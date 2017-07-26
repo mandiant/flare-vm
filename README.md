@@ -12,6 +12,6 @@
       ________________________________________________________ 
                                                           
 
-Welcome to FLARE VM - a fully customizable security distribution for malware analysis, incident response, penetration testing, etc.
+Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
 **The project will be released at Blackhat Arsenal on Wednesday, July 26th. Come see a demo at 11:30am-12:50pm | Business Hall, Level 2, Station 8**
