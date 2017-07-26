@@ -78,8 +78,7 @@ https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE
 Installation
 ============
 
-Create and configure a new Windows 7 or newer Virtual Machine. You have several options to deploy FLARE VM on an existing virtual machine:
-
+Create and configure a new Windows 7 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, you need to run an installation script. The installation script is a Boxstarter script which is used to deploy FLARE VM configurations and a collection of chocolatey packages. The easiest way to run the script is to use Boxstarter's web installer as follows:
 
 1) On the newly created VM, open the following URL in **Internet Explorer** (other browsers are not going to work):
 
@@ -94,6 +93,8 @@ Create and configure a new Windows 7 or newer Virtual Machine. You have several 
        http://boxstarter.org/package/url?C:\flarevm_malware.ps1
 
 2) Copy `install.bat` and `flarevm_malware.ps1` on the newly created VM and execute `install.bat`.
+
+
 
 Installing a new package
 ========================
@@ -113,56 +114,58 @@ Type the following command to update all of the packages to the most recent vers
 Malware Analysis with FLARE VM
 ==============================
 
-Please see a blog at [https://www.fireeye.com/blog/threat-research.html] for an example malware analysis session using FLARE VM.    
+Please see a blog at https://www.fireeye.com/blog/threat-research.html for an example malware analysis session using FLARE VM.    
 
 Installed Tools
 ===============
 
-==== Debuggers ====
+Debuggers
+---------
 * OllyDbg + OllyDump + OllyDumpEx
 * OllyDbg2 + OllyDumpEx
 * x64dbg
 * WinDbg
 
-==== Disassemblers ====
+Disassemblers ====
+
 * IDA Free
 * Binary Ninja Demo
 
-==== Java ====
+Java ====
 * JD-GUI
 
-==== Visual Basic ====
+Visual Basic ====
 * VBDecompiler
 
-==== Flash ====
+Flash ====
 * FFDec
 
-==== .NET ====
+.NET ====
 * ILSpy
 * DNSpy
 * DotPeek
 * De4dot
 
-==== Office ====
+Office ====
 * Offvis
 
-==== Hex Editors ====
+Hex Editors ====
 * FileInsight
 * HxD
 * 010 Editor
 
-==== PE ====
+PE ====
 * PEiD
 * ExplorerSuite (CFF Explorer)
 * PEview
 * DIE
 
-==== Text Editors ====
+Text Editors ====
 * SublimeText3
 * Notepad++
 * Vim
 
-==== Utilities ====
+Utilities ====
 * MD5
 * 7zip
 * Putty
@@ -176,7 +179,7 @@ Installed Tools
 * Checksum
 * Unxutils
 
-==== Python, Modules, Tools ====
+Python, Modules, Tools ====
 * Python 2.7
 * Hexdump
 * PEFile
@@ -188,5 +191,5 @@ Installed Tools
 * PyCrypto
 * Cryptography
 
-==== Other ====
+Other ====
 * VC Redistributable Modules (2008, 2010, 2012, 2013)
