@@ -14,7 +14,7 @@
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
-**The project will be released at Blackhat Arsenal on Wednesday, July 26th. Come see a demo at 11:30am-12:50pm | Business Hall, Level 2, Station 8**
+Please see https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html for a blog on installing and using the FLARE VM.
 
 Legal Notice
 ============
@@ -114,7 +114,7 @@ Type the following command to update all of the packages to the most recent vers
 Malware Analysis with FLARE VM
 ==============================
 
-Please see a blog at https://www.fireeye.com/blog/threat-research.html for an example malware analysis session using FLARE VM.    
+Please see a blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html for an example malware analysis session using FLARE VM.    
 
 Installed Tools
 ===============
