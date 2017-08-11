@@ -126,46 +126,55 @@ Debuggers
 * x64dbg
 * WinDbg
 
-Disassemblers ====
-
+Disassemblers
+---------
 * IDA Free
 * Binary Ninja Demo
 
-Java ====
+Java
+---------
 * JD-GUI
 
-Visual Basic ====
+Visual Basic
+---------
 * VBDecompiler
 
-Flash ====
+Flash
+---------
 * FFDec
 
-.NET ====
+.NET
+---------
 * ILSpy
 * DNSpy
 * DotPeek
 * De4dot
 
-Office ====
+Office
+---------
 * Offvis
 
-Hex Editors ====
+Hex Editors
+---------
 * FileInsight
 * HxD
 * 010 Editor
 
-PE ====
+PE
+---------
 * PEiD
 * ExplorerSuite (CFF Explorer)
 * PEview
 * DIE
 
-Text Editors ====
+Text Editors
+---------
 * SublimeText3
 * Notepad++
 * Vim
 
-Utilities ====
+Utilities
+---------
 * MD5
 * 7zip
 * Putty
@@ -179,7 +188,8 @@ Utilities ====
 * Checksum
 * Unxutils
 
-Python, Modules, Tools ====
+Python, Modules, Tools
+---------
 * Python 2.7
 * Hexdump
 * PEFile
@@ -191,5 +201,6 @@ Python, Modules, Tools ====
 * PyCrypto
 * Cryptography
 
-Other ====
+Other
+---------
 * VC Redistributable Modules (2008, 2010, 2012, 2013)
