@@ -134,6 +134,7 @@ Disassemblers
 Java
 ---------
 * JD-GUI
+* dex2jar
 
 Visual Basic
 ---------
