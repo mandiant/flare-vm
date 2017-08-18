@@ -166,6 +166,7 @@ PE
 * ExplorerSuite (CFF Explorer)
 * PEview
 * DIE
+* PeStudio
 
 Text Editors
 ---------
