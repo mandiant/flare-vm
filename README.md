@@ -207,4 +207,4 @@ Python, Modules, Tools
 
 Other
 ---------
-* VC Redistributable Modules (2008, 2010, 2012, 2013)
+* VC Redistributable Modules (2008, 2010, 2012, 2013, 2015)
