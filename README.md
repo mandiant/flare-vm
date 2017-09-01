@@ -134,6 +134,7 @@ Disassemblers
 Java
 ---------
 * JD-GUI
+* dex2jar
 
 Visual Basic
 ---------
@@ -166,6 +167,7 @@ PE
 * ExplorerSuite (CFF Explorer)
 * PEview
 * DIE
+* PeStudio
 
 Text Editors
 ---------
