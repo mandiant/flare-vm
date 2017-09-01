@@ -71,7 +71,8 @@ https://www.python.org/download/releases/2.7/license/,
 https://www.microsoft.com/en-us/download/details.aspx?id=44266,
 https://raw.githubusercontent.com/IntelliTect/Licenses/master/WindowsManagementFramework.txt,
 http://msdn.microsoft.com/en-US/cc300389.aspx,
-https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE
+https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE,
+http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
 </pre>
 
 
@@ -184,6 +185,7 @@ Utilities
 * RawCap
 * Wget
 * UPX
+* Process Hacker
 * Sysinternals Suite
 * API Monitor
 * SpyStudio
