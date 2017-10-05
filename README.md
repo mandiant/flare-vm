@@ -76,12 +76,29 @@ http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
 </pre>
 
 
-Installation
-============
+Installation (Install Script)
+=============================
 
-Create and configure a new Windows 7 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, first you need to install Boxstarter.
+Create and configure a new Windows 7 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, download and copy `install.ps1` on your analysis machine. On the analysis machine open PowerShell as an Administrator and enable script execution by running the following command:
 
-To install boxstarter in PowerShell V2:
+```
+Set-ExecutionPolicy Unrestricted
+```
+
+Finally, execute the installer script as follows:
+
+```
+.\install.ps1
+```
+
+The script will set up the Boxstarter environment and proceed to download and install the FLARE VM environment. You will be prompted for the Administrator password in order to automate host restarts during installation.
+
+Installation (Manually)
+=======================
+
+First, install boxstarter. All commands are expected to be executed with Administrator privileges. 
+
+If you are using PowerShell V2:
 
 ```
 Set-ExecutionPolicy Unrestricted
@@ -94,7 +111,6 @@ And PowerShell V3 or newest:
 Set-ExecutionPolicy Unrestricted
 . { iwr -useb http://boxstarter.org/bootstrapper.ps1 } | iex; get-boxstarter -Force
 ```
-
 
 Next, you can deploy FLARE VM environment as follows
 
