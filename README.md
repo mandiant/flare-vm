@@ -76,25 +76,49 @@ http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
 </pre>
 
 
-Installation
-============
+Installation (Install Script)
+=============================
 
-Create and configure a new Windows 7 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, you need to run an installation script. The installation script is a Boxstarter script which is used to deploy FLARE VM configurations and a collection of chocolatey packages. The easiest way to run the script is to use Boxstarter's web installer as follows:
+Create and configure a new Windows 7 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, download and copy `install.ps1` on your analysis machine. On the analysis machine open PowerShell as an Administrator and enable script execution by running the following command:
 
-1) On the newly created VM, open the following URL in **Internet Explorer** (other browsers are not going to work):
+```
+Set-ExecutionPolicy Unrestricted
+```
 
-       http://boxstarter.org/package/url?[FLAREVM_SCRIPT]
+Finally, execute the installer script as follows:
 
-   Where `FLAREVM_SCRIPT` is a path or URL to the respective FLARE VM script. For example to install the malware analysis edition:
+```
+.\install.ps1
+```
 
-       http://boxstarter.org/package/url?https://raw.githubusercontent.com/fireeye/flare-vm/master/flarevm_malware.ps1
+The script will set up the Boxstarter environment and proceed to download and install the FLARE VM environment. You will be prompted for the Administrator password in order to automate host restarts during installation.
 
-   or if you have downloaded and copied the installation script to the local C drive:
+Installation (Manually)
+=======================
 
-       http://boxstarter.org/package/url?C:\flarevm_malware.ps1
+First, install boxstarter. All commands are expected to be executed with Administrator privileges. 
 
-2) Copy `install.bat` and `flarevm_malware.ps1` on the newly created VM and execute `install.bat`.
+If you are using PowerShell V2:
 
+```
+Set-ExecutionPolicy Unrestricted
+iex ((New-Object System.Net.WebClient).DownloadString('http://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
+```
+
+And PowerShell V3 or newest:
+
+```
+Set-ExecutionPolicy Unrestricted
+. { iwr -useb http://boxstarter.org/bootstrapper.ps1 } | iex; get-boxstarter -Force
+```
+
+Next, you can deploy FLARE VM environment as follows
+
+```
+Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/fireeye/flare-vm/master/flarevm_malware.ps1
+```
+
+NOTE: The old installation method using the webinstaller link is now deprecated.
 
 
 Installing a new package
