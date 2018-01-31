@@ -74,6 +74,8 @@ http://msdn.microsoft.com/en-US/cc300389.aspx,
 https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE,
 http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
 https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
+https://blog.didierstevens.com/programs/pdf-tools
+http://sandsprite.com/tools.php?id=17
 </pre>
 
 
@@ -180,6 +182,12 @@ Flash
 Office
 ---------
 * Offvis
+
+PDF
+---------
+* pdfid
+* pdf-parser
+* PdfStreamDumper
 
 Hex Editors
 ---------
