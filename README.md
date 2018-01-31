@@ -164,6 +164,7 @@ Utilities
 * SpyStudio
 * Checksum
 * Unxutils
+* `shellcode_launcher`
 
 Python, Modules, Tools
 ---------
