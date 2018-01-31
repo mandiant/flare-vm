@@ -76,6 +76,7 @@ http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
 https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
 https://blog.didierstevens.com/programs/pdf-tools
 http://sandsprite.com/tools.php?id=17
+http://www.angusj.com/resourcehacker/
 </pre>
 
 
