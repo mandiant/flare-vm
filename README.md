@@ -1,16 +1,16 @@
-      ______ _               _____  ______   __      ____  __ 
+      ______ _               _____  ______   __      ____  __
      |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
      | |__  | |       /  \  | |__) | |__ _____\ \  / /| \  / |
      |  __| | |      / /\ \ |  _  /|  __|______\ \/ / | |\/| |
      | |    | |____ / ____ \| | \ \| |____      \  /  | |  | |
      |_|    |______/_/    \_\_|  \_\______|      \/   |_|  |_|
-                        
+
       ________________________________________________________
-                             Developed by                     
-                          Peter Kacherginsky                  
-           FLARE (FireEye Labs Advanced Reverse Engineering)  
-      ________________________________________________________ 
-                                                          
+                             Developed by
+                          Peter Kacherginsky
+           FLARE (FireEye Labs Advanced Reverse Engineering)
+      ________________________________________________________
+
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
@@ -73,6 +73,7 @@ https://raw.githubusercontent.com/IntelliTect/Licenses/master/WindowsManagementF
 http://msdn.microsoft.com/en-US/cc300389.aspx,
 https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE,
 http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
+https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
 </pre>
 
 
@@ -96,7 +97,7 @@ The script will set up the Boxstarter environment and proceed to download and in
 Installation (Manually)
 =======================
 
-First, install boxstarter. All commands are expected to be executed with Administrator privileges. 
+First, install boxstarter. All commands are expected to be executed with Administrator privileges.
 
 If you are using PowerShell V2:
 
@@ -139,7 +140,7 @@ Type the following command to update all of the packages to the most recent vers
 Malware Analysis with FLARE VM
 ==============================
 
-Please see a blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html for an example malware analysis session using FLARE VM.    
+Please see a blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html for an example malware analysis session using FLARE VM.
 
 Installed Tools
 ===============
@@ -232,3 +233,4 @@ Python, Modules, Tools
 Other
 ---------
 * VC Redistributable Modules (2008, 2010, 2012, 2013, 2015)
+* Practical Malware Analysis Labs
