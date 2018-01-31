@@ -77,6 +77,7 @@ https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
 https://blog.didierstevens.com/programs/pdf-tools
 http://sandsprite.com/tools.php?id=17
 http://www.angusj.com/resourcehacker/
+http://www.radare.org/r/
 </pre>
 
 
@@ -159,6 +160,7 @@ Disassemblers
 ---------
 * IDA Free
 * Binary Ninja Demo
+* Radare2 framework
 
 Java
 ---------
