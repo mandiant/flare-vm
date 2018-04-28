@@ -96,8 +96,10 @@ Debuggers
 Disassemblers
 ---------
 * IDA Free
+* IDA Free 7.0 (x64 bit only)
 * Binary Ninja Demo
 * Radare2 framework
+* Cutter -- GUI frontend for Radare2
 
 Java
 ---------
@@ -142,12 +144,14 @@ PE
 * PEview
 * DIE
 * PeStudio
+* LordPE
 * Resource Hacker
 
 Text Editors
 ---------
 * SublimeText3
 * Vim
+* Notepad++
 
 Utilities
 ---------
@@ -158,12 +162,16 @@ Utilities
 * RawCap
 * Wget
 * UPX
+* SysAnalyzer
 * Process Hacker
 * Sysinternals Suite
+* Kernel-Mode driver loader
 * API Monitor
 * SpyStudio
 * Checksum
 * Unxutils
+* YARA
+* Cyber Chef
 * `shellcode_launcher`
 
 Python, Modules, Tools
@@ -183,6 +191,7 @@ Other
 ---------
 * VC Redistributable Modules (2008, 2010, 2012, 2013, 2015)
 * Practical Malware Analysis Labs
+* MAP -- Malcode  Analyst Pack
 
 
 Legal Notice
