@@ -173,6 +173,7 @@ Utilities
 * YARA
 * Cyber Chef
 * `shellcode_launcher`
+* Py2ExeDecompiler
 
 Python, Modules, Tools
 ---------
