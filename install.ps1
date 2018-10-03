@@ -9,21 +9,28 @@
 #
 ###########################################
 
-
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal( [Security.Principal.WindowsIdentity]::GetCurrent() )
-
-if (-Not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "[ERR] Please run this script as administrator"
-	Read-Host  "      Press ANY key to continue..."
-	exit
-}
+param (
+	[string]$password = ""
+)
 
 
 function installBoxStarter()
-{
+{  
+	<#
+	.SYNOPSIS
+	Install BoxStarter on the current system
+	
+	.DESCRIPTION
+	Install BoxStarter on the current system. Returns $true or $false to indicate success or failure. On
+	fresh windows 7 systems, some root certificates are not installed and updated properly. Therefore, 
+	this funciton also temporarily trust all certificates before installing BoxStarter.
+	
+	#>
+	
 	# https://stackoverflow.com/questions/11696944/powershell-v3-invoke-webrequest-https-error
 	# Allows current PowerShell session to trust all certificates
 	# Also a good find: https://www.briantist.com/errors/could-not-establish-trust-relationship-for-the-ssltls-secure-channel/
+	try {
 	Add-Type @"
 	using System.Net;
 	using System.Security.Cryptography.X509Certificates;
@@ -35,6 +42,9 @@ function installBoxStarter()
 		}
 	}
 "@
+	} catch {
+	    Write-Debug "Failed to add new type"
+	}
 
 	try {
 		$AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
@@ -64,7 +74,24 @@ function installBoxStarter()
 	[System.Net.ServicePointManager]::SecurityProtocol = $prevSecProtocol
 	[System.Net.ServicePointManager]::CertificatePolicy = $prevCertPolicy
 	return $true
+}
 
+
+# Only run installer script if running as admin
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal( [Security.Principal.WindowsIdentity]::GetCurrent() )
+if (-Not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "[ERR] Please run this script as administrator"
+	Read-Host  "      Press ANY key to continue..."
+	exit
+}
+
+# Get user credentials for autologin during reboots
+Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
+if ([string]::IsNullOrEmpty($password)) {
+	$cred=Get-Credential $env:username
+} else {
+	$spasswd=ConvertTo-SecureString -String $password -AsPlainText -Force
+	$cred=New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $env:username, $spasswd
 }
 
 $rc = installBoxStarter
@@ -83,16 +110,7 @@ Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/flare/api/v2;https:/
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
 
-# Get user credentials for autologin during reboots
-Write-Host "[ * ] Getting user credentials ..."
-Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
-$cred=Get-Credential $env:username
-
 # Needed for many applications
 cinst -y vcredist-all
 
-if ($cred) {
-  Install-BoxstarterPackage -PackageName flarevm.installer.flare -Credential $cred
-} else {
-  Install-BoxstarterPackage -PackageName flarevm.installer.flare
-}
+Install-BoxstarterPackage -PackageName flarevm.installer.flare -Credential $cred
