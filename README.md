@@ -256,4 +256,5 @@ https://blog.didierstevens.com/programs/pdf-tools
 http://sandsprite.com/tools.php?id=17
 http://www.angusj.com/resourcehacker/
 http://www.radare.org/r/
+https://hshrzd.wordpress.com/pe-bear/
 </pre>
