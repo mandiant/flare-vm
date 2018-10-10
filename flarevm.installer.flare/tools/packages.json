@@ -1,0 +1,161 @@
+{
+    "packages": [
+        {"name": "cmdermini.flare"},
+        {"name": "powershell"},
+        {"name": "dotnet4.6.2"},
+		{"name": "dotnet4.7.1"},
+
+
+        {"name": "ollydbg"},
+        {"name": "ollydbg.ollydump"},
+        {"name": "ollydbg.ollydumpex"},
+
+        {"name": "ollydbg2"},
+        {"name": "ollydbg2.ollydumpex"},
+
+        {"name": "x64dbg"},
+        {"name": "x64dbg.py"},
+
+
+        {"name": "windbg"},
+        {"name": "windbg.kenstheme"},
+        {"name": "windbg.ollydumpex"},
+        {"name": "windbg.pykd"},
+		{"name": "scdbg"},
+
+
+        {"name": "idafree70", "x64Only": true},
+        {"name": "idafree"},
+        {"name": "binaryninja"},
+        {"name": "radare2.flare"},
+        {"name": "cutter.flare"},
+
+
+        {"name": "ilspy.flare"},
+        {"name": "dnspy.flare	"},
+        {"name": "dotpeek.flare"},
+        {"name": "de4dot"},
+
+
+        {"name": "javaruntime"},
+        {"name": "jd-gui"},
+        {"name": "bytecode-viewer.flare"},
+        {"name": "dex2jar"},
+
+
+        {"name": "vbdecompiler"},
+
+
+        {"name": "idr.small"},
+
+        {"name": "ffdec"},
+
+        {"name": "fileinsight"},
+        {"name": "hxd.flare"},
+        {"name": "010editor"},
+
+        {"name": "peid"},
+        {"name": "explorersuite"},
+        {"name": "peview"},
+        {"name": "die"},
+        {"name": "pestudio"},
+	{"name": "pebear.flare"},
+        {"name": "resourcehacker.flare"},
+
+        {"name": "sublimetext3"},
+        {"name": "notepadplusplus"},
+
+        {"name": "unxutils"},
+        {"name": "checksum"},
+        {"name": "7zip.install"},
+        {"name": "putty"},
+        {"name": "wireshark.flare"},
+        {"name": "winpcap"},
+        {"name": "rawcap"},
+        {"name": "wget"},
+        {"name": "upx"},
+        {"name": "processhacker.flare"},
+        {"name": "sysinternals.flare"},
+        {"name": "apimonitor.flare"},
+        {"name": "spystudio.flare"},
+        {"name": "hashcalc"},
+        {"name": "regshot"},
+        {"name": "exeinfope"},
+        {"name": "ncat"},
+        {"name": "shellcode_launcher"},
+        {"name": "xorsearch"},
+        {"name": "xorstrings"},
+        {"name": "yara.flare"},
+        {"name": "kmdloader.flare"},
+        {"name": "lordpe.flare"},
+		{"name": "googlechrome.flare"},
+        {"name": "cyberchef.flare"},
+        {"name": "py2exedecompiler"},
+
+        {"name": "offvis"},
+        {"name": "officemalscanner"},
+
+        {"name": "pdfid"},
+        {"name": "pdfparser"},
+        {"name": "pdfstreamdumper"},
+
+        {"name": "vim"},
+        {"name": "cygwin.flare"},
+		{"name": "burp.free.flare"},
+        {"name": "retdec"},
+        {"name": "MAP"},
+        {"name": "SysAnalyzer"},
+        {"name": "pmalabs"},
+		
+        {"name": "apktool"},
+
+        {"name": "vcpython27"},
+        {
+            "name": "python2.x86.nopath.flare",
+            "x64Only": true,
+            "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
+        },
+        {"name": "python2"},
+        {
+            "name": "hexdump",
+            "args": "--source python"
+        },
+        {
+            "name": "pefile",
+            "args": "--source python"
+        },
+        {
+            "name": "winappdbg",
+            "args": "--source python"
+        },
+        {
+            "name": "pycrypto",
+            "args": "--source python"
+        },
+        {
+            "name": "https://github.com/williballenthin/vivisect/zipball/master",
+            "args": "--source python"
+        },
+        {
+            "name": "https://github.com/fireeye/flare-qdb/zipball/master",
+            "args": "--source python"
+        },
+        {
+            "name": "capstone-windows",
+            "args": "--source python"
+        },
+        {
+            "name": "unicorn",
+            "args": "--source python"
+        },
+        {
+            "name": "oletools",
+            "args": "--source python"
+        },
+
+        {"name": "floss.python"},
+        {"name": "fakenet-ng.python"},
+        {"name": "python3"}
+
+    ]
+}
