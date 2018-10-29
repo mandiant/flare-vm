@@ -7,8 +7,8 @@
 
       ________________________________________________________
                              Developed by
-                          Peter Kacherginsky
            FLARE (FireEye Labs Advanced Reverse Engineering)
+                         flarevm@fireeye.com
       ________________________________________________________
 
 
@@ -54,13 +54,12 @@ Set-ExecutionPolicy Unrestricted
 . { iwr -useb http://boxstarter.org/bootstrapper.ps1 } | iex; get-boxstarter -Force
 ```
 
-Next, you can deploy FLARE VM environment as follows
+Next, you can deploy FLARE VM environment by executing the install.ps1 script using Power Shell.
 
 ```
-Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/fireeye/flare-vm/master/flarevm_malware.ps1
+.\install.ps1
 ```
 
-NOTE: The old installation method using the webinstaller link is now deprecated.
 
 
 Installing a new package
@@ -190,7 +189,7 @@ Python, Modules, Tools
 
 Other
 ---------
-* VC Redistributable Modules (2005, 2008, 2010, 2012, 2013, 2015)
+* VC Redistributable Modules (2008, 2010, 2012, 2013, 2015, 2017)
 * Practical Malware Analysis Labs
 * MAP -- Malcode  Analyst Pack
 
@@ -257,4 +256,5 @@ https://blog.didierstevens.com/programs/pdf-tools
 http://sandsprite.com/tools.php?id=17
 http://www.angusj.com/resourcehacker/
 http://www.radare.org/r/
+https://hshrzd.wordpress.com/pe-bear/
 </pre>
