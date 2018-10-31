@@ -1,39 +1,34 @@
-﻿#$ErrorActionPreference = 'Stop'; # stop on all errors
+$ErrorActionPreference = 'Stop'
 
-$packageName= 'flarevm.installer' #
-$toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$packageName = 'flarevm.installer'
+$toolsDir    = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 
 # Set desktop background to black
-set-itemproperty -path 'HKCU:\Control Panel\Colors' -name Background -value "0 0 0"
+Set-ItemProperty -Path 'HKCU:\Control Panel\Colors' -Name Background -Value "0 0 0" -Force | Out-Null
 
 # Boxstarter options
 
-$flareFeed = "https://www.myget.org/F/flare/api/v2"
-$cache =  "$env:userprofile\AppData\Local\ChocoCache"
+$flareFeed       = "https://www.myget.org/F/flare/api/v2"
+$cache           =  "${Env:UserProfile}\AppData\Local\ChocoCache"
 $globalCinstArgs = "--cacheLocation $cache"
-$startPath = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\FLARE"
+$startPath       = Join-Path ${Env:ProgramData} "Microsoft\Windows\Start Menu\Programs\FLARE"
 
 $pkgPath = Join-Path $toolsDir "flarevm.installer"
 $pkgPath = Join-Path $pkgPath "tools"
 $pkgPath = Join-Path $pkgPath "packages.json"
 
-function Test-Win64() {
-    return [IntPtr]::size -eq 8
-}
 
 # https://stackoverflow.com/questions/28077854/powershell-2-0-convertfrom-json-and-convertto-json-implementation
-function ConvertFrom-Json([object] $item)
-{
-    add-type -assembly system.web.extensions
-    $ps_js=new-object system.web.script.serialization.javascriptSerializer
+function ConvertFrom-Json([object] $item) {
+    Add-Type -assembly system.web.extensions
+    $ps_js = New-Object system.web.script.serialization.javascriptSerializer
 
     #The comma operator is the array construction operator in PowerShell
     return ,$ps_js.DeserializeObject($item)
 }
 
 
-function LoadPackages
-{
+function LoadPackages {
     try {
         $json = Get-Content $pkgPath -ErrorAction Stop
         $packages = ConvertFrom-Json $json
@@ -44,8 +39,7 @@ function LoadPackages
 }
 
 
-function UninstallOnePackage
-{
+function UninstallOnePackage {
     param([hashtable] $pkg)
     $name = $pkg.name
     $pkgargs = $pkg.args
@@ -56,7 +50,7 @@ function UninstallOnePackage
     }
 
     if ($is64Only) {
-        if (Test-WIn64) {
+        if (Get-OSArchitectureWidth -Compare 64) {
             # pass
         } else {
             Write-Warning "[!] Not uninstalling $name on x86 systems"
@@ -85,9 +79,7 @@ function UninstallOnePackage
     return $true
 }
 
-function PostUninstall
-{
-
+function PostUninstall {
     # Chocolatey setup
     Write-Host "Initializing chocolatey"
 
@@ -97,13 +89,16 @@ function PostUninstall
         # Ignore exception, in case the directory does not exist.
     }
 
-    $desktopShortcut = Join-Path ${Env:USERPROFILE} "Desktop\FLARE.lnk"
+    $desktopShortcut = Join-Path ${Env:UserProfile} "Desktop\FLARE.lnk"
     Remove-Item $desktopShortcut
+
+    # Set common paths in environment variables
+    [Environment]::SetEnvironmentVariable("FLARE_START", $null, "Machine")
+    Uninstall-ChocolateyEnvironmentVariable -VariableName "FLARE_START" -VariableType 'Machine'
 }
 
 
-function PreUninstall
-{
+function PreUninstall {
     # Final flarevm installation
     cuninst -x -y $globalCinstArgs flarevm
     try {

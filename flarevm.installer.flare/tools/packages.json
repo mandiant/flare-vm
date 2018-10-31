@@ -1,65 +1,64 @@
 {
     "packages": [
         {"name": "cmdermini.flare"},
-        {"name": "powershell"},
         {"name": "dotnet4.6.2"},
-		{"name": "dotnet4.7.1"},
+        {"name": "dotnet4.7.1"},
 
 
-        {"name": "ollydbg"},
-        {"name": "ollydbg.ollydump"},
-        {"name": "ollydbg.ollydumpex"},
+        {"name": "ollydbg.flare"},
+        {"name": "ollydbg.ollydump.flare"},
+        {"name": "ollydbg.ollydumpex.flare"},
 
-        {"name": "ollydbg2"},
-        {"name": "ollydbg2.ollydumpex"},
+        {"name": "ollydbg2.flare"},
+        {"name": "ollydbg2.ollydumpex.flare"},
 
-        {"name": "x64dbg"},
-        {"name": "x64dbg.py"},
-
-
-        {"name": "windbg"},
-        {"name": "windbg.kenstheme"},
-        {"name": "windbg.ollydumpex"},
-        {"name": "windbg.pykd"},
-		{"name": "scdbg"},
+        {"name": "x64dbg.flare"},
+        {"name": "x64dbg.py.flare"},
 
 
-        {"name": "idafree70", "x64Only": true},
-        {"name": "idafree"},
-        {"name": "binaryninja"},
+        {"name": "windbg.flare"},
+        {"name": "windbg.kenstheme.flare"},
+        {"name": "windbg.ollydumpex.flare"},
+        {"name": "windbg.pykd.flare"},
+        {"name": "scdbg.flare"},
+
+
+        {"name": "idafree70.flare", "x64Only": true},
+        {"name": "idafree.flare"},
+        {"name": "binaryninja.flare"},
         {"name": "radare2.flare"},
         {"name": "cutter.flare"},
 
 
         {"name": "ilspy.flare"},
-        {"name": "dnspy.flare	"},
+        {"name": "dnspy.flare"},
         {"name": "dotpeek.flare"},
-        {"name": "de4dot"},
+        {"name": "de4dot.flare"},
 
 
         {"name": "javaruntime"},
-        {"name": "jd-gui"},
+        {"name": "jd-gui.flare"},
         {"name": "bytecode-viewer.flare"},
-        {"name": "dex2jar"},
+        {"name": "dex2jar.flare"},
 
 
-        {"name": "vbdecompiler"},
+        {"name": "vbdecompiler.flare"},
 
 
-        {"name": "idr.small"},
+        {"name": "idr.small.flare"},
 
-        {"name": "ffdec"},
+        {"name": "ffdec.flare"},
 
-        {"name": "fileinsight"},
+        {"name": "fileinsight.flare"},
         {"name": "hxd.flare"},
-        {"name": "010editor"},
+        {"name": "010editor.flare"},
 
-        {"name": "peid"},
-        {"name": "explorersuite"},
-        {"name": "peview"},
-        {"name": "die"},
-        {"name": "pestudio"},
-	{"name": "pebear.flare"},
+        {"name": "peid.flare"},
+        {"name": "explorersuite.flare"},
+        {"name": "peview.flare"},
+        {"name": "die.flare"},
+        {"name": "pestudio.flare"},
+        {"name": "pebear.flare"},
         {"name": "resourcehacker.flare"},
 
         {"name": "sublimetext3"},
@@ -78,36 +77,36 @@
         {"name": "sysinternals.flare"},
         {"name": "apimonitor.flare"},
         {"name": "spystudio.flare"},
-        {"name": "hashcalc"},
-        {"name": "regshot"},
-        {"name": "exeinfope"},
-        {"name": "ncat"},
-        {"name": "shellcode_launcher"},
-        {"name": "xorsearch"},
-        {"name": "xorstrings"},
+        {"name": "hashcalc.flare"},
+        {"name": "regshot.flare"},
+        {"name": "exeinfope.flare"},
+        {"name": "ncat.flare"},
+        {"name": "shellcode_launcher.flare"},
+        {"name": "xorsearch.flare"},
+        {"name": "xorstrings.flare"},
         {"name": "yara.flare"},
         {"name": "kmdloader.flare"},
         {"name": "lordpe.flare"},
-		{"name": "googlechrome.flare"},
+        {"name": "googlechrome.flare"},
         {"name": "cyberchef.flare"},
-        {"name": "py2exedecompiler"},
+        {"name": "py2exedecompiler.flare"},
 
-        {"name": "offvis"},
-        {"name": "officemalscanner"},
+        {"name": "offvis.flare"},
+        {"name": "officemalscanner.flare"},
 
-        {"name": "pdfid"},
-        {"name": "pdfparser"},
-        {"name": "pdfstreamdumper"},
+        {"name": "pdfid.flare"},
+        {"name": "pdfparser.flare"},
+        {"name": "pdfstreamdumper.flare"},
 
         {"name": "vim"},
         {"name": "cygwin.flare"},
-		{"name": "burp.free.flare"},
-        {"name": "retdec"},
-        {"name": "MAP"},
-        {"name": "SysAnalyzer"},
-        {"name": "pmalabs"},
-		
-        {"name": "apktool"},
+        {"name": "burp.free.flare"},
+        {"name": "retdec.flare"},
+        {"name": "MAP.flare"},
+        {"name": "SysAnalyzer.flare"},
+        {"name": "pmalabs.flare"},
+
+        {"name": "apktool.flare"},
 
         {"name": "vcpython27"},
         {
@@ -136,10 +135,7 @@
             "name": "https://github.com/williballenthin/vivisect/zipball/master",
             "args": "--source python"
         },
-        {
-            "name": "https://github.com/fireeye/flare-qdb/zipball/master",
-            "args": "--source python"
-        },
+        {"name": "flare-qdb.python.flare"},
         {
             "name": "capstone-windows",
             "args": "--source python"
@@ -153,8 +149,8 @@
             "args": "--source python"
         },
 
-        {"name": "floss.python"},
-        {"name": "fakenet-ng.python"},
+        {"name": "floss.python.flare"},
+        {"name": "fakenet-ng.python.flare"},
         {"name": "python3"}
 
     ]

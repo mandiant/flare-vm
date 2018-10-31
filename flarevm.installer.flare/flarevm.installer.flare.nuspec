@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>flarevm.installer.flare</id>
-    <version>2.0.20180926</version>
+    <version>2.0.20180926.1</version>
     <title>FLARE</title>
     <authors>FLARE</authors>
     <description>FLARE VM - Malware Analysis Environment</description>
