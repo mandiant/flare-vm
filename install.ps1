@@ -109,6 +109,14 @@ Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/flare/api/v2;https:/
 
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
+try {
+  Set-MpPreference -DisableRealtimeMonitoring $true
+  iex "cinst -y disabledefender-winconfig "
+} catch {
+}
+if ([System.Environment]::OSVersion.Version.Major -eq 10) {
+  choco config set cacheLocation ${Env:TEMP}
+}
 
 # Needed for many applications
 iex "cinst -y vcredist-all"
