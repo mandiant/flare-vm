@@ -98,7 +98,7 @@
         {"name": "pdfparser.flare"},
         {"name": "pdfstreamdumper.flare"},
 
-        {"name": "vim"},
+        {"name": "vim.flare"},
         {"name": "cygwin.flare"},
         {"name": "burp.free.flare"},
         {"name": "retdec.flare"},
@@ -128,7 +128,7 @@
             "args": "--source python"
         },
         {
-            "name": "pycrypto",
+            "name": "pycryptodome",
             "args": "--source python"
         },
         {
