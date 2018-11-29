@@ -34,6 +34,8 @@
         {"name": "dnspy.flare"},
         {"name": "dotpeek.flare"},
         {"name": "de4dot.flare"},
+		{"name": "dnsd.flare"},
+		{"name": "rundotnetdll.flare"},
 
 
         {"name": "javaruntime"},
@@ -49,6 +51,11 @@
 
         {"name": "ffdec.flare"},
 
+        {"name": "metasploit.flare"},
+        {"name": "kali_windowsbinaries.flare"},
+
+        {"name": "volatility.flare", "x64Only": true},
+
         {"name": "fileinsight.flare"},
         {"name": "hxd.flare"},
         {"name": "010editor.flare"},
@@ -62,13 +69,15 @@
         {"name": "resourcehacker.flare"},
 
         {"name": "sublimetext3"},
-        {"name": "notepadplusplus"},
+        {"name": "notepadplusplus.flare"},
 
         {"name": "unxutils"},
+        {"name": "farmanager.flare"},
         {"name": "checksum"},
-        {"name": "7zip.install"},
+        {"name": "7zip.flare"},
         {"name": "putty"},
         {"name": "wireshark.flare"},
+        {"name": "nmap.flare"},
         {"name": "winpcap"},
         {"name": "rawcap"},
         {"name": "wget"},
@@ -78,6 +87,7 @@
         {"name": "apimonitor.flare"},
         {"name": "spystudio.flare"},
         {"name": "hashcalc.flare"},
+        {"name": "hashmyfiles.flare"},
         {"name": "regshot.flare"},
         {"name": "exeinfope.flare"},
         {"name": "ncat.flare"},
@@ -115,43 +125,12 @@
             "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
         },
         {"name": "python2"},
-        {
-            "name": "hexdump",
-            "args": "--source python"
-        },
-        {
-            "name": "pefile",
-            "args": "--source python"
-        },
-        {
-            "name": "winappdbg",
-            "args": "--source python"
-        },
-        {
-            "name": "pycryptodome",
-            "args": "--source python"
-        },
-        {
-            "name": "https://github.com/williballenthin/vivisect/zipball/master",
-            "args": "--source python"
-        },
+        {"name": "python3"},
+        {"name": "libraries.python2.flare"},
+        {"name": "libraries.python3.flare"},
         {"name": "flare-qdb.python.flare"},
-        {
-            "name": "capstone-windows",
-            "args": "--source python"
-        },
-        {
-            "name": "unicorn",
-            "args": "--source python"
-        },
-        {
-            "name": "oletools",
-            "args": "--source python"
-        },
-
         {"name": "floss.python.flare"},
-        {"name": "fakenet-ng.python.flare"},
-        {"name": "python3"}
+        {"name": "fakenet-ng.python.flare"}
 
     ]
 }
