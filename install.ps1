@@ -119,7 +119,10 @@ if ([System.Environment]::OSVersion.Version.Major -eq 10) {
 }
 
 # Needed for many applications
-iex "cinst -y vcredist-all"
+# Set up the correct feed
+$flareFeed = "https://www.myget.org/F/flare/api/v2"
+iex "choco sources add -n=flare -s $flareFeed --priority 1"
+iex "choco upgrade -y vcredist-all.flare"
 iex "cinst -y powershell"
 
 Install-BoxstarterPackage -PackageName flarevm.installer.flare -Credential $cred

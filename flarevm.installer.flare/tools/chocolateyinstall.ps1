@@ -1,3 +1,5 @@
+$ErrorActionPreference = 'Continue'
+
 Import-Module Boxstarter.Chocolatey
 Import-Module "$($Boxstarter.BaseDir)\Boxstarter.Common\boxstarter.common.psd1"
 
@@ -103,7 +105,7 @@ function InitialSetup {
     refreshenv
 
     # BoxStarter setup
-    Set-BoxstarterConfig -NugetSources "$flareFeed;https://chocolatey.org/api/v2" -LocalRepo "."
+    Set-BoxstarterConfig -NugetSources "$flareFeed;https://chocolatey.org/api/v2"
 }
 
 
@@ -130,9 +132,12 @@ function Main {
         $name = $pkg.name
         $rc = InstallOnePackage $pkg
         if ($rc) {
-            # pass
+            # Try not to get rate-limited
+            if (-Not ($name.Contains(".flare"))) {
+                Start-Sleep -Seconds 5
+            }
         } else {
-            Write-Error "Failed to install $name"
+            Write-Host "Failed to install $name"
         }
     }
 

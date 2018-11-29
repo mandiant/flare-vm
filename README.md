@@ -1,27 +1,136 @@
-      ______ _               _____  ______   __      ____  __
+      ______ _               _____  ______   __      ____  __ 
      |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
      | |__  | |       /  \  | |__) | |__ _____\ \  / /| \  / |
      |  __| | |      / /\ \ |  _  /|  __|______\ \/ / | |\/| |
      | |    | |____ / ____ \| | \ \| |____      \  /  | |  | |
      |_|    |______/_/    \_\_|  \_\______|      \/   |_|  |_|
-
+                        
       ________________________________________________________
-                             Developed by
-           FLARE (FireEye Labs Advanced Reverse Engineering)
-                         flarevm@fireeye.com
-      ________________________________________________________
-
+                             Developed by                     
+	                   flarevm@fireeye.com
+           FLARE (FireEye Labs Advanced Reverse Engineering)  
+      ________________________________________________________ 
+                                                          
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
-Please see https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html for a blog on installing and using the FLARE VM.
+Please see https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html for a blog on installing FLARE VM.
+
+v2.0 Update
+===========
+Version 2.0 of FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
+
+Version 2.0 of FLARE VM now depends on the environment variable `FLARE_START`. If troubleshooting, please make sure this environment variable is set. Its default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
+
+Legal Notice
+============
+<pre>This download configuration script is provided to assist cyber security analysts
+in creating handy and versatile toolboxes for malware analysis environments. It
+provides a convenient interface for them to obtain a useful set of analysis
+tools directly from their original sources. Installation and use of this script
+is subject to the Apache 2.0 License.
+ 
+You as a user of this script must review, accept and comply with the license
+terms of each downloaded/installed package listed below. By proceeding with the
+installation, you are accepting the license terms of each package, and
+acknowledging that your use of each package will be subject to its respective
+license terms.
+
+List of package licenses:
+
+http://exeinfo.atwebpages.com
+http://go.microsoft.com/fwlink/?LinkID=251960
+http://jd.benow.ca/
+http://msdn.microsoft.com/en-US/cc300389.aspx
+http://ntinfo.biz
+https://www.sublimetext.com
+http://opensource.org/licenses/MIT
+http://progress-tools.x10.mx/dnsd.html
+http://sandsprite.com/CodeStuff/scdbg_manual/MANUAL_EN.html
+http://sandsprite.com/iDef/MAP/
+http://sandsprite.com/iDef/SysAnalyzer/
+http://sandsprite.com/tools.php?id=17
+http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
+http://technet.microsoft.com/en-us/sysinternals/bb469936
+http://upx.sourceforge.net/upx-license.html
+http://vimdoc.sourceforge.net/htmldoc/uganda.html
+http://whiteboard.nektra.com/spystudio/spystudio_license
+http://wjradburn.com/software/
+http://www.7-zip.org/license.txt
+http://www.angusj.com/resourcehacker/
+http://www.chiark.greenend.org.uk/~sgtatham/putty/licence.html
+http://www.gnu.org/copyleft/gpl.html
+http://www.gnu.org/licenses/gpl-2.0.html
+http://www.novirusthanks.org/products/kernel-mode-driver-loader/
+http://www.ntcore.com/exsuite.php
+http://wjradburn.com/software/
+http://www.ollydbg.de/download.htm
+http://www.ollydbg.de/version2.html
+http://www.oracle.com/technetwork/java/javase/terms/license/index.html
+http://www.radare.org/r/license.html
+http://www.rohitab.com/apimonitor
+http://www.slavasoft.com/hashcalc/license-agreement.htm
+http://www.techworld.com/download/portable-applications/microsoft-offvis-11-3214034/
+https://blog.didierstevens.com/programs/pdf-tools/
+https://blog.didierstevens.com/programs/xorsearch/
+https://bytecodeviewer.com/
+https://cdn.rawgit.com/iggi131/packages/master/RawCap/license.txt
+https://docs.binary.ninja/about/license/#demo-license
+https://docs.binary.ninja/about/license/index.html#demo-license
+https://github.com/0xd4d/de4dot/blob/master/LICENSE.de4dot.txt
+https://github.com/0xd4d/dnSpy
+https://github.com/0xd4d/dnSpy/blob/master/dnSpy/dnSpy/LicenseInfo/GPLv3.txt
+https://github.com/FarGroup/FarManager/blob/master/LICENSE
+https://github.com/clinicallyinane/shellcode_launcher/
+https://github.com/enkomio/RunDotNetDll/blob/master/LICENSE.TXT
+https://github.com/fireeye/flare-fakenet-ng
+https://github.com/fireeye/flare-floss
+https://github.com/fireeye/flare-qdb
+https://github.com/fireeye/flare-vm
+https://github.com/icsharpcode/ILSpy/blob/master/README.txt
+https://github.com/icsharpcode/ILSpy/blob/master/doc/license.txt
+https://github.com/java-decompiler/jd-gui/blob/master/LICENSE
+https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
+https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE
+https://github.com/radareorg/cutter
+https://github.com/x64dbg/x64dbg/blob/development/LICENSE
+https://github.com/x64dbg/x64dbgpy/blob/v25/LICENSE
+https://hshrzd.wordpress.com/pe-bear/
+https://metasploit.com/
+https://mh-nexus.de/en/hxd/license.php
+https://nmap.org/ncat/
+https://portswigger.net/burp
+https://raw.githubusercontent.com/IntelliTect/Licenses/master/WindowsManagementFramework.txt
+https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE
+https://raw.githubusercontent.com/ferventcoder/checksum/master/LICENSE
+https://retdec.com/
+https://svn.nmap.org/nmap/COPYING
+https://www.7-zip.org/
+https://www.free-decompiler.com/flash/license/
+https://www.gnu.org/copyleft/gpl.html
+https://www.hex-rays.com/products/ida/support/download_freeware.shtml
+https://www.jetbrains.com/decompiler/download/license.html
+https://www.kali.org/about-us/
+https://www.mcafee.com/hk/downloads/free-tools/fileinsight.aspx
+https://www.microsoft.com/en-us/download/details.aspx?id=44266
+https://www.nirsoft.net/utils/hash_my_files.html
+https://www.openssl.org/source/license.html
+https://www.python.org/download/releases/2.7/license
+https://docs.python.org/3/license.html
+https://www.sweetscape.com/010editor/manual/License.htm
+https://www.vb-decompiler.org/license.htm
+http://kpnc.org/idr32/en/
+https://www.vim.org/about.php
+https://www.winitor.com
+</pre>
+
 
 
 
 Installation (Install Script)
 =============================
 
-Create and configure a new Windows 7 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, download and copy `install.ps1` on your analysis machine. On the analysis machine open PowerShell as an Administrator and enable script execution by running the following command:
+Create and configure a new Windows 7 SP1 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, download and copy `install.ps1` on your analysis machine. On the analysis machine open PowerShell as an Administrator and enable script execution by running the following command:
 
 ```
 Set-ExecutionPolicy Unrestricted
@@ -38,7 +147,7 @@ The script will set up the Boxstarter environment and proceed to download and in
 Installation (Manually)
 =======================
 
-First, install boxstarter. All commands are expected to be executed with Administrator privileges.
+First, install BoxStarter. All commands are expected to be executed with Administrator privileges. 
 
 If you are using PowerShell V2:
 
@@ -54,12 +163,13 @@ Set-ExecutionPolicy Unrestricted
 . { iwr -useb http://boxstarter.org/bootstrapper.ps1 } | iex; get-boxstarter -Force
 ```
 
-Next, you can deploy FLARE VM environment by executing the install.ps1 script using Power Shell.
+Next, you can deploy FLARE VM environment as follows
 
 ```
-.\install.ps1
+Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/fireeye/flare-vm/master/install.ps1
 ```
 
+NOTE: The old installation method using the webinstaller link is now deprecated.
 
 
 Installing a new package
@@ -80,61 +190,87 @@ Type the following command to update all of the packages to the most recent vers
 Malware Analysis with FLARE VM
 ==============================
 
-Please see a blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html for an example malware analysis session using FLARE VM.
+For an example malware analysis session using FLARE VM, please see the blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html.
+
+> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html.   
 
 Installed Tools
 ===============
 
+Android
+---------
+* dex2jar
+* apktool
+
 Debuggers
 ---------
+* flare-qdb
+* scdbg
 * OllyDbg + OllyDump + OllyDumpEx
 * OllyDbg2 + OllyDumpEx
 * x64dbg
-* WinDbg
+* WinDbg + OllyDumpex + pykd
+
+Decompilers
+---------
+* RetDec
+
+Delphi
+---------
+* Interactive Delphi Reconstructor (IDR)
 
 Disassemblers
 ---------
-* IDA Free
-* IDA Free 7.0 (x64 bit only)
+* IDA Free (5.0 & 7.0)
 * Binary Ninja Demo
-* Radare2 framework
-* Cutter -- GUI frontend for Radare2
+* radare2
+* Cutter
 
-Java
+.Net
 ---------
-* JD-GUI
-* dex2jar
-
-Visual Basic
----------
-* VBDecompiler
+* de4dot
+* Dot Net String Decoder (DNSD)
+* dnSpy
+* DotPeek
+* ILSpy
+* RunDotNetDll
 
 Flash
 ---------
 * FFDec
 
-.NET
+Forensic
 ---------
-* ILSpy
-* DNSpy
-* DotPeek
-* De4dot
-
-Office
----------
-* Offvis
-
-PDF
----------
-* pdfid
-* pdf-parser
-* PdfStreamDumper
+* Volatility
 
 Hex Editors
 ---------
 * FileInsight
 * HxD
 * 010 Editor
+
+Java
+---------
+* JD-GUI
+* Bytecode-Viewer
+
+Networking
+---------
+* FakeNet-NG
+* ncat
+* nmap
+* Wireshark
+
+Office
+---------
+* Offvis
+* OfficeMalScanner
+
+PDF
+---------
+* PDFiD
+* PDFParser
+* PDFStreamDumper
 
 PE
 ---------
@@ -143,118 +279,78 @@ PE
 * PEview
 * DIE
 * PeStudio
+* PEBear
+* ResourceHacker
 * LordPE
-* Resource Hacker
+
+Pentest
+---------
+* MetaSploit
+* Windows binaries from Kali Linux
 
 Text Editors
 ---------
 * SublimeText3
-* Vim
 * Notepad++
+* Vim
+
+Visual Basic
+---------
+* VBDecompiler
+
+Web
+---------
+* BurpSuite Free Edition
 
 Utilities
 ---------
-* MD5
+* FLOSS
+* HashCalc
+* HashMyFiles
+* Checksum
 * 7zip
+* Far Manager
 * Putty
-* Wireshark
-* RawCap
 * Wget
+* RawCap
 * UPX
-* SysAnalyzer
+* RegShot
 * Process Hacker
 * Sysinternals Suite
-* Kernel-Mode driver loader
 * API Monitor
 * SpyStudio
-* Checksum
+* Shellcode Launcher
+* Cygwin
 * Unxutils
-* YARA
-* Cyber Chef
-* `shellcode_launcher`
-* Py2ExeDecompiler
+* Malcode Analyst Pack (MAP)
+* XORSearch
+* XORStrings
+* Yara
+* CyberChef
+* KernelModeDriverLoader
 
 Python, Modules, Tools
 ---------
+* Py2ExeDecompiler
 * Python 2.7
-* Hexdump
-* PEFile
-* Winappdbg
-* FakeNet-NG
-* Vivisect
-* FLOSS
-* FLARE_QDB
-* PyCrypto
-* Cryptography
+    * hexdump
+    * pefile
+    * winappdbg
+    * pycryptodome
+    * vivisect
+    * capstone-windows
+    * unicorn
+    * oletools
+    * unpy2exe
+    * uncompyle6
+* Python 3
+    * unpy2exe
+    * uncompyle6
 
 Other
 ---------
-* VC Redistributable Modules (2008, 2010, 2012, 2013, 2015, 2017)
+* VC Redistributable Modules (2005, 2008, 2010, 2012, 2013, 2015, 2017)
+* .Net versions 4.6.2 and 4.7.1
 * Practical Malware Analysis Labs
-* MAP -- Malcode  Analyst Pack
-
-
-Legal Notice
-============
-<pre>This download configuration script is provided to assist cyber security analysts
-in creating handy and versatile toolboxes for malware analysis environments. It
-provides a convenient interface for them to obtain a useful set of analysis
-tools directly from their original sources. Installation and use of this script
-is subject to the Apache 2.0 License.
- 
-You as a user of this script must review, accept and comply with the license
-terms of each downloaded/installed package listed below. By proceeding with the
-installation, you are accepting the license terms of each package, and
-acknowledging that your use of each package will be subject to its respective
-license terms.
-
-List of package licenses:
-
-http://www.ollydbg.de/download.htm, http://www.ollydbg.de/download.htm,
-https://github.com/x64dbg/x64dbg/blob/development/LICENSE,
-http://go.microsoft.com/fwlink/?LinkID=251960,
-https://www.hex-rays.com/products/ida/support/download_freeware.shtml,
-https://docs.binary.ninja/about/license/#demo-license,
-https://github.com/icsharpcode/ILSpy/blob/master/doc/license.txt,
-https://github.com/0xd4d/dnSpy/blob/master/dnSpy/dnSpy/LicenseInfo/GPLv3.txt,
-https://www.jetbrains.com/decompiler/download/license.html,
-https://github.com/0xd4d/de4dot/blob/master/LICENSE.de4dot.txt,
-http://www.oracle.com/technetwork/java/javase/terms/license/index.html,
-https://github.com/java-decompiler/jd-gui/blob/master/LICENSE,
-https://www.vb-decompiler.org/license.htm, http://kpnc.org/idr32/en/,
-https://www.free-decompiler.com/flash/license/,
-https://www.mcafee.com/hk/downloads/free-tools/fileinsight.aspx,
-https://mh-nexus.de/en/hxd/license.php,
-https://www.sweetscape.com/010editor/manual/License.htm,
-http://www.ntcore.com/exsuite.php, http://wjradburn.com/software/,
-http://ntinfo.biz, https://www.sublimetext.com,
-https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE,
-http://vimdoc.sourceforge.net/htmldoc/uganda.html,
-http://www.gnu.org/licenses/gpl-2.0.html,
-https://raw.githubusercontent.com/ferventcoder/checksum/master/LICENSE,
-http://www.7-zip.org/license.txt,
-http://www.chiark.greenend.org.uk/~sgtatham/putty/licence.html,
-http://www.gnu.org/copyleft/gpl.html,
-https://cdn.rawgit.com/iggi131/packages/master/RawCap/license.txt,
-https://www.gnu.org/copyleft/gpl.html,
-http://upx.sourceforge.net/upx-license.html,
-http://technet.microsoft.com/en-us/sysinternals/bb469936,
-http://www.rohitab.com/apimonitor,
-http://whiteboard.nektra.com/spystudio/spystudio_license,
-http://www.slavasoft.com/hashcalc/license-agreement.htm,
-http://www.gnu.org/licenses/gpl-2.0.html,
-http://www.techworld.com/download/portable-applications/microsoft-offvis-11-3214034/,
-http://exeinfo.atwebpages.com,
-https://www.python.org/download/releases/2.7/license/,
-https://www.microsoft.com/en-us/download/details.aspx?id=44266,
-https://raw.githubusercontent.com/IntelliTect/Licenses/master/WindowsManagementFramework.txt,
-http://msdn.microsoft.com/en-US/cc300389.aspx,
-https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE,
-http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
-https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
-https://blog.didierstevens.com/programs/pdf-tools
-http://sandsprite.com/tools.php?id=17
-http://www.angusj.com/resourcehacker/
-http://www.radare.org/r/
-https://hshrzd.wordpress.com/pe-bear/
-</pre>
+* Google Chrome
+* Cmder Mini
