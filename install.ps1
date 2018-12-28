@@ -67,7 +67,7 @@ function installBoxStarter()
 	[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
 	
 	# download and instal boxstarter
-	iex ((New-Object System.Net.WebClient).DownloadString('http://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
+	iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
 	
 	# Restore previous trust settings for this PowerShell session
 	# Note: SSL certs trusted from installing BoxStarter above will be trusted for the remaining PS session
