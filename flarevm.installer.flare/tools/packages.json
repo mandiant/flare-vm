@@ -14,6 +14,7 @@
 
         {"name": "x64dbg.flare"},
         {"name": "x64dbg.py.flare"},
+        {"name": "x64dbg.ollydumpex.fireeye"},
 
 
         {"name": "windbg.flare"},
@@ -34,8 +35,8 @@
         {"name": "dnspy.flare"},
         {"name": "dotpeek.flare"},
         {"name": "de4dot.flare"},
-		{"name": "dnsd.flare"},
-		{"name": "rundotnetdll.flare"},
+        {"name": "dnsd.flare"},
+        {"name": "rundotnetdll.flare"},
 
 
         {"name": "javaruntime"},
@@ -75,12 +76,14 @@
         {"name": "farmanager.flare"},
         {"name": "checksum"},
         {"name": "7zip.flare"},
+        {"name": "lessmsi.fireeye"},
         {"name": "putty"},
         {"name": "wireshark.flare"},
         {"name": "nmap.flare"},
         {"name": "winpcap"},
         {"name": "rawcap"},
         {"name": "wget"},
+        {"name": "bytehist.fireeye"},
         {"name": "upx"},
         {"name": "processhacker.flare"},
         {"name": "sysinternals.flare"},
@@ -126,8 +129,8 @@
         },
         {"name": "python2"},
         {"name": "python3"},
-        {"name": "libraries.python2.flare"},
-        {"name": "libraries.python3.flare"},
+        {"name": "libraries.python2.fireeye"},
+        {"name": "libraries.python3.fireeye"},
         {"name": "flare-qdb.python.flare"},
         {"name": "floss.python.flare"},
         {"name": "fakenet-ng.python.flare"}
