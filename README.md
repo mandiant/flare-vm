@@ -149,14 +149,14 @@ Installation (Manually)
 
 First, install BoxStarter. All commands are expected to be executed with Administrator privileges. 
 
-If you are using PowerShell V2:
+If you are using PowerShell v2:
 
 ```
 Set-ExecutionPolicy Unrestricted
 iex ((New-Object System.Net.WebClient).DownloadString('http://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
 ```
 
-And PowerShell V3 or newest:
+And PowerShell v3 or newest:
 
 ```
 Set-ExecutionPolicy Unrestricted
@@ -226,7 +226,7 @@ Disassemblers
 * radare2
 * Cutter
 
-.Net
+.NET
 ---------
 * de4dot
 * Dot Net String Decoder (DNSD)
@@ -308,7 +308,7 @@ Utilities
 * HashCalc
 * HashMyFiles
 * Checksum
-* 7zip
+* 7-Zip
 * Far Manager
 * Putty
 * Wget
@@ -350,7 +350,7 @@ Python, Modules, Tools
 Other
 ---------
 * VC Redistributable Modules (2005, 2008, 2010, 2012, 2013, 2015, 2017)
-* .Net versions 4.6.2 and 4.7.1
+* .NET Framework versions 4.6.2 and 4.7.1
 * Practical Malware Analysis Labs
 * Google Chrome
 * Cmder Mini
