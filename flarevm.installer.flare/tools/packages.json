@@ -2,7 +2,19 @@
     "packages": [
         {"name": "cmdermini.flare"},
         {"name": "dotnet4.6.2"},
-        {"name": "dotnet4.7.1"},
+        {"name": "dotnet4.7.2"},
+
+        {"name": "vcbuildtools.fireeye"},
+        {"name": "vcpython27"},
+        {
+            "name": "python2.x86.nopath.flare",
+            "x64Only": true,
+            "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
+        },
+        {"name": "python2"},
+        {"name": "python3"},
+        {"name": "libraries.python2.fireeye"},
+        {"name": "libraries.python3.fireeye"},
 
 
         {"name": "ollydbg.flare"},
@@ -29,6 +41,7 @@
         {"name": "binaryninja.flare"},
         {"name": "radare2.flare"},
         {"name": "cutter.flare"},
+        {"name": "ghidra.fireeye"},
 
 
         {"name": "ilspy.flare"},
@@ -52,7 +65,7 @@
 
         {"name": "ffdec.flare"},
 
-        {"name": "metasploit.flare"},
+        {"name": "metasploit.flare", "x64Only": true},
         {"name": "kali_windowsbinaries.flare"},
 
         {"name": "volatility.flare", "x64Only": true},
@@ -68,6 +81,8 @@
         {"name": "pestudio.flare"},
         {"name": "pebear.flare"},
         {"name": "resourcehacker.flare"},
+        {"name": "processdump.fireeye"},
+
 
         {"name": "sublimetext3"},
         {"name": "notepadplusplus.flare"},
@@ -103,13 +118,22 @@
         {"name": "googlechrome.flare"},
         {"name": "cyberchef.flare"},
         {"name": "py2exedecompiler.flare"},
+        {"name": "uniextract2.fireeye"},
+        {"name": "innounp.fireeye"},
+        {"name": "innoextract.fireeye"},
+        {"name": "ppee.fireeye"},
+        {"name": "exe2aut.fireeye"},
 
         {"name": "offvis.flare"},
         {"name": "officemalscanner.flare"},
+        {"name": "oledump.fireeye"},
+        {"name": "oletools.fireeye"},
 
         {"name": "pdfid.flare"},
         {"name": "pdfparser.flare"},
         {"name": "pdfstreamdumper.flare"},
+
+        {"name": "nasm.fireeye"},
 
         {"name": "vim.flare"},
         {"name": "cygwin.flare"},
@@ -120,17 +144,6 @@
         {"name": "pmalabs.flare"},
 
         {"name": "apktool.flare"},
-
-        {"name": "vcpython27"},
-        {
-            "name": "python2.x86.nopath.flare",
-            "x64Only": true,
-            "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
-        },
-        {"name": "python2"},
-        {"name": "python3"},
-        {"name": "libraries.python2.fireeye"},
-        {"name": "libraries.python3.fireeye"},
         {"name": "flare-qdb.python.flare"},
         {"name": "floss.python.flare"},
         {"name": "fakenet-ng.python.flare"}

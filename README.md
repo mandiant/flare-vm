@@ -1,3 +1,4 @@
+  
       ______ _               _____  ______   __      ____  __ 
      |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
      | |__  | |       /  \  | |__) | |__ _____\ \  / /| \  / |
@@ -6,11 +7,14 @@
      |_|    |______/_/    \_\_|  \_\______|      \/   |_|  |_|
                         
       ________________________________________________________
-                             Developed by                     
+                           Developed by                     
 	                   flarevm@fireeye.com
-           FLARE (FireEye Labs Advanced Reverse Engineering)  
+          FLARE (FireEye Labs Advanced Reverse Engineering)  
       ________________________________________________________ 
-                                                          
+
+<p align="center">
+  <img width="300" height="300" src="https://github.com/fireeye/flare-vm/blob/master/flarevm.png?raw=true" alt="FLARE VM"/>
+</p>                  
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
@@ -122,6 +126,13 @@ https://www.vb-decompiler.org/license.htm
 http://kpnc.org/idr32/en/
 https://www.vim.org/about.php
 https://www.winitor.com
+https://raw.githubusercontent.com/NationalSecurityAgency/ghidra/master/LICENSE
+https://www.mzrst.com/
+https://raw.githubusercontent.com/dscharrer/innoextract/master/LICENSE
+http://innounp.sourceforge.net/
+https://www.visualstudio.com/en-us/support/legal/mt644918
+http://repo.or.cz/w/nasm.git/blob_plain/HEAD:/LICENSE
+https://blog.didierstevens.com/programs/oledump-py/
 </pre>
 
 
@@ -219,8 +230,14 @@ Delphi
 ---------
 * Interactive Delphi Reconstructor (IDR)
 
+Developer Tools
+---------
+* VC Build Tools
+* NASM
+
 Disassemblers
 ---------
+* Ghidra
 * IDA Free (5.0 & 7.0)
 * Binary Ninja Demo
 * radare2
@@ -265,6 +282,7 @@ Office
 ---------
 * Offvis
 * OfficeMalScanner
+* oledump.py
 
 PDF
 ---------
@@ -282,6 +300,7 @@ PE
 * PEBear
 * ResourceHacker
 * LordPE
+* PPEE(puppy)
 
 Pentest
 ---------
@@ -328,29 +347,46 @@ Utilities
 * Yara
 * CyberChef
 * KernelModeDriverLoader
+* Process Dump
+* Exe2Aut
+* Innounp
+* InnoExtract
+* UniExtract2
 
 Python, Modules, Tools
 ---------
 * Py2ExeDecompiler
 * Python 2.7
-    * hexdump
-    * pefile
-    * winappdbg
-    * pycryptodome
-    * vivisect
-    * capstone-windows
-    * unicorn
-    * oletools
-    * unpy2exe
-    * uncompyle6
+  * hexdump
+  * pefile
+  * winappdbg
+  * pycryptodome
+  * vivisect
+  * binwalk
+  * capstone-windows
+  * unicorn
+  * oletools
+  * olefile
+  * unpy2exe
+  * uncompyle6
+  * pycrypto
+  * pyftpdlib
+  * pyasn1
+  * pyOpenSSL
+  * ldapdomaindump
+  * pyreadline
+  * flask
+  * networkx
+  * requests
 * Python 3
-    * unpy2exe
-    * uncompyle6
+  * binwalk
+  * unpy2exe
+  * uncompyle6
 
 Other
 ---------
 * VC Redistributable Modules (2005, 2008, 2010, 2012, 2013, 2015, 2017)
-* .NET Framework versions 4.6.2 and 4.7.1
+* .NET Framework versions 4.6.2 and 4.7.2
 * Practical Malware Analysis Labs
 * Google Chrome
 * Cmder Mini
