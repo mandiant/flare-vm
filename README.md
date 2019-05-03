@@ -100,6 +100,8 @@ https://github.com/radareorg/cutter
 https://github.com/x64dbg/x64dbg/blob/development/LICENSE
 https://github.com/x64dbg/x64dbgpy/blob/v25/LICENSE
 https://hshrzd.wordpress.com/pe-bear/
+https://github.com/hasherezade/hollows_hunter/blob/master/LICENSE
+https://github.com/hasherezade/pe-sieve/blob/master/LICENSE
 https://metasploit.com/
 https://mh-nexus.de/en/hxd/license.php
 https://nmap.org/ncat/
@@ -133,6 +135,9 @@ http://innounp.sourceforge.net/
 https://www.visualstudio.com/en-us/support/legal/mt644918
 http://repo.or.cz/w/nasm.git/blob_plain/HEAD:/LICENSE
 https://blog.didierstevens.com/programs/oledump-py/
+https://lessmsi.activescott.com/
+https://cert.at/downloads/software/bytehist_en.html
+https://github.com/ReFirmLabs/binwalk
 </pre>
 
 
@@ -352,6 +357,8 @@ Utilities
 * Innounp
 * InnoExtract
 * UniExtract2
+* Hollows-Hunter
+* PE-sieve
 
 Python, Modules, Tools
 ---------
