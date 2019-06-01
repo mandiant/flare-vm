@@ -138,6 +138,7 @@ https://blog.didierstevens.com/programs/oledump-py/
 https://lessmsi.activescott.com/
 https://cert.at/downloads/software/bytehist_en.html
 https://github.com/ReFirmLabs/binwalk
+https://github.com/fireeye/SilkETW
 </pre>
 
 
