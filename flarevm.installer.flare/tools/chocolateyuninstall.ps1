@@ -93,8 +93,8 @@ function PostUninstall {
     Remove-Item $desktopShortcut
 
     # Set common paths in environment variables
-    [Environment]::SetEnvironmentVariable("FLARE_START", $null, "Machine")
-    Uninstall-ChocolateyEnvironmentVariable -VariableName "FLARE_START" -VariableType 'Machine'
+    [Environment]::SetEnvironmentVariable("TOOL_LIST_DIR", $null, "Machine")
+    Uninstall-ChocolateyEnvironmentVariable -VariableName "TOOL_LIST_DIR" -VariableType 'Machine'
 }
 
 

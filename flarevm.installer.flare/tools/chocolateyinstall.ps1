@@ -101,7 +101,7 @@ function InitialSetup {
     Install-ChocolateyShortcut -shortcutFilePath $desktopShortcut -targetPath $startPath
 
     # Set common paths in environment variables
-    Install-ChocolateyEnvironmentVariable -VariableName "FLARE_START" -VariableValue $startPath -VariableType 'Machine'
+    Install-ChocolateyEnvironmentVariable -VariableName "TOOL_LIST_DIR" -VariableValue $startPath -VariableType 'Machine'
     refreshenv
 
     # BoxStarter setup
