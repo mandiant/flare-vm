@@ -147,7 +147,7 @@ https://github.com/fireeye/SilkETW
 Installation (Install Script)
 =============================
 
-Create and configure a new Windows 7 SP1 or newer Virtual Machine. To install FLARE VM on an existing Windows VM, download and copy `install.ps1` on your analysis machine. On the analysis machine open PowerShell as an Administrator and enable script execution by running the following command:
+Create and configure a new Windows 7 SP1 or newer Virtual Machine. We recommend at least 40Gb of disk space for Windows 7 and FLARE VM packages. To install FLARE VM on an existing Windows VM, download and copy `install.ps1` on your analysis machine. On the analysis machine open PowerShell as an Administrator and enable script execution by running the following command:
 
 ```
 Set-ExecutionPolicy Unrestricted
