@@ -24,7 +24,10 @@ v2.0 Update
 ===========
 Version 2.0 of FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
 
-Version 2.0 of FLARE VM now depends on the environment variable `FLARE_START`. If troubleshooting, please make sure this environment variable is set. Its default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
+Version 2.0 of FLARE VM now depends on the following environment variables: 
+  - `FLARE_START`:  The default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
+  - `TOOL_LIST_DIR`: The default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
+  - `TOOL_LIST_SHORTCUT`: The default value is set to *`%USERPROFILE%`*`\Desktop\FLARE.lnk`.
 
 
 
