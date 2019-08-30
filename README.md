@@ -26,122 +26,6 @@ Version 2.0 of FLARE VM has introduced **breaking changes** with previous versio
 
 Version 2.0 of FLARE VM now depends on the environment variable `FLARE_START`. If troubleshooting, please make sure this environment variable is set. Its default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
 
-Legal Notice
-============
-<pre>This download configuration script is provided to assist cyber security analysts
-in creating handy and versatile toolboxes for malware analysis environments. It
-provides a convenient interface for them to obtain a useful set of analysis
-tools directly from their original sources. Installation and use of this script
-is subject to the Apache 2.0 License.
- 
-You as a user of this script must review, accept and comply with the license
-terms of each downloaded/installed package listed below. By proceeding with the
-installation, you are accepting the license terms of each package, and
-acknowledging that your use of each package will be subject to its respective
-license terms.
-
-List of package licenses:
-
-http://exeinfo.atwebpages.com
-http://go.microsoft.com/fwlink/?LinkID=251960
-http://jd.benow.ca/
-http://msdn.microsoft.com/en-US/cc300389.aspx
-http://ntinfo.biz
-https://www.sublimetext.com
-http://opensource.org/licenses/MIT
-http://progress-tools.x10.mx/dnsd.html
-http://sandsprite.com/CodeStuff/scdbg_manual/MANUAL_EN.html
-http://sandsprite.com/iDef/MAP/
-http://sandsprite.com/iDef/SysAnalyzer/
-http://sandsprite.com/tools.php?id=17
-http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
-http://technet.microsoft.com/en-us/sysinternals/bb469936
-http://upx.sourceforge.net/upx-license.html
-http://vimdoc.sourceforge.net/htmldoc/uganda.html
-http://whiteboard.nektra.com/spystudio/spystudio_license
-http://wjradburn.com/software/
-http://www.7-zip.org/license.txt
-http://www.angusj.com/resourcehacker/
-http://www.chiark.greenend.org.uk/~sgtatham/putty/licence.html
-http://www.gnu.org/copyleft/gpl.html
-http://www.gnu.org/licenses/gpl-2.0.html
-http://www.novirusthanks.org/products/kernel-mode-driver-loader/
-http://www.ntcore.com/exsuite.php
-http://wjradburn.com/software/
-http://www.ollydbg.de/download.htm
-http://www.ollydbg.de/version2.html
-http://www.oracle.com/technetwork/java/javase/terms/license/index.html
-http://www.radare.org/r/license.html
-http://www.rohitab.com/apimonitor
-http://www.slavasoft.com/hashcalc/license-agreement.htm
-http://www.techworld.com/download/portable-applications/microsoft-offvis-11-3214034/
-https://blog.didierstevens.com/programs/pdf-tools/
-https://blog.didierstevens.com/programs/xorsearch/
-https://bytecodeviewer.com/
-https://cdn.rawgit.com/iggi131/packages/master/RawCap/license.txt
-https://docs.binary.ninja/about/license/#demo-license
-https://docs.binary.ninja/about/license/index.html#demo-license
-https://github.com/0xd4d/de4dot/blob/master/LICENSE.de4dot.txt
-https://github.com/0xd4d/dnSpy
-https://github.com/0xd4d/dnSpy/blob/master/dnSpy/dnSpy/LicenseInfo/GPLv3.txt
-https://github.com/FarGroup/FarManager/blob/master/LICENSE
-https://github.com/clinicallyinane/shellcode_launcher/
-https://github.com/enkomio/RunDotNetDll/blob/master/LICENSE.TXT
-https://github.com/fireeye/flare-fakenet-ng
-https://github.com/fireeye/flare-floss
-https://github.com/fireeye/flare-qdb
-https://github.com/fireeye/flare-vm
-https://github.com/icsharpcode/ILSpy/blob/master/README.txt
-https://github.com/icsharpcode/ILSpy/blob/master/doc/license.txt
-https://github.com/java-decompiler/jd-gui/blob/master/LICENSE
-https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
-https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE
-https://github.com/radareorg/cutter
-https://github.com/x64dbg/x64dbg/blob/development/LICENSE
-https://github.com/x64dbg/x64dbgpy/blob/v25/LICENSE
-https://hshrzd.wordpress.com/pe-bear/
-https://github.com/hasherezade/hollows_hunter/blob/master/LICENSE
-https://github.com/hasherezade/pe-sieve/blob/master/LICENSE
-https://metasploit.com/
-https://mh-nexus.de/en/hxd/license.php
-https://nmap.org/ncat/
-https://portswigger.net/burp
-https://raw.githubusercontent.com/IntelliTect/Licenses/master/WindowsManagementFramework.txt
-https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE
-https://raw.githubusercontent.com/ferventcoder/checksum/master/LICENSE
-https://retdec.com/
-https://svn.nmap.org/nmap/COPYING
-https://www.7-zip.org/
-https://www.free-decompiler.com/flash/license/
-https://www.gnu.org/copyleft/gpl.html
-https://www.hex-rays.com/products/ida/support/download_freeware.shtml
-https://www.jetbrains.com/decompiler/download/license.html
-https://www.kali.org/about-us/
-https://www.mcafee.com/hk/downloads/free-tools/fileinsight.aspx
-https://www.microsoft.com/en-us/download/details.aspx?id=44266
-https://www.nirsoft.net/utils/hash_my_files.html
-https://www.openssl.org/source/license.html
-https://www.python.org/download/releases/2.7/license
-https://docs.python.org/3/license.html
-https://www.sweetscape.com/010editor/manual/License.htm
-https://www.vb-decompiler.org/license.htm
-http://kpnc.org/idr32/en/
-https://www.vim.org/about.php
-https://www.winitor.com
-https://raw.githubusercontent.com/NationalSecurityAgency/ghidra/master/LICENSE
-https://www.mzrst.com/
-https://raw.githubusercontent.com/dscharrer/innoextract/master/LICENSE
-http://innounp.sourceforge.net/
-https://www.visualstudio.com/en-us/support/legal/mt644918
-http://repo.or.cz/w/nasm.git/blob_plain/HEAD:/LICENSE
-https://blog.didierstevens.com/programs/oledump-py/
-https://lessmsi.activescott.com/
-https://cert.at/downloads/software/bytehist_en.html
-https://github.com/ReFirmLabs/binwalk
-https://github.com/fireeye/SilkETW
-</pre>
-
-
 
 
 Installation (Install Script)
@@ -398,3 +282,121 @@ Other
 * Practical Malware Analysis Labs
 * Google Chrome
 * Cmder Mini
+
+
+Legal Notice
+============
+<pre>This download configuration script is provided to assist cyber security analysts
+in creating handy and versatile toolboxes for malware analysis environments. It
+provides a convenient interface for them to obtain a useful set of analysis
+tools directly from their original sources. Installation and use of this script
+is subject to the Apache 2.0 License.
+ 
+You as a user of this script must review, accept and comply with the license
+terms of each downloaded/installed package listed below. By proceeding with the
+installation, you are accepting the license terms of each package, and
+acknowledging that your use of each package will be subject to its respective
+license terms.
+
+List of package licenses:
+
+http://exeinfo.atwebpages.com
+http://go.microsoft.com/fwlink/?LinkID=251960
+http://jd.benow.ca/
+http://msdn.microsoft.com/en-US/cc300389.aspx
+http://ntinfo.biz
+https://www.sublimetext.com
+http://opensource.org/licenses/MIT
+http://progress-tools.x10.mx/dnsd.html
+http://sandsprite.com/CodeStuff/scdbg_manual/MANUAL_EN.html
+http://sandsprite.com/iDef/MAP/
+http://sandsprite.com/iDef/SysAnalyzer/
+http://sandsprite.com/tools.php?id=17
+http://svn.code.sf.net/p/processhacker/code/2.x/trunk/LICENSE.txt
+http://technet.microsoft.com/en-us/sysinternals/bb469936
+http://upx.sourceforge.net/upx-license.html
+http://vimdoc.sourceforge.net/htmldoc/uganda.html
+http://whiteboard.nektra.com/spystudio/spystudio_license
+http://wjradburn.com/software/
+http://www.7-zip.org/license.txt
+http://www.angusj.com/resourcehacker/
+http://www.chiark.greenend.org.uk/~sgtatham/putty/licence.html
+http://www.gnu.org/copyleft/gpl.html
+http://www.gnu.org/licenses/gpl-2.0.html
+http://www.novirusthanks.org/products/kernel-mode-driver-loader/
+http://www.ntcore.com/exsuite.php
+http://wjradburn.com/software/
+http://www.ollydbg.de/download.htm
+http://www.ollydbg.de/version2.html
+http://www.oracle.com/technetwork/java/javase/terms/license/index.html
+http://www.radare.org/r/license.html
+http://www.rohitab.com/apimonitor
+http://www.slavasoft.com/hashcalc/license-agreement.htm
+http://www.techworld.com/download/portable-applications/microsoft-offvis-11-3214034/
+https://blog.didierstevens.com/programs/pdf-tools/
+https://blog.didierstevens.com/programs/xorsearch/
+https://bytecodeviewer.com/
+https://cdn.rawgit.com/iggi131/packages/master/RawCap/license.txt
+https://docs.binary.ninja/about/license/#demo-license
+https://docs.binary.ninja/about/license/index.html#demo-license
+https://github.com/0xd4d/de4dot/blob/master/LICENSE.de4dot.txt
+https://github.com/0xd4d/dnSpy
+https://github.com/0xd4d/dnSpy/blob/master/dnSpy/dnSpy/LicenseInfo/GPLv3.txt
+https://github.com/FarGroup/FarManager/blob/master/LICENSE
+https://github.com/clinicallyinane/shellcode_launcher/
+https://github.com/enkomio/RunDotNetDll/blob/master/LICENSE.TXT
+https://github.com/fireeye/flare-fakenet-ng
+https://github.com/fireeye/flare-floss
+https://github.com/fireeye/flare-qdb
+https://github.com/fireeye/flare-vm
+https://github.com/icsharpcode/ILSpy/blob/master/README.txt
+https://github.com/icsharpcode/ILSpy/blob/master/doc/license.txt
+https://github.com/java-decompiler/jd-gui/blob/master/LICENSE
+https://github.com/mikesiko/PracticalMalwareAnalysis-Labs
+https://github.com/notepad-plus-plus/notepad-plus-plus/blob/master/LICENSE
+https://github.com/radareorg/cutter
+https://github.com/x64dbg/x64dbg/blob/development/LICENSE
+https://github.com/x64dbg/x64dbgpy/blob/v25/LICENSE
+https://hshrzd.wordpress.com/pe-bear/
+https://github.com/hasherezade/hollows_hunter/blob/master/LICENSE
+https://github.com/hasherezade/pe-sieve/blob/master/LICENSE
+https://metasploit.com/
+https://mh-nexus.de/en/hxd/license.php
+https://nmap.org/ncat/
+https://portswigger.net/burp
+https://raw.githubusercontent.com/IntelliTect/Licenses/master/WindowsManagementFramework.txt
+https://raw.githubusercontent.com/chocolatey/choco/master/LICENSE
+https://raw.githubusercontent.com/ferventcoder/checksum/master/LICENSE
+https://retdec.com/
+https://svn.nmap.org/nmap/COPYING
+https://www.7-zip.org/
+https://www.free-decompiler.com/flash/license/
+https://www.gnu.org/copyleft/gpl.html
+https://www.hex-rays.com/products/ida/support/download_freeware.shtml
+https://www.jetbrains.com/decompiler/download/license.html
+https://www.kali.org/about-us/
+https://www.mcafee.com/hk/downloads/free-tools/fileinsight.aspx
+https://www.microsoft.com/en-us/download/details.aspx?id=44266
+https://www.nirsoft.net/utils/hash_my_files.html
+https://www.openssl.org/source/license.html
+https://www.python.org/download/releases/2.7/license
+https://docs.python.org/3/license.html
+https://www.sweetscape.com/010editor/manual/License.htm
+https://www.vb-decompiler.org/license.htm
+http://kpnc.org/idr32/en/
+https://www.vim.org/about.php
+https://www.winitor.com
+https://raw.githubusercontent.com/NationalSecurityAgency/ghidra/master/LICENSE
+https://www.mzrst.com/
+https://raw.githubusercontent.com/dscharrer/innoextract/master/LICENSE
+http://innounp.sourceforge.net/
+https://www.visualstudio.com/en-us/support/legal/mt644918
+http://repo.or.cz/w/nasm.git/blob_plain/HEAD:/LICENSE
+https://blog.didierstevens.com/programs/oledump-py/
+https://lessmsi.activescott.com/
+https://cert.at/downloads/software/bytehist_en.html
+https://github.com/ReFirmLabs/binwalk
+https://github.com/fireeye/SilkETW
+</pre>
+
+
