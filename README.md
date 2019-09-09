@@ -247,6 +247,7 @@ Utilities
 * UniExtract2
 * Hollows-Hunter
 * PE-sieve
+* StringSifter
 
 Python, Modules, Tools
 ---------
