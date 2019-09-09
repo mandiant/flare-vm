@@ -107,6 +107,12 @@ $Boxstarter.NoPassword=$false # Is this a machine with no login password?
 $Boxstarter.AutoLogin=$true # Save my password securely and auto-login after a reboot
 Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/flare/api/v2;https://chocolatey.org/api/v2"
 
+# Environment variables used by common.fireeye and other packages.
+$startPath = Join-Path ${Env:ProgramData} "Microsoft\Windows\Start Menu\Programs\FLARE"
+[Environment]::SetEnvironmentVariable("TOOL_LIST_DIR", $startPath, 2)
+$desktopShortcut = Join-Path ${Env:UserProfile} "Desktop\FLARE.lnk"
+[Environment]::SetEnvironmentVariable("TOOL_LIST_SHORTCUT", $desktopShortcut, 2)
+
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
 try {
