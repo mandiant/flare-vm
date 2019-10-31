@@ -20,11 +20,15 @@ Welcome to FLARE VM - a fully customizable, Windows-based security distribution 
 
 Please see https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html for a blog on installing FLARE VM.
 
-v2.0 Update
+Update
 ===========
-Version 2.0 of FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
+Starting with version 2.0, FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
 
-Version 2.0 of FLARE VM now depends on the environment variable `TOOL_LIST_DIR`. If troubleshooting, please make sure this environment variable is set. Its default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
+Starting with version 2.0, FLARE VM uses the following environment variables: 
+  - `TOOL_LIST_DIR`: The default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
+  - `TOOL_LIST_SHORTCUT`: The default value is set to *`%USERPROFILE%`*`\Desktop\FLARE.lnk`.
+
+The installer script sets those environment variables automatically. If there are issues during installation, please verify that those environment variables are set correctly.
 
 
 
