@@ -94,7 +94,9 @@ function InitialSetup {
         $toolListShortcut = Join-Path (Join-Path ${Env:UserProfile} "Desktop") "FLARE.lnk"
     }
     Install-ChocolateyShortcut -shortcutFilePath $toolListShortcut -targetPath $toolListDir
+    Install-ChocolateyEnvironmentVariable -VariableName "TOOL_LIST_SHORTCUT" -VariableValue $toolListShortcut -VariableType 'Machine'
 
+    
     refreshenv
 
     # BoxStarter setup
