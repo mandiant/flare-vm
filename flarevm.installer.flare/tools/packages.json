@@ -1,6 +1,6 @@
 {
     "packages": [
-        {"name": "cmdermini.flare"},
+        {"name": "cmder.fireeye"},
         {"name": "dotnet4.6.2"},
         {"name": "dotnet4.7.2"},
 
@@ -11,8 +11,6 @@
             "x64Only": true,
             "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
         },
-        {"name": "python2"},
-        {"name": "python3"},
         {"name": "libraries.python2.fireeye"},
         {"name": "libraries.python3.fireeye"},
 
