@@ -55,7 +55,6 @@ The script will set up the Boxstarter environment and proceed to download and in
 * Create and configure a new Windows Virtual Machine.
   * We strongly recommend the latest build for Windows 10 to take full advantage of FLARE VM
   * Ensure the VM is up to date
-  * Ensure the VM has VT-x enabled if you wish to take advantage of the Windows Subsytem for Linux (if on Windows 10)
 * Take your initial snapshot before installing FLARE VM
 * Download and copy [`install.ps1`](https://github.com/fireeye/flare-vm/blob/master/install.ps1) on to your new VM
 * Download and copy [`profile.json`](https://github.com/fireeye/flare-vm/blob/master/profile.json) on to your new VM
