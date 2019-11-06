@@ -260,7 +260,6 @@ Utilities
 * Malcode Analyst Pack (MAP)
 * XORSearch
 * XORStrings
-* StringSifter
 * Yara
 * CyberChef
 * KernelModeDriverLoader
@@ -297,10 +296,11 @@ Python, Modules, Tools
   * flask
   * networkx
   * requests
-* Python 3
+* Python 3.7
   * binwalk
   * unpy2exe
   * uncompyle6
+  * StringSifter
 
 Other
 ---------
