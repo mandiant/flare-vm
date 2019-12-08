@@ -134,7 +134,7 @@ function Make-InstallerPackage($PackageName, $TemplateDir, $packages) {
   $Dest = Join-Path $ToolsDir "packages.json"
 
   Move-Item -Force -Path $Tmp -Destination $Dest
-  New-BoxstarterPackage -Name $PackageName -Description "My Own Instalelr" -Path $ToolsDir
+  New-BoxstarterPackage -Name $PackageName -Description "My Own Installer" -Path $ToolsDir
 }
 
 function installBoxStarter()
