@@ -150,7 +150,12 @@ function installBoxStarter()
 
   # Try to install BoxStarter as is first, then fall back to be over trusing only if this step fails.
   try {
-    iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
+    	if ($PSVersionTable.PSVersion -ge [Version]"5.0"){
+	        . { iwr -useb https://boxstarter.org/bootstrapper.ps1 } | iex; Get-Boxstarter -Force
+       }
+       else{
+          iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
+       }
     return $true
   } catch {
   }
