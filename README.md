@@ -59,7 +59,7 @@ The script will set up the Boxstarter environment and proceed to download and in
 * Download and copy [`flarevm.installer.flare`](https://github.com/fireeye/flare-vm/tree/master/flarevm.installer.flare) directory on to your new VM
 * Modify the `profile.json` file:
   * Most of the fields within `env` data should be left unchanged.
-  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to the following [URL](https://github.com/fireeye/flare-vm/packages.csv) for a full list of packages available
+  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to the following [URL](https://github.com/fireeye/flare-vm/blob/master/packages.csv) for a full list of packages available
 * Open `PowerShell` as an Administrator
 * Enable script execution by running the following command:
   * `Set-ExecutionPolicy unrestricted`
