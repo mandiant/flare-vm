@@ -339,7 +339,7 @@ if ($profile -eq $null) {
   }
 
   choco upgrade -y -f common.fireeye
-  Install-BoxStarterPackage -PackageName flarevm.installer_dev.flare -Credential $cred
+  Install-BoxStarterPackage -PackageName flarevm.installer.flare -Credential $cred
   exit 0
 } 
 
