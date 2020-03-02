@@ -1,10 +1,10 @@
 {
     "packages": [
-        {"name": "cmder.fireeye"},
-        {"name": "dotnet4.6.2"},
-        {"name": "dotnet4.7.2"},
-
+        {"name": "dotnetfx"},
+        {"name": "powershell"},
         {"name": "vcbuildtools.fireeye"},
+        {"name": "cmder.fireeye"},
+
         {"name": "vcpython27"},
         {
             "name": "python2.x86.nopath.flare",
@@ -13,7 +13,6 @@
         },
         {"name": "libraries.python2.fireeye"},
         {"name": "libraries.python3.fireeye"},
-
 
         {"name": "ollydbg.flare"},
         {"name": "ollydbg.ollydump.flare"},
@@ -52,6 +51,7 @@
 
         {"name": "javaruntime"},
         {"name": "jd-gui.flare"},
+        {"name": "java-deobfuscator-gui.fireeye"},
         {"name": "bytecode-viewer.flare"},
         {"name": "dex2jar.flare"},
 
@@ -66,6 +66,7 @@
         {"name": "kali_windowsbinaries.flare"},
 
         {"name": "volatility.flare", "x64Only": true},
+        {"name": "Autopsy.fireeye"},
 
         {"name": "fileinsight.flare"},
         {"name": "hxd.flare"},
@@ -118,15 +119,20 @@
         {"name": "googlechrome.flare"},
         {"name": "cyberchef.flare"},
         {"name": "py2exedecompiler.flare"},
+        {"name": "pyinstxtractor.fireeye"},
         {"name": "uniextract2.fireeye"},
         {"name": "innounp.fireeye"},
         {"name": "innoextract.fireeye"},
         {"name": "ppee.fireeye"},
         {"name": "exe2aut.fireeye"},
+        {"name": "ImpRec.fireeye"},
+        {"name": "procdot.fireeye"},
 
         {"name": "offvis.flare"},
         {"name": "officemalscanner.flare"},
         {"name": "oledump.fireeye"},
+        {"name": "rtfdump.fireeye"},
+        {"name": "msoffcrypto-crack.fireeye"},
         {"name": "oletools.fireeye"},
 
         {"name": "pdfid.flare"},
@@ -137,11 +143,19 @@
 
         {"name": "vim.flare"},
         {"name": "cygwin.flare"},
-        {"name": "burp.free.flare"},
+
         {"name": "retdec.flare"},
         {"name": "MAP.flare"},
         {"name": "SysAnalyzer.flare"},
         {"name": "pmalabs.flare"},
+
+        {"name": "PSDecode.fireeye"},
+
+        {"name": "burp.free.fireeye"},
+        {"name": "fiddler.fireeye"},
+        {"name": "HTTrack.fireeye"},
+
+        {"name": "malware-jail.fireeye"},
 
         {"name": "apktool.flare"},
         {"name": "flare-qdb.python.flare"},

@@ -2,14 +2,23 @@
     "env": {
         "TOOL_LIST_DIR": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\FLARE",
         "TOOL_LIST_SHORTCUT": "%UserProfile%\\Desktop\\FLARE.lnk",
-        "RAW_TOOLS_DIR": "%SystemDrive%\\FLARE",
+        "RAW_TOOLS_DIR": "%SystemDrive%\\Tools",
         "TEMPLATE_DIR": "flarevm.installer.flare"
     },
     "packages": [
+        {"name": "dotnetfx"},
+        {"name": "powershell"},
+        {"name": "vcbuildtools.fireeye"},
         {"name": "cmder.fireeye"},
-        {"name": "dotnet4.6.2"},
-        {"name": "dotnet4.7.1"},
 
+        {"name": "vcpython27"},
+        {
+            "name": "python2.x86.nopath.flare",
+            "x64Only": true,
+            "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
+        },
+        {"name": "libraries.python2.fireeye"},
+        {"name": "libraries.python3.fireeye"},
 
         {"name": "ollydbg.flare"},
         {"name": "ollydbg.ollydump.flare"},
@@ -35,6 +44,7 @@
         {"name": "binaryninja.flare"},
         {"name": "radare2.flare"},
         {"name": "cutter.flare"},
+        {"name": "ghidra.fireeye"},
 
 
         {"name": "ilspy.flare"},
@@ -45,8 +55,9 @@
         {"name": "rundotnetdll.flare"},
 
 
-        {"name": "openjdk11"},
+        {"name": "javaruntime"},
         {"name": "jd-gui.flare"},
+        {"name": "java-deobfuscator-gui.fireeye"},
         {"name": "bytecode-viewer.flare"},
         {"name": "dex2jar.flare"},
 
@@ -58,10 +69,10 @@
 
         {"name": "ffdec.flare"},
 
-        {"name": "metasploit.flare"},
         {"name": "kali_windowsbinaries.flare"},
 
         {"name": "volatility.flare", "x64Only": true},
+        {"name": "Autospy.fireeye"},
 
         {"name": "fileinsight.flare"},
         {"name": "hxd.flare"},
@@ -73,11 +84,16 @@
         {"name": "die.flare"},
         {"name": "pestudio.flare"},
         {"name": "pebear.flare"},
+        {"name": "hollowshunter.fireeye"},
+        {"name": "pesieve.fireeye"},
         {"name": "resourcehacker.flare"},
+        {"name": "processdump.fireeye"},
+
 
         {"name": "sublimetext3"},
         {"name": "notepadplusplus.flare"},
 
+        {"name": "SilkETW.fireeye"},
         {"name": "unxutils"},
         {"name": "farmanager.flare"},
         {"name": "checksum"},
@@ -109,38 +125,48 @@
         {"name": "googlechrome.flare"},
         {"name": "cyberchef.flare"},
         {"name": "py2exedecompiler.flare"},
+        {"name": "pyinstxtractor.fireeye"},
+        {"name": "uniextract2.fireeye"},
+        {"name": "innounp.fireeye"},
+        {"name": "innoextract.fireeye"},
+        {"name": "ppee.fireeye"},
+        {"name": "exe2aut.fireeye"},
+        {"name": "ImpRec.fireeye"},
+        {"name": "procdot.fireeye"},
 
         {"name": "offvis.flare"},
         {"name": "officemalscanner.flare"},
+        {"name": "oledump.fireeye"},
+        {"name": "rtfdump.fireeye"},
+        {"name": "msoffcrypto-crack.fireeye"},
+        {"name": "oletools.fireeye"},
 
         {"name": "pdfid.flare"},
         {"name": "pdfparser.flare"},
         {"name": "pdfstreamdumper.flare"},
 
+        {"name": "nasm.fireeye"},
+
         {"name": "vim.flare"},
         {"name": "cygwin.flare"},
-        {"name": "burp.free.flare"},
+
         {"name": "retdec.flare"},
         {"name": "MAP.flare"},
         {"name": "SysAnalyzer.flare"},
         {"name": "pmalabs.flare"},
 
-        {"name": "apktool.flare"},
+        {"name": "PSDecode.fireeye"},
 
-        {"name": "vcpython27"},
-        {
-            "name": "python2.x86.nopath.flare",
-            "x64Only": true,
-            "args": "--package-parameters \'/InstallDir:C:\\Python27.x86\'"
-        },
-        {"name": "python2"},
-        {"name": "python3"},
-        {"name": "libraries.python2.fireeye"},
-        {"name": "libraries.python3.fireeye"},
+        {"name": "burp.free.fireeye"},
+        {"name": "fiddler.fireeye"},
+        {"name": "HTTrack.fireeye"},
+
+        {"name": "malware-jail.fireeye"},
+
+        {"name": "apktool.flare"},
         {"name": "flare-qdb.python.flare"},
         {"name": "floss.python.flare"},
-        {"name": "PayloadsAllTheThings.fireeye"},        
-        {"name": "vscode.fireeye", "args":"--parameters /NoDesktopIcon --paramsglobal"},
         {"name": "fakenet-ng.python.flare"}
+
     ]
 }

@@ -2,9 +2,12 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>flarevm.installer.flare</id>
-    <version>2.2.20.1</version>
+    <version>2.3.2.7</version>
     <title>FLARE</title>
     <authors>FLARE</authors>
     <description>FLARE VM - Malware Analysis Environment</description>
+    <dependencies>
+      <dependency id="common.fireeye" />
+    </dependencies>
   </metadata>
 </package>
