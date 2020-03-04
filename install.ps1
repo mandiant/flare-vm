@@ -14,7 +14,6 @@ param (
   [string]$profile_file = $null
 )
 
-
 function Set-EnvironmentVariableWrap([string] $key, [string] $value)
 {
 <#
@@ -116,9 +115,24 @@ function Make-InstallerPackage($PackageName, $TemplateDir, $packages) {
   User can then call "Install-BoxStarterPackage installer" using the local repo.
   #>
 
+  function Get-Tree($Path,$Include='*') { 
+    @(Get-Item $Path -Include $Include -Force) + (Get-ChildItem $Path -Recurse -Include $Include -Force) | sort pspath -Descending -unique
+  } 
+
+  function Remove-Tree($Path,$Include='*') { 
+      Get-Tree $Path $Include | Remove-Item -force -recurse
+  } 
+
   $PackageDir = Join-Path $BoxStarter.LocalRepo $PackageName
   if (Test-Path $PackageDir) {
-    Remove-Item -Recurse -Force $PackageDir
+    Remove-Tree $PackageDir
+  }
+
+  $files = Get-ChildItem -Path $BoxStarter.LocalRepo -Filter $PackageName | Foreach-Object {($_.BaseName)} | Sort -Descending
+  if ($files.count -gt 0) {
+    foreach ($f in $files) {
+      Remove-Item $f -force
+    }
   }
 
   $Tmp = [System.IO.Path]::GetTempFileName()
@@ -134,7 +148,7 @@ function Make-InstallerPackage($PackageName, $TemplateDir, $packages) {
   $Dest = Join-Path $ToolsDir "packages.json"
 
   Move-Item -Force -Path $Tmp -Destination $Dest
-  New-BoxstarterPackage -Name $PackageName -Description "My Own Instalelr" -Path $ToolsDir
+  New-BoxstarterPackage -Name $PackageName -Description "My Own Installer" -Path $ToolsDir
 }
 
 function installBoxStarter()
@@ -148,11 +162,30 @@ function installBoxStarter()
   this funciton also temporarily trust all certificates before installing BoxStarter.
   #>
 
+  # See: https://chocolatey.org/docs/installation#completely-offline-install
+  # Attempt to set highest encryption available for SecurityProtocol.
+  # PowerShell will not set this by default (until maybe .NET 4.6.x). This
+  # will typically produce a message for PowerShell v2 (just an info message though)
+  try {
+    # Set TLS 1.2 (3072), then TLS 1.1 (768), then TLS 1.0 (192), finally SSL 3.0 (48)
+    # Use integers because the enumeration values for TLS 1.2 and TLS 1.1 won't
+    # exist in .NET 4.0, even though they are addressable if .NET 4.5+ is
+    # installed (.NET 4.5 is an in-place upgrade).
+    [System.Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor 192 -bor 48
+  } catch {
+    Write-Output 'Unable to set PowerShell to use TLS 1.2 and TLS 1.1 due to old .NET Framework installed. If you see underlying connection closed or trust errors, you may need to upgrade to .NET Framework 4.5+ and PowerShell v3+.'
+  }
+
   # Try to install BoxStarter as is first, then fall back to be over trusing only if this step fails.
   try {
-    iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
+    if ($PSVersionTable -And $PSVersionTable.PSVersion.Major -ge 5) {
+      . { iwr -useb https://boxstarter.org/bootstrapper.ps1 } | iex; Get-Boxstarter -Force
+    } else {
+      iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); Get-Boxstarter -Force
+    }
     return $true
   } catch {
+    Write-Host "Failed to install boxstarter. Trying again."
   }
 
   # https://stackoverflow.com/questions/11696944/powershell-v3-invoke-webrequest-https-error
@@ -171,32 +204,29 @@ function installBoxStarter()
   }
 "@
   } catch {
-      Write-Debug "Failed to add new type"
+      Write-Host "Failed to add new type"
   }
-  try {
-    $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls,Tls11,Tls12'
-  } catch {
-    Write-Debug "Failed to find SSL type...1"
-  }
-  try {
-    $AllProtocols = [System.Net.SecurityProtocolType]'Ssl3,Tls'
-  } catch {
-    Write-Debug "Failed to find SSL type...2"
-  }
-  $prevSecProtocol = [System.Net.ServicePointManager]::SecurityProtocol
-  $prevCertPolicy = [System.Net.ServicePointManager]::CertificatePolicy
 
-  Write-Host "[+] Installing Boxstarter"
-  # Become overly trusting
-  [System.Net.ServicePointManager]::SecurityProtocol = $AllProtocols
-  [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-  # download and instal boxstarter
-  iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
-  # Restore previous trust settings for this PowerShell session
-  # Note: SSL certs trusted from installing BoxStarter above will be trusted for the remaining PS session
-  [System.Net.ServicePointManager]::SecurityProtocol = $prevSecProtocol
-  [System.Net.ServicePointManager]::CertificatePolicy = $prevCertPolicy
-  return $true
+  try {
+    # Become overly trusting
+    $prevCertPolicy = [System.Net.ServicePointManager]::CertificatePolicy
+    [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+
+    # Download and install boxstarter
+    if ($PSVersionTable -And $PSVersionTable.PSVersion.Major -ge 5) {
+      . { iwr -useb https://boxstarter.org/bootstrapper.ps1 } | iex; Get-Boxstarter -Force
+    } else {
+      iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1')); Get-Boxstarter -Force
+    }
+    # Restore previous trust settings for this PowerShell session
+    # Note: SSL certs trusted from installing BoxStarter above will be trusted for the remaining PS session
+    [System.Net.ServicePointManager]::CertificatePolicy = $prevCertPolicy
+
+    return $true
+  } catch {
+    Write-Host "Failed to install boxstarter a second time."
+    return $false
+  }
 }
 
 if ([string]::IsNullOrEmpty($profile_file)) {
@@ -224,6 +254,15 @@ if (-Not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
   exit
 }
 
+# Check to make sure host is supported
+Write-Host "[+] Checking to make sure Operating System is compatible"
+if (-Not (((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601") -or ([System.Environment]::OSVersion.Version.Major -eq 10))){
+  Write-Host "`t[ERR] $((Get-WmiObject -class Win32_OperatingSystem).Caption) is not supported, please use Windows 7 Service Pack 1 or Windows 10" -ForegroundColor Red
+  exit 
+} else {
+  Write-Host "`t$((Get-WmiObject -class Win32_OperatingSystem).Caption) supported" -ForegroundColor Green
+}
+
 # Get user credentials for autologin during reboots
 Write-Host "[+] Getting user credentials ..."
 Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
@@ -234,11 +273,13 @@ if ([string]::IsNullOrEmpty($password)) {
   $cred=New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $env:username, $spasswd
 }
 
+
+
 Write-Host "[+] Installing Boxstarter"
 $rc = installBoxStarter
 if ( -Not $rc ) {
-  Write-Host "[ERR] Failed to install BoxStarter"
-  Read-Host  "      Press ANY key to continue..."
+  Write-Host "[ERR] Failed to install BoxStarter`n" -ForegroundColor Red
+  Read-Host  "`tPress ANY key to continue..."
   exit
 }
 
@@ -250,11 +291,29 @@ Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/fireeye/api/v2;https
 
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
+
+# Disable Windows Defender
 try {
-  Set-MpPreference -DisableRealtimeMonitoring $true
-  iex "cinst -y disabledefender-winconfig "
+  Get-Service WinDefend | Stop-Service -Force
+  Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\services\WinDefend" -Name "Start" -Value 4 -Type DWORD -Force
 } catch {
+  Write-Warning "Failed to disable WinDefend service"
 }
+
+try {
+  New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft' -Name "Windows Defender" -Force -ea 0 | Out-Null
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "DisableAntiSpyware" -Value 1 -PropertyType DWORD -Force -ea 0 | Out-Null
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" -Name "DisableRoutinelyTakingAction" -Value 1 -PropertyType DWORD -Force -ea 0 | Out-Null
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SpyNetReporting" -Value 0 -PropertyType DWORD -Force -ea 0 | Out-Null
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 0 -PropertyType DWORD -Force -ea 0 | Out-Null
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MRT" -Name "DontReportInfectionInformation" -Value 1 -PropertyType DWORD -Force -ea 0 | Out-Null
+  if (-Not ((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601")) {
+    Set-MpPreference -DisableIntrusionPreventionSystem $true -DisableIOAVProtection $true -DisableRealtimeMonitoring $true -DisableScriptScanning $true -EnableControlledFolderAccess Disabled -EnableNetworkProtection AuditMode -Force -MAPSReporting Disabled -SubmitSamplesConsent NeverSend
+  }
+} catch {
+  Write-Warning "Failed to disable Windows Defender"
+}
+
 if ([System.Environment]::OSVersion.Version.Major -eq 10) {
   choco config set cacheLocation ${Env:TEMP}
 }
@@ -264,7 +323,6 @@ if ([System.Environment]::OSVersion.Version.Major -eq 10) {
 $fireeyeFeed = "https://www.myget.org/F/fireeye/api/v2"
 iex "choco sources add -n=fireeye -s $fireeyeFeed --priority 1"
 iex "choco upgrade -y vcredist-all.flare"
-iex "choco install -y powershell"
 iex "refreshenv"
 
 if ($profile -eq $null) {

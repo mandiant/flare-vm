@@ -1,37 +1,24 @@
 $ErrorActionPreference = 'Stop'
 
-$packageName = 'flarevm.installer'
+Import-Module Boxstarter.Chocolatey
+Import-Module "$($Boxstarter.BaseDir)\Boxstarter.Common\boxstarter.common.psd1"
+Import-Module FireEyeVM.Common
+
+# Boxstarter options
+$cache           =  "${Env:UserProfile}\AppData\Local\ChocoCache"
+$globalCinstArgs = "--cacheLocation $cache"
+
 $toolsDir    = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
+$pkgPath          = Join-Path $toolsDir "packages.json"
 
 # Set desktop background to black
 Set-ItemProperty -Path 'HKCU:\Control Panel\Colors' -Name Background -Value "0 0 0" -Force | Out-Null
-
-# Boxstarter options
-
-$flareFeed       = "https://www.myget.org/F/flare/api/v2"
-$cache           =  "${Env:UserProfile}\AppData\Local\ChocoCache"
-$globalCinstArgs = "--cacheLocation $cache"
-$startPath       = Join-Path ${Env:ProgramData} "Microsoft\Windows\Start Menu\Programs\FLARE"
-
-$pkgPath = Join-Path $toolsDir "flarevm.installer"
-$pkgPath = Join-Path $pkgPath "tools"
-$pkgPath = Join-Path $pkgPath "packages.json"
-
-
-# https://stackoverflow.com/questions/28077854/powershell-2-0-convertfrom-json-and-convertto-json-implementation
-function ConvertFrom-Json([object] $item) {
-    Add-Type -assembly system.web.extensions
-    $ps_js = New-Object system.web.script.serialization.javascriptSerializer
-
-    #The comma operator is the array construction operator in PowerShell
-    return ,$ps_js.DeserializeObject($item)
-}
 
 
 function LoadPackages {
     try {
         $json = Get-Content $pkgPath -ErrorAction Stop
-        $packages = ConvertFrom-Json $json
+        $packages = FE-ConvertFrom-Json $json
     } catch {
         return $null
     }

@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Continue'
 
 Import-Module Boxstarter.Chocolatey
 Import-Module "$($Boxstarter.BaseDir)\Boxstarter.Common\boxstarter.common.psd1"
-Import-Module FireEyeVM.Common
+Import-Module FireEyeVM.common -Force -DisableNameChecking
 
 $toolsDir         = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $flareFeed        = "https://www.myget.org/F/fireeye/api/v2"
@@ -82,6 +82,7 @@ function InitialSetup {
     # Create the cache directory
     New-Item -Path $cache -ItemType directory -Force
 
+
     # Set common paths in environment variables
     $toolListDir = [Environment]::GetEnvironmentVariable("TOOL_LIST_DIR", 2)
     if ($toolListDir -eq $null) {
@@ -96,7 +97,6 @@ function InitialSetup {
     Install-ChocolateyShortcut -shortcutFilePath $toolListShortcut -targetPath $toolListDir
     Install-ChocolateyEnvironmentVariable -VariableName "TOOL_LIST_SHORTCUT" -VariableValue $toolListShortcut -VariableType 'Machine'
 
-    
     refreshenv
 
     # BoxStarter setup
@@ -111,6 +111,17 @@ function InitialSetup {
     & powercfg -change -standby-timeout-dc 0 | Out-Null
     & powercfg -change -hibernate-timeout-ac 0 | Out-Null
     & powercfg -change -hibernate-timeout-dc 0 | Out-Null
+
+
+    if ((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601") {
+        # Update Tls settings
+        if (Get-OSArchitectureWidth -Compare 64) {
+            $cmdPath = Join-Path $toolsDir "tls_mod_x64.reg"
+        } else {
+            $cmdPath = Join-Path $toolsDir "tls_mod_x86.reg"
+        }
+        Start-Process -FilePath "reg.exe" -ArgumentList "import $cmdPath" -Wait -PassThru
+    }
 }
 
 

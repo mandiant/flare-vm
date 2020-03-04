@@ -20,8 +20,16 @@ Welcome to FLARE VM - a fully customizable, Windows-based security distribution 
 
 Please see https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html for a blog on installing FLARE VM.
 
-Update
+Updates
 ===========
+
+## Version 2.3 Updates
+Chocolatey now requires PowerShell v3 (or higher) and .NET 4.0 (or higher) due to recent upgrades to TLS 1.2. Please ensure .NET 4+ and PowerShell v3+ are installed prior to attempting FLARE VM installation. Below are links to download .NET 4.5 and WMF 5.1 (PowerShell 5.1).
+
+* .NET 4.5 [https://www.microsoft.com/en-us/download/details.aspx?id=30653](https://www.microsoft.com/en-us/download/details.aspx?id=30653)
+* WMF 5.1 [https://www.microsoft.com/en-us/download/details.aspx?id=54616](https://www.microsoft.com/en-us/download/details.aspx?id=54616)
+
+## Version 2.0 Updates
 Starting with version 2.0, FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
 
 Starting with version 2.0, FLARE VM uses the following environment variables: 
@@ -29,7 +37,6 @@ Starting with version 2.0, FLARE VM uses the following environment variables:
   - `TOOL_LIST_SHORTCUT`: The default value is set to *`%USERPROFILE%`*`\Desktop\FLARE.lnk`.
 
 The installer script sets those environment variables automatically. If there are issues during installation, please verify that those environment variables are set correctly.
-
 
 
 Installation (Install Script)
@@ -59,7 +66,7 @@ The script will set up the Boxstarter environment and proceed to download and in
 * Download and copy [`flarevm.installer.flare`](https://github.com/fireeye/flare-vm/tree/master/flarevm.installer.flare) directory on to your new VM
 * Modify the `profile.json` file:
   * Most of the fields within `env` data should be left unchanged.
-  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to the following [URL](https://github.com/fireeye/flare-vm/packages.csv) for a full list of packages available
+  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to the following [URL](https://github.com/fireeye/flare-vm/blob/master/packages.csv) for a full list of packages available
 * Open `PowerShell` as an Administrator
 * Enable script execution by running the following command:
   * `Set-ExecutionPolicy unrestricted`
@@ -87,7 +94,7 @@ Set-ExecutionPolicy Unrestricted
 . { iwr -useb http://boxstarter.org/bootstrapper.ps1 } | iex; get-boxstarter -Force
 ```
 
-Next, you can deploy FLARE VM environment as follows
+Next, you can deploy FLARE VM environment as follows:
 
 ```
 Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/fireeye/flare-vm/master/install.ps1
@@ -172,6 +179,7 @@ Flash
 Forensic
 ---------
 * Volatility
+* Autopsy
 
 Hex Editors
 ---------
@@ -183,6 +191,11 @@ Java
 ---------
 * JD-GUI
 * Bytecode-Viewer
+* Java-Deobfuscator
+
+JavaScript
+---------
+* malware-jail
 
 Networking
 ---------
@@ -196,6 +209,8 @@ Office
 * Offvis
 * OfficeMalScanner
 * oledump.py
+* rtfdump.py
+* msoffcrypto-crack.py
 
 PDF
 ---------
@@ -217,8 +232,11 @@ PE
 
 Pentest
 ---------
-* MetaSploit
 * Windows binaries from Kali Linux
+
+Powershell
+---------
+* PSDecode
 
 Text Editors
 ---------
@@ -230,9 +248,10 @@ Visual Basic
 ---------
 * VBDecompiler
 
-Web
+Web Application
 ---------
 * BurpSuite Free Edition
+* HTTrack
 
 Utilities
 ---------
@@ -267,10 +286,13 @@ Utilities
 * UniExtract2
 * Hollows-Hunter
 * PE-sieve
+* ImpRec
+* ProcDot
 
 Python, Modules, Tools
 ---------
 * Py2ExeDecompiler
+* pyinstxtractor
 * Python 2.7
   * hexdump
   * pefile
@@ -293,19 +315,34 @@ Python, Modules, Tools
   * flask
   * networkx
   * requests
+  * msoffcrypto-tool
+  * yara-python
+  * mkyara
 * Python 3.7
   * binwalk
   * unpy2exe
   * uncompyle6
   * StringSifter
+  * hexdump
+  * pycryptodome
+  * oletools
+  * olefile
+  * msoffcrypto-tool
+  * pyftpdlib
+  * pyasn1
+  * pyOpenSSL
+  * acefile
+  * requests
+  * yara-python
+  * mkyara
 
 Other
 ---------
 * VC Redistributable Modules (2005, 2008, 2010, 2012, 2013, 2015, 2017)
-* .NET Framework versions 4.6.2 and 4.7.2
+* .NET Framework versions 4.8
 * Practical Malware Analysis Labs
 * Google Chrome
-* Cmder Mini
+* Cmder
 
 
 Legal Notice
@@ -315,7 +352,7 @@ in creating handy and versatile toolboxes for malware analysis environments. It
 provides a convenient interface for them to obtain a useful set of analysis
 tools directly from their original sources. Installation and use of this script
 is subject to the Apache 2.0 License.
- 
+ 
 You as a user of this script must review, accept and comply with the license
 terms of each downloaded/installed package listed below. By proceeding with the
 installation, you are accepting the license terms of each package, and
@@ -422,4 +459,13 @@ https://cert.at/downloads/software/bytehist_en.html
 https://github.com/ReFirmLabs/binwalk
 https://github.com/fireeye/SilkETW
 https://github.com/fireeye/stringsifter
+https://github.com/sleuthkit/autopsy
+http://www.httrack.com/page/1/en/index.html
+https://github.com/java-deobfuscator/deobfuscator
+https://github.com/HynekPetrak/malware-jail
+https://blog.didierstevens.com/2018/12/31/new-tool-msoffcrypto-crack-py/
+https://www.procdot.com
+https://github.com/R3MRUM/PSDecode
+https://sourceforge.net/projects/pyinstallerextractor/
+https://blog.didierstevens.com/2018/12/10/update-rtfdump-py-version-0-0-9/
 </pre>

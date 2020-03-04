@@ -14,6 +14,7 @@ apimonitor.flare,Allows creation of process traces that include all windows APIs
 apktool.flare,A tool for reverse engineering  Android apps, common.fireeye - https://chocolatey.org/packages//apktool, Android, https://ibotpeaches.github.io/Apktool/, cinst -y apktool.flare
 ASREPRoast.fireeye,Project that retrieves crackable hashes from KRB5 AS-REP responses for users without kerberoast preauthentication enabled., , Password Attacks,https://github.com/HarmJ0y/ASREPRoast, cinst -y ASREPRoast.fireeye
 autoit.fireeye,Creates a shortcut in the Utilities folder, common.fireeye - https://chocolatey.org/packages//autoit, Utilities, http://www.autoitscript.com/autoit3, cinst -y autoit.fireeye
+Autopsy.fireeye ,Autopsy is a digital forensics platform and graphical interface to The Sleuth Kit¨ and other digital forensics tools.,common.fireeye,Forensic,https://github.com/sleuthkit/autopsy,cinst -y Autopsy.fireeye 
 binaryninja.flare,A dissassembler for reverse engineers, , Disassemblers, https://binary.ninja/demo.html, cinst -y binaryninja.flare
 BloodHound.fireeye,BloodHound uses graph theory to reveal the hidden and often unintended relationships within an Active Directory environment., , Information Gathering,https://github.com/BloodHoundAD/BloodHound, cinst -y BloodHound.fireeye
 burp.free.fireeye,Creates a shortcut in the Web Application directory for BurpSuite Free Edition, common.fireeye - https://chocolatey.org/packages//burp-suite-free-edition, Web Application, https://portswigger.net/burp, cinst -y burp.free.fireeye
@@ -82,6 +83,7 @@ hashcalc.flare,Hash calculator, , Utilities, http://www.slavasoft.com/hashcalc/i
 hashcat.fireeye,Password cracking utility, common.fireeye - https://chocolatey.org/packages//opencl-intel-cpu-runtime, Password Attacks,https://hashcat.net/hashcat/, cinst -y hashcat.fireeye
 hashmyfiles.flare,Hash calculator, , Utilities, https://www.nirsoft.net/utils/hash_my_files.html, cinst -y hashmyfiles.flare
 hexchat.fireeye,Creates a HexChat shortcut in the Utilities folder, common.fireeye - https://chocolatey.org/packages//vcredist2015 - https://chocolatey.org/packages//hexchat, Utilities, https://hexchat.github.io/, cinst -y hexchat.fireeye
+HTTrack.fireeye,"HTTrack is a free (GPL, libre/free software) and easy-to-use offline browser utility.",,Web Application,http://www.httrack.com/page/1/en/index.html,cinst -y HTTrack.fireeye
 hxd.fireeye,A hex editor, common.fireeye - https://chocolatey.org/packages//hxd, Utilities, https://mh-nexus.de/en/hxd/, cinst -y hxd.fireeye
 hxd.flare,A hex editor, common.fireeye - https://chocolatey.org/packages//chocolatey, Hex Editor, https://mh-nexus.de/en/hxd/, cinst -y hxd.flare
 idafree.flare,IDA Free edition, , Disassemblers, https://www.hex-rays.com/products/ida/support/download_freeware.shtml, cinst -y idafree.flare
@@ -132,4 +134,3 @@ ncat.flare,Netcat utility, , Net, https://nmap.org/ncat/, cinst -y ncat.flare
 neo4j-community.fireeye,Installs start/stop scripts for Neo4j in the Utilities folder and disables auto start for Neo4j, common.fireeye - https://chocolatey.org/packages//jdk8 - https://chocolatey.org/packages//neo4j-community, Utilities, http://neo4j.com/, cinst -y neo4j-community.fireeye
 NetRipper.fireeye,NetRipper - Smart traffic sniffing for penetration testers, , Information Gathering,https://github.com/NytroRST/NetRipper, cinst -y NetRipper.fireeye
 NetshHelperBeacon.fireeye,Example DLL to load from Windows NetShell, , Exploitation,https://github.com/outflanknl/NetshHelperBeacon, cinst -y NetshHelperBeacon.fireeye
-
