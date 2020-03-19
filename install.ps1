@@ -11,7 +11,8 @@
 
 param (
   [string]$password = "",
-  [string]$profile_file = $null
+  [string]$profile_file = $null,
+  [switch]$norestart
 )
 
 function Set-EnvironmentVariableWrap([string] $key, [string] $value)
@@ -284,7 +285,11 @@ if ( -Not $rc ) {
 }
 
 # Boxstarter options
-$Boxstarter.RebootOk = $true # Allow reboots?
+if ($norestart) {
+  $BoxStarter.RebootOk = $false
+} else {
+  $Boxstarter.RebootOk = $true # Allow reboots?
+}
 $Boxstarter.NoPassword = $false # Is this a machine with no login password?
 $Boxstarter.AutoLogin = $true # Save my password securely and auto-login after a reboot
 Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/fireeye/api/v2;https://chocolatey.org/api/v2"
@@ -339,7 +344,11 @@ if ($profile -eq $null) {
   }
 
   choco upgrade -y -f common.fireeye
-  Install-BoxStarterPackage -PackageName flarevm.installer.flare -Credential $cred
+  if ($norestart) {
+    Install-BoxStarterPackage -PackageName flarevm.installer.flare -DisableReboots
+  } else {
+    Install-BoxStarterPackage -PackageName flarevm.installer.flare -Credential $cred
+  }
   exit 0
 } 
 
@@ -368,5 +377,9 @@ $TemplateDir = $profile.env.TEMPLATE_DIR
 $Packages = $profile.packages
 Make-InstallerPackage $PackageName $TemplateDir $Packages
 Invoke-BoxStarterBuild $PackageName
-Install-BoxStarterPackage -PackageName $PackageName -Credential $cred
+if ($norestart) {
+  Install-BoxStarterPackage -PackageName $PackageName -DisableReboots
+} else {
+  Install-BoxStarterPackage -PackageName $PackageName -Credential $cred
+}
 exit 0
