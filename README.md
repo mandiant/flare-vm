@@ -52,6 +52,7 @@ Installation (Install Script)
 * Finally, execute the installer script as follows:
   * `.\install.ps1`
   * You can also pass the current user's password as an argument: `.\install.ps1 -password <password>`
+  * `install.ps1` also supports a `-norestart` to stop BoxStarter from automatically rebooting and restarting the VM during installation.
 
 The script will set up the Boxstarter environment and proceed to download and install the FLARE VM environment. You will be prompted for the Administrator password in order to automate host restarts during installation.
 
