@@ -1,20 +1,20 @@
-  
-      ______ _               _____  ______   __      ____  __ 
+
+      ______ _               _____  ______   __      ____  __
      |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
      | |__  | |       /  \  | |__) | |__ _____\ \  / /| \  / |
      |  __| | |      / /\ \ |  _  /|  __|______\ \/ / | |\/| |
      | |    | |____ / ____ \| | \ \| |____      \  /  | |  | |
      |_|    |______/_/    \_\_|  \_\______|      \/   |_|  |_|
-                        
+
       ________________________________________________________
-                           Developed by                     
-	                   flarevm@fireeye.com
-          FLARE (FireEye Labs Advanced Reverse Engineering)  
-      ________________________________________________________ 
+                           Developed by
+                       flarevm@fireeye.com
+          FLARE (FireEye Labs Advanced Reverse Engineering)
+      ________________________________________________________
 
 <p align="center">
   <img width="300" height="300" src="https://github.com/fireeye/flare-vm/blob/master/flarevm.png?raw=true" alt="FLARE VM"/>
-</p>                  
+</p>
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
@@ -32,7 +32,7 @@ Chocolatey now requires PowerShell v3 (or higher) and .NET 4.0 (or higher) due t
 ## Version 2.0 Updates
 Starting with version 2.0, FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
 
-Starting with version 2.0, FLARE VM uses the following environment variables: 
+Starting with version 2.0, FLARE VM uses the following environment variables:
   - `TOOL_LIST_DIR`: The default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
   - `TOOL_LIST_SHORTCUT`: The default value is set to *`%USERPROFILE%`*`\Desktop\FLARE.lnk`.
 
@@ -43,16 +43,15 @@ Installation (Install Script)
 =============================
 
 * Create and configure a new Windows Virtual Machine
-  * Ensure VM is updated completely. You may have to check for updates, reboot, and check again until no more remain 
+  * Ensure VM is updated completely. You may have to check for updates, reboot, and check again until no more remain
 * Take a snapshot of your machine!
-* Download and copy `install.ps1` on your newly configured machine. 
+* Download and copy `install.ps1` on your newly configured machine.
 * Open PowerShell as an Administrator
 * Enable script execution by running the following command:
   * `Set-ExecutionPolicy Unrestricted`
 * Finally, execute the installer script as follows:
   * `.\install.ps1`
-  * You can also pass your password as an argument: `.\install.ps1 -password <password>`
-``
+  * You can also pass the current user's password as an argument: `.\install.ps1 -password <password>`
 
 The script will set up the Boxstarter environment and proceed to download and install the FLARE VM environment. You will be prompted for the Administrator password in order to automate host restarts during installation.
 
@@ -78,7 +77,7 @@ The script will set up the Boxstarter environment and proceed to download and in
 Installation (Manually)
 =======================
 
-First, install BoxStarter. All commands are expected to be executed with Administrator privileges. 
+First, install BoxStarter. All commands are expected to be executed with Administrator privileges.
 
 If you are using PowerShell v2:
 
@@ -123,7 +122,7 @@ Malware Analysis with FLARE VM
 
 For an example malware analysis session using FLARE VM, please see the blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html.
 
-> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html.   
+> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html.
 
 Installed Tools
 ===============
@@ -352,7 +351,7 @@ in creating handy and versatile toolboxes for malware analysis environments. It
 provides a convenient interface for them to obtain a useful set of analysis
 tools directly from their original sources. Installation and use of this script
 is subject to the Apache 2.0 License.
- 
+
 You as a user of this script must review, accept and comply with the license
 terms of each downloaded/installed package listed below. By proceeding with the
 installation, you are accepting the license terms of each package, and
