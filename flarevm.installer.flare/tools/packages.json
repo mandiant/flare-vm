@@ -66,6 +66,7 @@
         {"name": "kali_windowsbinaries.flare"},
 
         {"name": "volatility.flare", "x64Only": true},
+	{"name": "AutoItExtractor.fireeye"},
         {"name": "Autopsy.fireeye"},
 
         {"name": "fileinsight.flare"},
