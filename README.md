@@ -13,7 +13,7 @@
       ________________________________________________________ 
 
 <p align="center">
-  <img width="300" height="300" src="https://github.com/fireeye/flare-vm/blob/master/flarevm.png?raw=true" alt="FLARE VM"/>
+  <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
 </p>                  
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
@@ -52,21 +52,20 @@ Installation (Install Script)
 * Finally, execute the installer script as follows:
   * `.\install.ps1`
   * You can also pass your password as an argument: `.\install.ps1 -password <password>`
-``
 
 The script will set up the Boxstarter environment and proceed to download and install the FLARE VM environment. You will be prompted for the Administrator password in order to automate host restarts during installation.
 
 ## Customizing packages
 * *NOTE*: By customizing your own packages list, you will NOT automatically get the newly added packages by simply running `cup all`. You can always manually install a new package by using `cinst` or `choco install` command.
-* For a list of available packages to use, please refer to the following [URL](https://github.com/fireeye/flare-vm/packages.csv)
+* For a list of available packages to use, please refer to [packages.csv](packages.csv)
 * Create and configure a new Windows Virtual Machine.
 * Take your initial snapshot before installing FLARE VM
-* Download and copy [`install.ps1`](https://github.com/fireeye/flare-vm/blob/master/install.ps1) on to your new VM
-* Download and copy [`profile.json`](https://github.com/fireeye/flare-vm/blob/master/profile.json) on to your new VM
-* Download and copy [`flarevm.installer.flare`](https://github.com/fireeye/flare-vm/tree/master/flarevm.installer.flare) directory on to your new VM
+* Download and copy [`install.ps1`](install.ps1) on to your new VM
+* Download and copy [`profile.json`](profile.json) on to your new VM
+* Download and copy [`flarevm.installer.flare`](flarevm.installer.flare) directory on to your new VM
 * Modify the `profile.json` file:
   * Most of the fields within `env` data should be left unchanged.
-  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to the following [URL](https://github.com/fireeye/flare-vm/blob/master/packages.csv) for a full list of packages available
+  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to [packages.csv](packages.csv) for a full list of packages available
 * Open `PowerShell` as an Administrator
 * Enable script execution by running the following command:
   * `Set-ExecutionPolicy unrestricted`
