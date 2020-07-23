@@ -473,4 +473,5 @@ https://github.com/R3MRUM/PSDecode
 https://sourceforge.net/projects/pyinstallerextractor/
 https://blog.didierstevens.com/2018/12/10/update-rtfdump-py-version-0-0-9/
 https://gitlab.com/x0r19x91/autoit-extractor/-/blob/master/LICENSE
+https://github.com/fireeye/capa
 </pre>

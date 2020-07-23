@@ -66,7 +66,7 @@
         {"name": "kali_windowsbinaries.flare"},
 
         {"name": "volatility.flare", "x64Only": true},
-	{"name": "AutoItExtractor.fireeye"},
+        {"name": "AutoItExtractor.fireeye"},
         {"name": "Autopsy.fireeye"},
 
         {"name": "fileinsight.flare"},
@@ -159,6 +159,7 @@
         {"name": "malware-jail.fireeye"},
 
         {"name": "apktool.flare"},
+        {"name": "capa.fireeye"},
         {"name": "flare-qdb.python.flare"},
         {"name": "floss.python.flare"},
         {"name": "fakenet-ng.python.flare"}
