@@ -43,6 +43,8 @@ Installation (Install Script)
 =============================
 
 * Create and configure a new Windows Virtual Machine
+  * FLARE VM is designed to be installed on Windows 7 Service Pack 1 or newer
+  * Allow for a total of 50-60 GB disk storage (including OS)
   * Ensure VM is updated completely. You may have to check for updates, reboot, and check again until no more remain 
 * Take a snapshot of your machine!
 * Download and copy `install.ps1` on your newly configured machine. 
