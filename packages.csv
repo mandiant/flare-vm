@@ -22,7 +22,7 @@ burp.free.fireeye,Creates a shortcut in the Web Application directory for BurpSu
 burp.free.flare,Creates a shortcut in the Web Application directory for BurpSuite Free Edition, common.fireeye - https://chocolatey.org/packages//burp-suite-free-edition, Web Application, https://portswigger.net/burp, cinst -y burp.free.flare
 bytecode-viewer.flare,A Java 8+ Jar & Android APK Reverse Engineering Suite, common.fireeye - https://chocolatey.org/packages//javaruntime, Java, https://bytecodeviewer.com/, cinst -y bytecode-viewer.flare
 bytehist.fireeye,A tool for generating byte-usage-histograms for all types of files with a special focus on binary executables in PE-format (Windows), , Utilities, https://cert.at/downloads/software/bytehist_en.html, cinst -y bytehist.fireeye
-capa.fireeye, capa detects capabilities in executable files, commom.fireeye, Utilities, https://github.com/fireeye/capa, cinst -y capa.fireeye,,,
+capa.fireeye, capa detects capabilities in executable files, commom.fireeye, Utilities, https://github.com/fireeye/capa, cinst -y capa.fireeye
 CheckPlease.fireeye,Sandbox evasion modules, , Evasion,https://github.com/Arvanaghi/CheckPlease, cinst -y CheckPlease.fireeye
 citrix-receiver.fireeye,Creates a Citrix shortcut in the Networking Tools folder and disables Citrix auto start, common.fireeye - https://chocolatey.org/packages//citrix-receiver, Networking, http://www.citrix.com/downloads/citrix-receiver/windows/, cinst -y citrix-receiver.fireeye
 cmder.fireeye,Creates a shortcut in the Utilities directory - pins cmder to taskbar - and changes default ls alias to deconflict with unxUtils package, common.fireeye - https://chocolatey.org/packages//cmder, Utilities, http://cmder.net/, cinst -y cmder.fireeye
