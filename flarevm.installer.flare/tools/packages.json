@@ -158,6 +158,7 @@
 
         {"name": "malware-jail.fireeye"},
 
+        {"name": "vscode.fireeye", "args":"--parameters /NoDesktopIcon --paramsglobal"},
         {"name": "apktool.flare"},
         {"name": "capa.fireeye", "x64Only": true},
         {"name": "flare-qdb.python.flare"},
