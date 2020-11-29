@@ -117,7 +117,7 @@
         {"name": "yara.flare"},
         {"name": "kmdloader.flare"},
         {"name": "lordpe.flare"},
-        {"name": "googlechrome.flare"},
+        {"name": "googlechrome.fireeye"},
         {"name": "cyberchef.flare"},
         {"name": "py2exedecompiler.flare"},
         {"name": "pyinstxtractor.fireeye"},
@@ -159,10 +159,9 @@
         {"name": "malware-jail.fireeye"},
 
         {"name": "apktool.flare"},
-        {"name": "capa.fireeye"},
+        {"name": "capa.fireeye", "x64Only": true},
         {"name": "flare-qdb.python.flare"},
-        {"name": "floss.python.flare"},
-        {"name": "fakenet-ng.python.flare"}
-
+        {"name": "flare-floss.fireeye"},
+        {"name": "fakenet-ng.python.fireeye"}
     ]
 }
