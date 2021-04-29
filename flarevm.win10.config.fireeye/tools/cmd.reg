@@ -1,0 +1,9 @@
+Windows Registry Editor Version 5.00
+
+;Reset Command Prompt settings to default
+
+[HKEY_CURRENT_USER\Console]
+"QuickEdit"=dword:00000001
+"ScreenBufferSize"=dword:012c0078
+"WindowSize"=dword:00320078
+"HistoryBufferSize"=dword:000003e7
