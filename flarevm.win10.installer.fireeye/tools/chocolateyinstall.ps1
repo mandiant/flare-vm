@@ -125,7 +125,7 @@ function CleanUp
   Remove-Item $cache -Recurse
 
   # Final flare vm installation
-  iex "choco upgrade flarevm.win10.config.flare $globalCinstArgs"
+  iex "choco upgrade flarevm.win10.config.fireeye $globalCinstArgs"
 }
 
 

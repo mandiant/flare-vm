@@ -27,7 +27,7 @@ function Set-EnvironmentVariableWrap([string] $key, [string] $value)
     [Environment]::SetEnvironmentVariable($key, $value)
     [Environment]::SetEnvironmentVariable($key, $value, 1)
     [Environment]::SetEnvironmentVariable($key, $value, 2)
-  
+
     $rc = $true
   } catch {
     $rc = $false
@@ -55,7 +55,7 @@ function ConvertFrom-Json([object] $item) {
   } catch {
     $result = $null
   }
-  
+
   # Cast dictionary to hashtable
   [hashtable] $result
 }
@@ -81,7 +81,7 @@ function ConvertTo-Json([object] $data) {
   } catch {
     $result = $null
   }
-  
+
   $result
 }
 
@@ -90,7 +90,7 @@ function Import-JsonFile {
 <#
 .DESCRIPTION
   Load a hashtable from a JSON file
-  
+
 .OUTPUTS
   [hashtable] or $null
 #>
@@ -101,7 +101,7 @@ function Import-JsonFile {
   } catch {
     $result = $null
   }
-  
+
   $result
 }
 
@@ -116,13 +116,13 @@ function Make-InstallerPackage($PackageName, $TemplateDir, $packages) {
   User can then call "Install-BoxStarterPackage installer" using the local repo.
   #>
 
-  function Get-Tree($Path,$Include='*') { 
+  function Get-Tree($Path,$Include='*') {
     @(Get-Item $Path -Include $Include -Force) + (Get-ChildItem $Path -Recurse -Include $Include -Force) | sort pspath -Descending -unique
-  } 
+  }
 
-  function Remove-Tree($Path,$Include='*') { 
+  function Remove-Tree($Path,$Include='*') {
       Get-Tree $Path $Include | Remove-Item -force -recurse
-  } 
+  }
 
   $PackageDir = Join-Path $BoxStarter.LocalRepo $PackageName
   if (Test-Path $PackageDir) {
@@ -139,7 +139,7 @@ function Make-InstallerPackage($PackageName, $TemplateDir, $packages) {
   $Tmp = [System.IO.Path]::GetTempFileName()
   Write-Host -ForegroundColor Green "packages file is" + $tmp
   ConvertTo-Json @{"packages" = $packages} | Out-File -FilePath $Tmp
-  
+
   if ([System.IO.Path]::IsPathRooted($TemplateDir)) {
     $ToolsDir = Join-Path $TemplateDir "tools"
   } else {
@@ -232,18 +232,18 @@ function installBoxStarter()
 
 if ([string]::IsNullOrEmpty($profile_file)) {
   Write-Host "[+] No custom profile is provided..."
-  $profile = $null
+  $loaded_profile = $null
 } else {
   Write-Host "[+] Using the following profile $profile_file"
-  $profile = Import-JsonFile $profile_file
-  if ($profile -eq $null) {
+  $loaded_profile = Import-JsonFile $profile_file
+  if ($null -eq $loaded_profile) {
     Write-Error "Invaild configuration! Exiting..."
     exit 1
   }
   # Confirmation message
   Write-Warning "[+] You are using a custom profile and list of packages. You will NOT receive updates"
   Write-Warning "[+] on new packages from FLAREVM automatically when running choco update."
-}  
+}
 
 
 # Check to make sure script is run as administrator
@@ -259,9 +259,23 @@ if (-Not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
 Write-Host "[+] Checking to make sure Operating System is compatible"
 if (-Not (((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601") -or ([System.Environment]::OSVersion.Version.Major -eq 10))){
   Write-Host "`t[ERR] $((Get-WmiObject -class Win32_OperatingSystem).Caption) is not supported, please use Windows 7 Service Pack 1 or Windows 10" -ForegroundColor Red
-  exit 
+  exit
 } else {
   Write-Host "`t$((Get-WmiObject -class Win32_OperatingSystem).Caption) supported" -ForegroundColor Green
+}
+
+# Check and warn if diskspace is too low
+Write-Host "[+] Checking for available diskspace"
+$disk = Get-PSDrive ${Env:SystemDrive}[0]
+Start-Sleep -Seconds 1
+if (-Not (($disk.free)/1Gb -gt 40)) {
+  Write-Host -ForegroundColor Yellow -NoNewline "`t[WRN} Warning: You have less than 40Gb of free diskspace left. Are you sure you want to continue? (Y/N) "
+  $response = Read-Host
+  if ($response -ne "Y") {
+    Write-Host -ForegroundColor Red "[*] Exiting..."
+    exit
+  }
+  Write-Host -ForegroundColor Green "`t[!] Continuing ..."
 }
 
 # Get user credentials for autologin during reboots
@@ -286,7 +300,7 @@ if ( -Not $rc ) {
 
 # Boxstarter options
 if ($norestart) {
-  $BoxStarter.RebootOk = $false
+  $Boxstarter.RebootOk = $false
 } else {
   $Boxstarter.RebootOk = $true # Allow reboots?
 }
@@ -297,7 +311,7 @@ Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/fireeye/api/v2;https
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
 
-# Disable Windows Defender
+# Attempt to disable Windows Defender
 try {
   Get-Service WinDefend | Stop-Service -Force
   Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\services\WinDefend" -Name "Start" -Value 4 -Type DWORD -Force
@@ -313,7 +327,25 @@ try {
   New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -Value 0 -PropertyType DWORD -Force -ea 0 | Out-Null
   New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\MRT" -Name "DontReportInfectionInformation" -Value 1 -PropertyType DWORD -Force -ea 0 | Out-Null
   if (-Not ((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601")) {
-    Set-MpPreference -DisableIntrusionPreventionSystem $true -DisableIOAVProtection $true -DisableRealtimeMonitoring $true -DisableScriptScanning $true -EnableControlledFolderAccess Disabled -EnableNetworkProtection AuditMode -Force -MAPSReporting Disabled -SubmitSamplesConsent NeverSend
+    Add-MpPreference -ExclusionPath "C:\" -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableArchiveScanning $true  -ea 0 | Out-Null
+    Set-MpPreference -DisableBehaviorMonitoring $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableBlockAtFirstSeen $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableCatchupFullScan $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableCatchupQuickScan $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableIntrusionPreventionSystem $true  -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableIOAVProtection $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableRealtimeMonitoring $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableRemovableDriveScanning $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableRestorePoint $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableScanningMappedNetworkDrivesForFullScan $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableScanningNetworkFiles $true -Force -ea 0 | Out-Null
+    Set-MpPreference -DisableScriptScanning $true -Force -ea 0 | Out-Null
+    Set-MpPreference -EnableControlledFolderAccess Disabled -Force -ea 0 | Out-Null
+    Set-MpPreference -EnableNetworkProtection AuditMode -Force -ea 0 | Out-Null
+    Set-MpPreference -MAPSReporting Disabled -Force -ea 0 | Out-Null
+    Set-MpPreference -SubmitSamplesConsent NeverSend -Force -ea 0 | Out-Null
+    Set-MpPreference -PUAProtection Disabled -Force -ea 0 | Out-Null
   }
 } catch {
   Write-Warning "Failed to disable Windows Defender"
@@ -330,7 +362,7 @@ iex "choco sources add -n=fireeye -s $fireeyeFeed --priority 1"
 iex "choco upgrade -y vcredist-all.flare"
 iex "refreshenv"
 
-if ($profile -eq $null) {
+if ($null -eq $loaded_profile) {
   # Default install
   Write-Host "[+] Performing normal installation..."
   $startPath = Join-Path ${Env:ProgramData} "Microsoft\Windows\Start Menu\Programs\FLARE"
@@ -344,13 +376,22 @@ if ($profile -eq $null) {
   }
 
   choco upgrade -y -f common.fireeye
-  if ($norestart) {
-    Install-BoxStarterPackage -PackageName flarevm.installer.flare -DisableReboots
+  if (([Environment]::OSVersion).Version.Major -eq 10) {
+    choco upgrade -y flarevm.win10.preconfig.fireeye
+    if ($norestart) {
+      Install-BoxStarterPackage -PackageName "flarevm.win10.installer.fireeye" -DisableReboots
+    } else {
+      Install-BoxStarterPackage -PackageName "flarevm.win10.installer.fireeye" -Credential $cred
+    }
   } else {
-    Install-BoxStarterPackage -PackageName flarevm.installer.flare -Credential $cred
+    if ($norestart) {
+      Install-BoxStarterPackage -PackageName "flarevm.installer.flare" -DisableReboots
+    } else {
+      Install-BoxStarterPackage -PackageName "flarevm.installer.flare" -Credential $cred
+    }
   }
   exit 0
-} 
+}
 
 # The necessary basic environment variables
 $EnvVars = @(
@@ -362,7 +403,7 @@ $EnvVars = @(
 
 foreach ($envVar in $EnvVars) {
   try {
-    $value = [Environment]::ExpandEnvironmentVariables($profile.env.($envVar))
+    $value = [Environment]::ExpandEnvironmentVariables($loaded_profile.env.($envVar))
     if (-Not (Set-EnvironmentVariableWrap $envVar $value)) {
       Write-Warning "[-] Failed to set environment variable $envVar"
     }
@@ -373,10 +414,13 @@ choco install -y common.fireeye
 refreshenv
 
 $PackageName = "MyInstaller"
-$TemplateDir = $profile.env.TEMPLATE_DIR
-$Packages = $profile.packages
+$TemplateDir = $loaded_profile.env.TEMPLATE_DIR
+$Packages = $loaded_profile.packages
 Make-InstallerPackage $PackageName $TemplateDir $Packages
 Invoke-BoxStarterBuild $PackageName
+if (([Environment]::OSVersion).Version.Major -eq 10) {
+  choco upgrade -y flarevm.win10.preconfig.fireeye
+}
 if ($norestart) {
   Install-BoxStarterPackage -PackageName $PackageName -DisableReboots
 } else {
