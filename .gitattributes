@@ -1,0 +1,19 @@
+# Set default behaviour, in case users don't have core.autocrlf set.
+* text=auto
+
+# Explicitly declare text files we want to always be normalized and converted
+# to native line endings on checkout.
+*.md            text
+*.gitattributes text
+
+# Declare files that will always have CRLF line endings on checkout.
+*.ps1    text  eol=crlf
+*.psm1   text  eol=crlf
+*.psd1   text  eol=crlf
+*.psc1   text  eol=crlf
+*.ps1xml text  eol=crlf
+*.clixml text  eol=crlf
+*.xml    text  eol=crlf
+*.txt    text  eol=crlf
+*.nuspec text  eol=crlf
+*.reg    text  eol=crlf

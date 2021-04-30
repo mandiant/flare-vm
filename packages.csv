@@ -136,3 +136,4 @@ ncat.flare,Netcat utility, , Net, https://nmap.org/ncat/, cinst -y ncat.flare
 neo4j-community.fireeye,Installs start/stop scripts for Neo4j in the Utilities folder and disables auto start for Neo4j, common.fireeye - https://chocolatey.org/packages//jdk8 - https://chocolatey.org/packages//neo4j-community, Utilities, http://neo4j.com/, cinst -y neo4j-community.fireeye
 NetRipper.fireeye,NetRipper - Smart traffic sniffing for penetration testers, , Information Gathering,https://github.com/NytroRST/NetRipper, cinst -y NetRipper.fireeye
 NetshHelperBeacon.fireeye,Example DLL to load from Windows NetShell, , Exploitation,https://github.com/outflanknl/NetshHelperBeacon, cinst -y NetshHelperBeacon.fireeye
+UnAutoIt.fireeye, The Cross Platform AutoIt extractor, common.fireeye, Utilities, https://github.com/x0r19x91/UnAutoIt, cinst -y UnAutoIt.fireeye
