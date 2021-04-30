@@ -1,11 +1,17 @@
 {
+    "env": {
+        "VM_COMMON_DIR": "%ProgramData%\\FEVM",
+        "TOOL_LIST_DIR": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\FLARE",
+        "TOOL_LIST_SHORTCUT": "%UserProfile%\\Desktop\\FLARE.lnk",
+        "RAW_TOOLS_DIR": "%SystemDrive%\\Tools",
+        "TEMPLATE_DIR": "flarevm.installer.flare"
+    },
     "packages": [
         {"name": "dotnetfx"},
         {"name": "powershell"},
         {"name": "vcbuildtools.fireeye"},
         {"name": "cmder.fireeye"},
 
-        {"name": "vcpython27"},
         {
             "name": "python2.x86.nopath.flare",
             "x64Only": true,
@@ -66,7 +72,8 @@
         {"name": "kali_windowsbinaries.flare"},
 
         {"name": "volatility.flare", "x64Only": true},
-	{"name": "AutoItExtractor.fireeye"},
+        {"name": "AutoItExtractor.fireeye"},
+        {"name": "UnAutoIt.fireeye"},
         {"name": "Autopsy.fireeye"},
 
         {"name": "fileinsight.flare"},
@@ -117,7 +124,7 @@
         {"name": "yara.flare"},
         {"name": "kmdloader.flare"},
         {"name": "lordpe.flare"},
-        {"name": "googlechrome.flare"},
+        {"name": "googlechrome.fireeye"},
         {"name": "cyberchef.flare"},
         {"name": "py2exedecompiler.flare"},
         {"name": "pyinstxtractor.fireeye"},
@@ -158,10 +165,11 @@
 
         {"name": "malware-jail.fireeye"},
 
+        {"name": "vscode.fireeye", "args":"--parameters /NoDesktopIcon --paramsglobal"},
         {"name": "apktool.flare"},
+        {"name": "capa.fireeye", "x64Only": true},
         {"name": "flare-qdb.python.flare"},
-        {"name": "floss.python.flare"},
-        {"name": "fakenet-ng.python.flare"}
-
+        {"name": "flare-floss.fireeye"},
+        {"name": "fakenet-ng.python.fireeye"}
     ]
 }

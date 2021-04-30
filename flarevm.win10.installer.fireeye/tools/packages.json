@@ -4,7 +4,7 @@
         "TOOL_LIST_DIR": "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\FLARE",
         "TOOL_LIST_SHORTCUT": "%UserProfile%\\Desktop\\FLARE.lnk",
         "RAW_TOOLS_DIR": "%SystemDrive%\\Tools",
-        "TEMPLATE_DIR": "flarevm.win10.installer_dev.fireeye"
+        "TEMPLATE_DIR": "flarevm.win10.installer.fireeye"
     },
     "packages": [
         {"name": "dotnetfx"},
@@ -12,7 +12,6 @@
         {"name": "powershell"},
         {"name": "vcbuildtools.fireeye"},
         {"name": "cmder.fireeye"},
-        {"name": "vcpython27"},
         {
             "name": "python2.x86.nopath.flare",
             "x64Only": true,

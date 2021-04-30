@@ -1,27 +1,32 @@
-  
-      ______ _               _____  ______   __      ____  __ 
+
+      ______ _               _____  ______   __      ____  __
      |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
      | |__  | |       /  \  | |__) | |__ _____\ \  / /| \  / |
      |  __| | |      / /\ \ |  _  /|  __|______\ \/ / | |\/| |
      | |    | |____ / ____ \| | \ \| |____      \  /  | |  | |
      |_|    |______/_/    \_\_|  \_\______|      \/   |_|  |_|
-                        
+
       ________________________________________________________
-                           Developed by                     
+                           Developed by
 	                   flarevm@fireeye.com
-          FLARE (FireEye Labs Advanced Reverse Engineering)  
-      ________________________________________________________ 
+          FLARE (FireEye Labs Advanced Reverse Engineering)
+      ________________________________________________________
 
 <p align="center">
-  <img width="300" height="300" src="https://github.com/fireeye/flare-vm/blob/master/flarevm.png?raw=true" alt="FLARE VM"/>
-</p>                  
+  <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
+</p>
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
-Please see https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html for a blog on installing FLARE VM.
+Please see [https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html](https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html) for a blog on installing FLARE VM.
 
 Updates
 ===========
+
+## Version 3.0 Updates
+FLARE VM version `3.0` now supports Windows 10. The installer has been tested on Windows 10 VMs provided by Microsoft below:
+* Windows 10 with Microsoft Edge: [https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/)
+* Windows 10 development environment: [https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/](https://developer.microsoft.com/en-us/windows/downloads/virtual-machines/)
 
 ## Version 2.3 Updates
 Chocolatey now requires PowerShell v3 (or higher) and .NET 4.0 (or higher) due to recent upgrades to TLS 1.2. Please ensure .NET 4+ and PowerShell v3+ are installed prior to attempting FLARE VM installation. Below are links to download .NET 4.5 and WMF 5.1 (PowerShell 5.1).
@@ -30,88 +35,122 @@ Chocolatey now requires PowerShell v3 (or higher) and .NET 4.0 (or higher) due t
 * WMF 5.1 [https://www.microsoft.com/en-us/download/details.aspx?id=54616](https://www.microsoft.com/en-us/download/details.aspx?id=54616)
 
 ## Version 2.0 Updates
-Starting with version 2.0, FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
+Starting with version `2.0`, FLARE VM has introduced **breaking changes** with previous versions. A fresh installation in a clean Virtual Machine is recommended.
 
-Starting with version 2.0, FLARE VM uses the following environment variables: 
+Starting with version 2.0, FLARE VM uses the following environment variables:
   - `TOOL_LIST_DIR`: The default value is set to *`%PROGRAMDATA%`*`\Microsoft\Windows\Start Menu\Programs\FLARE`.
   - `TOOL_LIST_SHORTCUT`: The default value is set to *`%USERPROFILE%`*`\Desktop\FLARE.lnk`.
 
 The installer script sets those environment variables automatically. If there are issues during installation, please verify that those environment variables are set correctly.
 
+Installation
+=======================
 
-Installation (Install Script)
-=============================
+Requirements
+------------
+* 60 GB Hard Drive
+  * Additional space needed after VM is downloaded/installed
+* 2 GB RAM
 
-* Create and configure a new Windows Virtual Machine
-  * Ensure VM is updated completely. You may have to check for updates, reboot, and check again until no more remain 
+## Windows 10 Installation
+
+### Pre-installation Steps
+* Download one of the VMs from the links provided above
+  * Import the `.ovf` if necessary  
+* Disable Windows Defender by following the procedures outlined at:
+  * [https://www.howtogeek.com/howto/15788/how-to-uninstall-disable-and-remove-windows-defender-also-how-turn-it-off/](https://www.howtogeek.com/howto/15788/how-to-uninstall-disable-and-remove-windows-defender-also-how-turn-it-off/)
+* Additionally make sure to disable the following settings:
+  * Disable real-time protection
+  * Disable cloud-delivered protection
+  * Disable automatic sample submission
+  * Add the directory `C:\` to the exclusion list
 * Take a snapshot of your machine!
-* Download and copy `install.ps1` on your newly configured machine. 
+
+### Installations Steps
+* Download and copy [install.ps1](https://github.com/fireeye/flare-vm/raw/master/install.ps1) onto your new VM
+* Open `PowerShell` as an Administrator
+* Unblock the install file by running:
+  * `Unblock-File .\install.ps1`
+* Enable script execution by running:
+  * `Set-ExecutionPolicy Unrestricted`
+* Finally, execute the installer script as follow:
+  * `.\install.ps1`
+  * You can also pass your password as an argument: `.\install.ps1 -password <password>`
+
+### Post-installation Steps
+* If the background was not successfully set:
+  * Navigate to _`%PROGRAMDATA%`_`\chocolatey\lib\flarevm.win10.config.flare\tools` and right click `flarevm.png`
+  * Right click `flarevm.png` and select `Set as desktop background`
+* Update your VM's networking settings to `Host-Only`
+* Make it yours!
+  * Customize your taskbar with various shortcuts
+  * Customize your color scheme
+* Take a snapshot!
+
+## Windows 7 x64 Installation
+
+### Pre-Installations Steps
+* Create and configure a new Windows Virtual Machine
+  * FLARE VM is designed to be installed on Windows 7 Service Pack 1 or newer
+  * Allow for a total of 50-60 GB disk storage (including OS)
+  * Ensure VM is updated completely. You may have to check for updates, reboot, and check again until no more remain
+* Install .NET 4.5 and WMF 5.1 from the following links:
+  * .NET 4.5 [https://www.microsoft.com/en-us/download/details.aspx?id=30653](https://www.microsoft.com/en-us/download/details.aspx?id=30653)
+  * WMF 5.1 [https://www.microsoft.com/en-us/download/details.aspx?id=54616](https://www.microsoft.com/en-us/download/details.aspx?id=54616)
+  * Make sure you restart the VM to complete the installation
+* Take a snapshot of your machine!
+
+### Installation Steps
+* Download and copy [install.ps1](https://github.com/fireeye/flare-vm/raw/master/install.ps1) onto your newly configured machine
 * Open PowerShell as an Administrator
 * Enable script execution by running the following command:
   * `Set-ExecutionPolicy Unrestricted`
 * Finally, execute the installer script as follows:
   * `.\install.ps1`
   * You can also pass your password as an argument: `.\install.ps1 -password <password>`
-``
 
-The script will set up the Boxstarter environment and proceed to download and install the FLARE VM environment. You will be prompted for the Administrator password in order to automate host restarts during installation.
+### Post-installation Steps
+* If the background was not successfully set:
+  * Navigate to _`%PROGRAMDATA%`_`\chocolatey\lib\flarevm.config.flare\tools` and right click `flarevm.png`
+  * Right click `flarevm.png` and select `Set as desktop background`
+* Update your VM's networking settings to `Host-Only`
+* Make it yours!
+  * Customize your taskbar with various shortcuts
+  * Customize your color scheme
+* Take a snapshot!
 
-## Customizing packages
+Customized Package Selection
+======================
+You can know select which packages you wish to install!
+
 * *NOTE*: By customizing your own packages list, you will NOT automatically get the newly added packages by simply running `cup all`. You can always manually install a new package by using `cinst` or `choco install` command.
-* For a list of available packages to use, please refer to the following [URL](https://github.com/fireeye/flare-vm/packages.csv)
+* For a list of available packages to use, please refer to [packages.csv](packages.csv)
 * Create and configure a new Windows Virtual Machine.
 * Take your initial snapshot before installing FLARE VM
-* Download and copy [`install.ps1`](https://github.com/fireeye/flare-vm/blob/master/install.ps1) on to your new VM
-* Download and copy [`profile.json`](https://github.com/fireeye/flare-vm/blob/master/profile.json) on to your new VM
-* Download and copy [`flarevm.installer.flare`](https://github.com/fireeye/flare-vm/tree/master/flarevm.installer.flare) directory on to your new VM
+* Download and copy [`install.ps1`](install.ps1) on to your new VM
+* Download and copy [`profile.json`](profile.json) on to your new VM
+* Download and copy [`flarevm.installer.flare`](flarevm.installer.flare) or [`flarevm.win10.installer.fireeye`](flarevm.win10.installer.fireeye) directory on to your new VM
 * Modify the `profile.json` file:
   * Most of the fields within `env` data should be left unchanged.
-  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to the following [URL](https://github.com/fireeye/flare-vm/blob/master/packages.csv) for a full list of packages available
+  * Modify the `TEMPLATE_DIR` entry to match the correct template for your VM.
+  * Modify the `packages` list in the `JSON` file to only include the packages you would like to install. Please refer to [packages.csv](packages.csv) for a full list of packages available
 * Open `PowerShell` as an Administrator
 * Enable script execution by running the following command:
   * `Set-ExecutionPolicy unrestricted`
-* Finally, execute the installer by providing `profile.json` using the `-profile_file` switch, assuming `profile.json`, `install.ps1` and `flarevm.installer.flare` are all in the same directory:
+* Finally, execute the installer by providing `profile.json` using the `-profile_file` switch, assuming `profile.json`, `install.ps1` and the template directory (`flarevm.installer.flare` or `flarevm.win10.installer.fireeye`) are all in the same directory:
   * `.\install.ps1 -profile_file profile.json`
   * Optionally, you can also pass the following flags:
     * `-password <current_user_password>`: Use the specified password instead of prompting user
 
-Installation (Manually)
-=======================
-
-First, install BoxStarter. All commands are expected to be executed with Administrator privileges. 
-
-If you are using PowerShell v2:
-
-```
-Set-ExecutionPolicy Unrestricted
-iex ((New-Object System.Net.WebClient).DownloadString('http://boxstarter.org/bootstrapper.ps1')); get-boxstarter -Force
-```
-
-And PowerShell v3 or newest:
-
-```
-Set-ExecutionPolicy Unrestricted
-. { iwr -useb http://boxstarter.org/bootstrapper.ps1 } | iex; get-boxstarter -Force
-```
-
-Next, you can deploy FLARE VM environment as follows:
-
-```
-Install-BoxstarterPackage -PackageName https://raw.githubusercontent.com/fireeye/flare-vm/master/install.ps1
-```
-
-NOTE: The old installation method using the webinstaller link is now deprecated.
-
-
-Installing a new package
+Installing Additional Packages
 ========================
 
-FLARE VM uses the chocolatey public and custom FLARE package repositories. It is easy to install a new package. For example, enter the following command as Administrator to deploy x64dbg on your system:
+FLARE VM uses both the Chocolatey public and custom FireEye package repositories making it easy to install additional packages. For example, enter the command below as an Administrator to install `x64dbg` on your system:
 
     cinst x64dbg
 
 
-Staying up to date
+Staying up to Date
 ==================
 
 Type the following command to update all of the packages to the most recent version:
@@ -121,9 +160,9 @@ Type the following command to update all of the packages to the most recent vers
 Malware Analysis with FLARE VM
 ==============================
 
-For an example malware analysis session using FLARE VM, please see the blog at https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html.
+For an example malware analysis session using FLARE VM, please see the blog at [https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html](https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html).
 
-> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html.   
+> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog [https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html](https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html).
 
 Installed Tools
 ===============
@@ -175,6 +214,8 @@ Disassemblers
 AutoIt
 ---------
 * AutoItExtractor
+* UnAutoIt
+* Exe2Aut
 
 Flash
 ---------
@@ -284,7 +325,6 @@ Utilities
 * CyberChef
 * KernelModeDriverLoader
 * Process Dump
-* Exe2Aut
 * Innounp
 * InnoExtract
 * UniExtract2
@@ -356,7 +396,7 @@ in creating handy and versatile toolboxes for malware analysis environments. It
 provides a convenient interface for them to obtain a useful set of analysis
 tools directly from their original sources. Installation and use of this script
 is subject to the Apache 2.0 License.
- 
+
 You as a user of this script must review, accept and comply with the license
 terms of each downloaded/installed package listed below. By proceeding with the
 installation, you are accepting the license terms of each package, and
@@ -473,4 +513,5 @@ https://github.com/R3MRUM/PSDecode
 https://sourceforge.net/projects/pyinstallerextractor/
 https://blog.didierstevens.com/2018/12/10/update-rtfdump-py-version-0-0-9/
 https://gitlab.com/x0r19x91/autoit-extractor/-/blob/master/LICENSE
+https://github.com/fireeye/capa
 </pre>

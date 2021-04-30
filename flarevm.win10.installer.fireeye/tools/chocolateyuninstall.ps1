@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'Continue'
 
-$packageName = 'commandovm.win10.installer.fireeye'
+$packageName = 'flarevm.win10.installer.fireeye'
 $toolsDir    = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 
 # Set desktop background to black

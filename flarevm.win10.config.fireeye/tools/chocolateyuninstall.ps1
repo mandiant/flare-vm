@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$packageName = 'flarevm.win10.config.flare'
+$packageName = 'flarevm.win10.config.fireeye'
 
 try {
 	$desktopReadme = Join-Path ${Env:UserProfile} "Desktop\README.txt"

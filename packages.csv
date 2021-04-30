@@ -14,13 +14,15 @@ apimonitor.flare,Allows creation of process traces that include all windows APIs
 apktool.flare,A tool for reverse engineering  Android apps, common.fireeye - https://chocolatey.org/packages//apktool, Android, https://ibotpeaches.github.io/Apktool/, cinst -y apktool.flare
 ASREPRoast.fireeye,Project that retrieves crackable hashes from KRB5 AS-REP responses for users without kerberoast preauthentication enabled., , Password Attacks,https://github.com/HarmJ0y/ASREPRoast, cinst -y ASREPRoast.fireeye
 autoit.fireeye,Creates a shortcut in the Utilities folder, common.fireeye - https://chocolatey.org/packages//autoit, Utilities, http://www.autoitscript.com/autoit3, cinst -y autoit.fireeye
-Autopsy.fireeye ,Autopsy is a digital forensics platform and graphical interface to The Sleuth Kit¨ and other digital forensics tools.,common.fireeye,Forensic,https://github.com/sleuthkit/autopsy,cinst -y Autopsy.fireeye 
+AutoItExtractor.fireeye, View and Extract Resources in an AutoIT Compiled Executable., common.fireeye, Utilities, https://gitlab.com/x0r19x91/autoit-extractor/, cinst -y AutoItExtractor.fireeye
+Autopsy.fireeye ,Autopsy is a digital forensics platform and graphical interface to The Sleuth Kitï¿½ and other digital forensics tools.,common.fireeye,Forensic,https://github.com/sleuthkit/autopsy,cinst -y Autopsy.fireeye 
 binaryninja.flare,A dissassembler for reverse engineers, , Disassemblers, https://binary.ninja/demo.html, cinst -y binaryninja.flare
 BloodHound.fireeye,BloodHound uses graph theory to reveal the hidden and often unintended relationships within an Active Directory environment., , Information Gathering,https://github.com/BloodHoundAD/BloodHound, cinst -y BloodHound.fireeye
 burp.free.fireeye,Creates a shortcut in the Web Application directory for BurpSuite Free Edition, common.fireeye - https://chocolatey.org/packages//burp-suite-free-edition, Web Application, https://portswigger.net/burp, cinst -y burp.free.fireeye
 burp.free.flare,Creates a shortcut in the Web Application directory for BurpSuite Free Edition, common.fireeye - https://chocolatey.org/packages//burp-suite-free-edition, Web Application, https://portswigger.net/burp, cinst -y burp.free.flare
 bytecode-viewer.flare,A Java 8+ Jar & Android APK Reverse Engineering Suite, common.fireeye - https://chocolatey.org/packages//javaruntime, Java, https://bytecodeviewer.com/, cinst -y bytecode-viewer.flare
 bytehist.fireeye,A tool for generating byte-usage-histograms for all types of files with a special focus on binary executables in PE-format (Windows), , Utilities, https://cert.at/downloads/software/bytehist_en.html, cinst -y bytehist.fireeye
+capa.fireeye, capa detects capabilities in executable files, commom.fireeye, Utilities, https://github.com/fireeye/capa, cinst -y capa.fireeye
 CheckPlease.fireeye,Sandbox evasion modules, , Evasion,https://github.com/Arvanaghi/CheckPlease, cinst -y CheckPlease.fireeye
 citrix-receiver.fireeye,Creates a Citrix shortcut in the Networking Tools folder and disables Citrix auto start, common.fireeye - https://chocolatey.org/packages//citrix-receiver, Networking, http://www.citrix.com/downloads/citrix-receiver/windows/, cinst -y citrix-receiver.fireeye
 cmder.fireeye,Creates a shortcut in the Utilities directory - pins cmder to taskbar - and changes default ls alias to deconflict with unxUtils package, common.fireeye - https://chocolatey.org/packages//cmder, Utilities, http://cmder.net/, cinst -y cmder.fireeye
@@ -123,6 +125,7 @@ libraries.python3.flare,Python 3 libraries, common.fireeye - https://chocolatey.
 lordpe.flare,PE utility, , Utilities, http://www.woodmann.com/collaborative/tools/index.php/LordPE, cinst -y lordpe.flare
 luckystrike.fireeye,A PowerShell based utility for the creation of malicious Office macro documents., , Exploitation,https://github.com/curi0usJack/luckystrike, cinst -y luckystrike.fireeye
 MailSniper.fireeye,MailSniper is a penetration testing tool for searching through email in a Microsoft Exchange environment for specific terms. It can be used as a non-administrative user to search their own email or by an administrator to search the mailboxes of every user in a domain., , Password Attacks,https://github.com/dafthack/MailSniper, cinst -y MailSniper.fireeye
+malware-jail.fireeye, Sandbox for semi-automatic Javascript malware analysis -- written in Node.js, common.fireeye - node.js, Javascript, https://github.com/HynekPetrak/malware-jail, cinst -y malware-jail.fireeye
 MAP.flare,Malware Analyst Pack, , Utilities, http://sandsprite.com/iDef/MAP/, cinst -y MAP.flare
 metasploit.flare,Metasploit for windows, , Exploitation, https://github.com/rapid7/metasploit-framework, cinst -y metasploit.flare
 metatwin.fireeye,The project is designed as a file resource cloner. Metadata including digital signature is extracted from one file and injected into another., , Exploitation,https://github.com/threatexpress/metatwin, cinst -y metatwin.fireeye
@@ -134,3 +137,4 @@ ncat.flare,Netcat utility, , Net, https://nmap.org/ncat/, cinst -y ncat.flare
 neo4j-community.fireeye,Installs start/stop scripts for Neo4j in the Utilities folder and disables auto start for Neo4j, common.fireeye - https://chocolatey.org/packages//jdk8 - https://chocolatey.org/packages//neo4j-community, Utilities, http://neo4j.com/, cinst -y neo4j-community.fireeye
 NetRipper.fireeye,NetRipper - Smart traffic sniffing for penetration testers, , Information Gathering,https://github.com/NytroRST/NetRipper, cinst -y NetRipper.fireeye
 NetshHelperBeacon.fireeye,Example DLL to load from Windows NetShell, , Exploitation,https://github.com/outflanknl/NetshHelperBeacon, cinst -y NetshHelperBeacon.fireeye
+UnAutoIt.fireeye, The Cross Platform AutoIt extractor, common.fireeye, Utilities, https://github.com/x0r19x91/UnAutoIt, cinst -y UnAutoIt.fireeye
