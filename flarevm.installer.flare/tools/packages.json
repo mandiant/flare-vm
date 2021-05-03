@@ -170,6 +170,6 @@
         {"name": "capa.fireeye", "x64Only": true},
         {"name": "flare-qdb.python.flare"},
         {"name": "flare-floss.fireeye"},
-        {"name": "fakenet-ng.python.fireeye"}
+        {"name": "fakenet-ng.fireeye"}
     ]
 }

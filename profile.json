@@ -166,7 +166,7 @@
         {"name": "apktool.flare"},
         {"name": "flare-qdb.python.flare"},
         {"name": "floss.python.flare"},
-        {"name": "fakenet-ng.python.flare"}
+        {"name": "fakenet-ng.flare"}
 
     ]
 }
