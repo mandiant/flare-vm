@@ -121,7 +121,7 @@ Requirements
 
 Customized Package Selection
 ======================
-You can know select which packages you wish to install!
+You can now select which packages you wish to install!
 
 * *NOTE*: By customizing your own packages list, you will NOT automatically get the newly added packages by simply running `cup all`. You can always manually install a new package by using `cinst` or `choco install` command.
 * For a list of available packages to use, please refer to [packages.csv](packages.csv)
