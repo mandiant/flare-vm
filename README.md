@@ -8,7 +8,7 @@
 
       ________________________________________________________
                            Developed by
-	               flarevm@mandiant.com
+	                   flarevm@mandiant.com
                      FLARE Team at Mandiant
       ________________________________________________________
 
