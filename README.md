@@ -8,8 +8,8 @@
 
       ________________________________________________________
                            Developed by
-	                   flarevm@fireeye.com
-          FLARE (FireEye Labs Advanced Reverse Engineering)
+	               flarevm@mandiant.com
+                     FLARE Team at Mandiant
       ________________________________________________________
 
 <p align="center">
