@@ -18,7 +18,7 @@
 
 Welcome to FLARE VM - a fully customizable, Windows-based security distribution for malware analysis, incident response, penetration testing, etc.
 
-Please see [https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html](https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html) for a blog on installing FLARE VM.
+Please see [https://www.mandiant.com/resources/flare-vm-update](https://www.mandiant.com/resources/flare-vm-update) for a blog on installing FLARE VM.
 
 Updates
 ===========
@@ -145,7 +145,7 @@ You can now select which packages you wish to install!
 Installing Additional Packages
 ========================
 
-FLARE VM uses both the Chocolatey public and custom FireEye package repositories making it easy to install additional packages. For example, enter the command below as an Administrator to install `x64dbg` on your system:
+FLARE VM uses both the Chocolatey public and custom Mandiant package repositories making it easy to install additional packages. For example, enter the command below as an Administrator to install `x64dbg` on your system:
 
     cinst x64dbg
 
@@ -160,9 +160,9 @@ Type the following command to update all of the packages to the most recent vers
 Malware Analysis with FLARE VM
 ==============================
 
-For an example malware analysis session using FLARE VM, please see the blog at [https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html](https://www.fireeye.com/blog/threat-research/2017/07/flare-vm-the-windows-malware.html).
+For an example malware analysis session using FLARE VM, please see the blog at [https://www.mandiant.com/resources/flare-vm-the-windows-malware](https://www.mandiant.com/resources/flare-vm-the-windows-malware).
 
-> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog [https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html](https://www.fireeye.com/blog/threat-research/2018/11/flare-vm-update.html).
+> The installation instructions referenced in the above blog post are outdated. For installation instructions, follow the steps outlined in the blog [https://www.mandiant.com/resources/flare-vm-update](https://www.mandiant.com/resources/flare-vm-update).
 
 Installed Tools
 ===============
