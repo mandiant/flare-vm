@@ -79,7 +79,7 @@ Requirements
 
 ### Post-installation Steps
 * If the background was not successfully set:
-  * Navigate to _`%PROGRAMDATA%`_`\chocolatey\lib\flarevm.win10.config.flare\tools` and right click `flarevm.png`
+  * Navigate to _`%PROGRAMDATA%`_`\chocolatey\lib\flarevm.win10.config.flare\tools`
   * Right click `flarevm.png` and select `Set as desktop background`
 * Update your VM's networking settings to `Host-Only`
 * Make it yours!
@@ -111,7 +111,7 @@ Requirements
 
 ### Post-installation Steps
 * If the background was not successfully set:
-  * Navigate to _`%PROGRAMDATA%`_`\chocolatey\lib\flarevm.config.flare\tools` and right click `flarevm.png`
+  * Navigate to _`%PROGRAMDATA%`_`\chocolatey\lib\flarevm.config.flare\tools`
   * Right click `flarevm.png` and select `Set as desktop background`
 * Update your VM's networking settings to `Host-Only`
 * Make it yours!
