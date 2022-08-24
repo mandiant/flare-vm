@@ -306,7 +306,7 @@ if ($norestart) {
 }
 $Boxstarter.NoPassword = $false # Is this a machine with no login password?
 $Boxstarter.AutoLogin = $true # Save my password securely and auto-login after a reboot
-Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/fireeye/api/v2;https://chocolatey.org/api/v2"
+Set-BoxstarterConfig -NugetSources "https://myget.org/F/fireeye/api/v2;https://chocolatey.org/api/v2"
 
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
@@ -357,7 +357,7 @@ if ([System.Environment]::OSVersion.Version.Major -eq 10) {
 
 # Needed for many applications
 # Set up the correct feed
-$fireeyeFeed = "https://www.myget.org/F/fireeye/api/v2"
+$fireeyeFeed = "https://myget.org/F/fireeye/api/v2"
 iex "choco sources add -n=fireeye -s $fireeyeFeed --priority 1"
 iex "choco upgrade -y vcredist-all.flare"
 iex "refreshenv"
