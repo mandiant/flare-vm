@@ -311,6 +311,13 @@ Set-BoxstarterConfig -NugetSources "https://www.myget.org/F/fireeye/api/v2;https
 # Go ahead and disable the Windows Updates
 Disable-MicrosoftUpdate
 
+# Attempt to disable Microsoft Store Updates
+try {
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -PropertyType DWord -Value 2
+} catch {
+  Write-Warning "Failed to disable Microsoft Store updates"
+}
+ 
 # Attempt to disable Windows Defender
 try {
   Get-Service WinDefend | Stop-Service -Force
