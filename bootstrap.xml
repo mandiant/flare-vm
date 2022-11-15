@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <envs>
+        <env name="VM_COMMON_DIR" value="%ProgramData%\_VM"/>
+        <env name="TOOL_LIST_DIR" value="%ProgramData%\Microsoft\Windows\Start Menu\Programs\Tools"/>
+        <env name="TOOL_LIST_SHORTCUT" value="%UserProfile%\Desktop\Tools.lnk"/>
+        <env name="RAW_TOOLS_DIR" value="%SystemDrive%\Tools"/>
+    </envs>
+    <packages>
+        <package name="git.install"/>
+        <package name="die.vm"/>
+        <package name="diesss.vm"/>
+        <package name="map.vm"/>
+        <package name="7zip.vm"/>
+        <package name="capa.vm"/>
+        <package name="peid.vm"/>
+        <package name="cmder.vm"/>
+        <package name="common.vm"/>
+        <package name="cygwin.vm"/>
+        <package name="ghidra.vm"/>
+        <package name="x64dbg.vm"/>
+        <package name="idafree.vm"/>
+        <package name="ollydbg.vm"/>
+    </packages>
+</config>
