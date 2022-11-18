@@ -1,61 +1,132 @@
-###########################################
-#
-# FLARE VM Installation Script
-#
-# To execute this script:
-#   1) Open PowerShell window as administrator
-#   2) Allow script execution by running command "Set-ExecutionPolicy Unrestricted"
-#   3) Unblock the install script by running "Unblock-File .\install.ps1"
-#   4) Execute the script by running ".\install.ps1"
-#
-###########################################
+<#
+    .SYNOPSIS
+        Installation script for FLARE VM.
+        ** Only install on a virtual machine! **
+
+    .DESCRIPTION
+        Installation script for FLARE VM that leverages Chocolatey and Boxstarter.
+        Script verifies minimal settings necessary to install FLARE VM on a virtual machine.
+        Script allows users to customize package selection and envrionment variables used in FLARE VM via a GUI before installation begins.
+        A CLI-only mode is also available by providing specific command-line arugment switches.
+
+        To execute this script:
+          1) Open PowerShell window as administrator
+          2) Allow script execution by running command "Set-ExecutionPolicy Unrestricted"
+          3) Unblock the install script by running "Unblock-File .\install.ps1"
+          4) Execute the script by running ".\install.ps1"
+
+    .PARAMETER password
+        Current user password to allow reboot resiliency via Boxstarter. The script prompts for the password if no provided.
+
+    .PARAMETER noPassword
+        Switch parameter indicating a password is not needed for reboots.
+
+    .PARAMETER customConfig
+        Path to a configuration XML file. May be a file path or URL.
+
+    .PARAMETER noWait
+        Switch parameter to skip installation message before installation begins.
+
+    .PARAMETER noGui
+        Switch parameter to skip customization GUI.
+
+    .PARAMETER noReboots
+        Switch parameter to prevent reboots.
+
+    .PARAMETER noChecks
+        Switch parameter to skip validation checks (not recommended).
+
+    .EXAMPLE
+        .\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
+
+        Description
+        ---------------------------------------
+        CLI-only installation with minimal user interaction (some packages may require user interaction).
+
+    .EXAMPLE
+        .\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml"
+
+        Description
+        ---------------------------------------
+        Use a custom configuration XML file hosted on the internet.
+
+    .LINK
+        https://github.com/mandiant/flare-vm
+        https://github.com/mandiant/VM-Packages
+#>
 param (
   [string]$password = $null,
+  [switch]$noPassword,
   [string]$customConfig = $null,
-  [bool]$noChecks = $false,
-  [bool]$noEdit = $false,
-  [bool]$noWait = $false
+  [switch]$noWait,
+  [switch]$noGui,
+  [switch]$noReboots,
+  [switch]$noChecks
 )
 
 # Set path to user's desktop
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 Set-Location -Path $desktopPath -PassThru | Out-Null
 
-if (-not $noChecks) {
+if (-not $noChecks.IsPresent) {
     # Ensure script is ran as administrator
     Write-Host "[+] Checking if script is running as administrator..."
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
     if (-Not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         Write-Host "`t[!] Please run this script as administrator" -ForegroundColor Red
-        Read-Host "Press any key to continue..."
+        Read-Host "Press any key to exit..."
         exit 1
     } else {
         Write-Host "`t[+] Running as administrator" -ForegroundColor Green
         Start-Sleep -Milliseconds 500
     }
 
-    # Ensure Tamper Protection is disabled
+    # Ensure execution policy is unrestricted
+    Write-Host "[+] Checking if execution policy is unrestricted..."
+    if ((Get-ExecutionPolicy).ToString() -ne "Unrestricted") {
+        Write-Host "`t[!] Please run this script after updating your execution policy to unrestricted" -ForegroundColor Red
+        Write-Host "`t[-] Hint: Set-ExecutionPolicy Unrestricted" -ForegroundColor Yellow
+        Read-Host "Press any key to exit..."
+        exit 1
+    } else {
+        Write-Host "`t[+] Execution policy is unrestricted" -ForegroundColor Green
+        Start-Sleep -Milliseconds 500
+    }
+
+    # Check if Tamper Protection is disabled
     Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
     if (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection") {
-        if ($(Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection").TamperProtection -ne 0) {
-            Write-Host "`t[!] Please disable Windows Defender Tamper Protection and retry install" -ForegroundColor Red
+        if ($(Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection").TamperProtection -notin @(0,4)) {
+            Write-Host "`t[!] Please disable Tamper Protection, reboot, and rerun installer" -ForegroundColor Red
+            Write-Host "`t[+] Hint: hhttps://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87" -ForegroundColor Yellow
             Write-Host "`t[+] Hint: https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html" -ForegroundColor Yellow
-            Read-Host "Press any key to continue..."
-            exit 1
+            Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
+            Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
+            Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+            $response = Read-Host
+            if ($response -notin @("y","Y")) {
+                exit 1
+            }
         } else {
             Write-Host "`t[+] Tamper Protection is disabled" -ForegroundColor Green
             Start-Sleep -Milliseconds 500
         }
     }
 
-    # Ensure Defender is disabled
+    # Check if Defender is disabled
     Write-Host "[+] Checking if Windows Defender service is disabled..."
     $defender = Get-Service -Name WinDefend
-    if ($defender.Status -eq "Running"){
-        Write-Host "`t[!] Please disable Windows Defender through Group Policy and retry install" -ForegroundColor Red
+    if ($defender.Status -eq "Running") {
+        Write-Host "`t[!] Please disable Windows Defender through Group Policy, reboot, and rerun installer" -ForegroundColor Red
         Write-Host "`t[+] Hint: https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo" -ForegroundColor Yellow
-        Read-Host "Press any key to continue..."
-        exit 1
+        Write-Host "`t[+] Hint: https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10" -ForegroundColor Yellow
+        Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
+        Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
+        Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
     } else {
         Write-Host "`t[+] Defender is disabled" -ForegroundColor Green
         Start-Sleep -Milliseconds 500
@@ -67,53 +138,54 @@ if (-not $noChecks) {
         Write-Host "`t[!] Windows 7 is no longer supported / tested" -ForegroundColor Yellow
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
         $response = Read-Host
-        if ($response -ne "Y"){
+        if ($response -notin @("y","Y")) {
             exit 1
         }
     }
 
-    # Ensure host has been tested
-    # TODO: Add more build numbers
+    # Check if host has been tested
     $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
     $validVersions = @(17763)
     if ($osVersion -notin $validVersions) {
-        Write-Host "`t[!] Windows version $osVersion has not been tested, please use Windows 10 version 1809" -ForegroundColor Yellow
+        Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($validVersions -join ', ')" -ForegroundColor Yellow
+        Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
         $response = Read-Host
-        if ($response -ne "Y"){
+        if ($response -notin @("y","Y")) {
             exit 1
         }
     } else {
         Write-Host "`t[+] Installing on Windows version $osVersion" -ForegroundColor Green
     }
 
-    # Ensure host has enough disk space
-    # TODO: Decided the actual minimum size recommendation
-    # TODO: Refactor to allow user to choose which drive Chocolatey will install packages by default and check that drive
+    # Check if host has enough disk space
     Write-Host "[+] Checking if host has enough disk space..."
-    $disk = Get-PSDrive C
+    $disk = Get-PSDrive (Get-Location).Drive.Name
     Start-Sleep -Seconds 1
     if (-Not (($disk.used + $disk.free)/1GB -gt 58.8)) {
-        Write-Host "`t[!] Install requires a minimum 60 GB hard drive space, please increase hard drive space to continue" -ForegroundColor Red
+        Write-Host "`t[!] A minimum of 60 GB hard drive space is preferred. Please increase hard drive space of the VM, reboot, and retry install" -ForegroundColor Red
+        Write-Host "`t[+] If you have multiple drives, you may change the tool installation location via the envrionment variable %RAW_TOOLS_DIR% in config.xml or GUI" -ForegroundColor Yellow
+        Write-Host "`t[+] However, packages provided from the Chocolatey community repository will install to their default location" -ForegroundColor Yellow
+        Write-Host "`t[+] See: https://stackoverflow.com/questions/19752533/how-do-i-set-chocolatey-to-install-applications-onto-another-drive" -ForegroundColor Yellow
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
         $response = Read-Host
-        if ($response -ne "Y"){
+        if ($response -notin @("y","Y")) {
             exit 1
         }
     } else {
         Write-Host "`t[+] Disk is larger than 60 GB" -ForegroundColor Green
     }
 
-    # Ensure system is a virtual machine
+    # Check if system is a virtual machine
     $virtualModels = @('VirtualBox', 'VMware Virtual Platform', 'Virtual Machine')
     if ((Get-WmiObject win32_computersystem).model -notin $virtualModels) {
         Write-Host "`t[!] You are not on a virual machine or have hardened your machine to not appear as a virtual machine" -ForegroundColor Red
         Write-Host "`t[!] Please do NOT install this on your host system as it can't be uninstalled completely" -ForegroundColor Red
-        Write-Host "`t[!] Please install on a virtual machine" -ForegroundColor Red
-        Write-Host "`t[!] Only continue if know what you are doing!" -ForegroundColor Red
+        Write-Host "`t[!] ** Please only install on a virtual machine **" -ForegroundColor Red
+        Write-Host "`t[!] ** Only continue if you know what you are doing! **" -ForegroundColor Red
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
         $response = Read-Host
-        if ($response -ne "Y"){
+        if ($response -notin @("y","Y")) {
             exit 1
         }
     }
@@ -121,55 +193,76 @@ if (-not $noChecks) {
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Do you need to take a VM snapshot before continuing? (Y/N): " -ForegroundColor Yellow -NoNewline
     $response = Read-Host
-    if ($response -ne "N") {
-        Write-Host "[+] Exiting..." -ForegroundColor Red
+    if ($response -notin @("n","N")) {
         exit 1
     }
 }
 
-# Get user credentials for autologin during reboots
-Write-Host "[+] Getting user credentials ..."
-Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
-if ([string]::IsNullOrEmpty($password)) {
-    $credentials = Get-Credential ${Env:username}
-} else {
-    $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
-    $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:username}, $securePassword
+if (-not $noPassword.IsPresent -and [string]::IsNullOrEmpty($password)) {
+    # Get user credentials for autologin during reboots
+    Write-Host "[+] Getting user credentials ..."
+    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
+    if ([string]::IsNullOrEmpty($password)) {
+        $credentials = Get-Credential ${Env:username}
+    } else {
+        $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
+        $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:username}, $securePassword
+    }
 }
 
-Write-Host "`n[+] Beginning Install...`n" -ForegroundColor Green
-
-# Install Boxstarter
-Write-Host "[+] Installing Boxstarter" -ForegroundColor Green
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-iex ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
-Get-Boxstarter -Force
-
-# Fix verbosity issues with Boxstarter v3
-# See: https://github.com/chocolatey/boxstarter/issues/501
-$fileToFix = "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\Chocolatey.ps1"
-$offendingString = 'if ($val -is [string] -or $val -is [boolean]) {'
-if ((Get-Content $fileToFix -raw) -contains $offendingString) {
-    $fixString = 'if ($val -is [string] -or $val -is [boolean] -or $val -is [system.management.automation.actionpreference]) {'
-    ((Get-Content $fileToFix -raw) -replace [regex]::escape($offendingString),$fixString) | Set-Content $fileToFix
+# Check Chocolatey and Boxstarter versions
+$boxstarterVersionGood = $false
+$chocolateyVersionGood = $false
+if(${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.exe")) {
+    $version = choco --version
+    $chocolateyVersionGood = [System.Version]$version -ge [System.Version]"0.10.13"
+    choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
+    $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.0"
 }
-$fileToFix = "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\invoke-chocolatey.ps1"
-$offendingString = 'Verbose           = $VerbosePreference'
-if ((Get-Content $fileToFix -raw) -contains $offendingString) {
-    $fixString = 'Verbose           = ($global:VerbosePreference -eq "Continue")'
-    ((Get-Content $fileToFix -raw) -replace [regex]::escape($offendingString),$fixString) | Set-Content $fileToFix
+
+# Install Chocolatey and Boxstarter if needed
+if (-not ($chocolateyVersionGood -and $boxstarterVersionGood)) {
+    Write-Host "[+] Installing Boxstarter..." -ForegroundColor Cyan
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
+    Get-Boxstarter -Force
+
+    # Fix verbosity issues with Boxstarter v3
+    # See: https://github.com/chocolatey/boxstarter/issues/501
+    $fileToFix = "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\Chocolatey.ps1"
+    $offendingString = 'if ($val -is [string] -or $val -is [boolean]) {'
+    if ((Get-Content $fileToFix -raw) -contains $offendingString) {
+        $fixString = 'if ($val -is [string] -or $val -is [boolean] -or $val -is [system.management.automation.actionpreference]) {'
+        ((Get-Content $fileToFix -raw) -replace [regex]::escape($offendingString),$fixString) | Set-Content $fileToFix
+    }
+    $fileToFix = "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\invoke-chocolatey.ps1"
+    $offendingString = 'Verbose           = $VerbosePreference'
+    if ((Get-Content $fileToFix -raw) -contains $offendingString) {
+        $fixString = 'Verbose           = ($global:VerbosePreference -eq "Continue")'
+        ((Get-Content $fileToFix -raw) -replace [regex]::escape($offendingString),$fixString) | Set-Content $fileToFix
+    }
+    Start-Sleep -Milliseconds 500
 }
-Start-Sleep -Milliseconds 500
 Import-Module "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\boxstarter.chocolatey.psd1" -Force
 
+# Attempt to disable updates (i.e., windows updates and store updates)
+Write-Host "[+] Attempting to disable updates..."
+Disable-MicrosoftUpdate
+try {
+  New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -PropertyType DWord -Value 2 -ErrorAction Stop -Force | Out-Null
+} catch {
+  Write-Host "`t[!] Failed to disable Microsoft Store updates" -ForegroundColor Red
+}
+
 # Set Boxstarter options
-$Boxstarter.RebootOk = $true
-$Boxstarter.NoPassword = $false
+$Boxstarter.RebootOk = (-not $noReboots.IsPresent)
+$Boxstarter.NoPassword = $noPassword.IsPresent
 $Boxstarter.AutoLogin = $true
 $global:VerbosePreference = "SilentlyContinue"
 Set-BoxstarterConfig -NugetSources "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2;https://chocolatey.org/api/v2"
 
 # Set Chocolatey options
+Write-Host "[+] Updating Chocolatey settings..."
 choco sources add -n="vm-packages" -s "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2" --priority 1
 choco feature enable -n allowGlobalConfirmation
 choco feature enable -n allowEmptyChecksums
@@ -188,99 +281,81 @@ powercfg -change -hibernate-timeout-ac 0 | Out-Null
 powercfg -change -hibernate-timeout-dc 0 | Out-Null
 
 Write-Host "[+] Checking for configuration file..."
+$configPath = Join-Path $desktopPath "config.xml"
 if ([string]::IsNullOrEmpty($customConfig)) {
     # Download configuration file from GitHub
-    $configPath = Join-Path $desktopPath "config.xml"
     $configPathUrl = 'https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml'
     if (-Not (Test-Path $configPath)) {
         Write-Host "[+] Downloading configuration file..."
         (New-Object System.Net.WebClient).DownloadFile($configPathUrl, $configPath)
     }
-    if (-Not (Test-Path $configPath)) {
-        Write-Host "`t[!] Configuration file missing: " $configPath -ForegroundColor Red
-        Write-Host "`t[-] Please download config.xml from $configPathUrl to your desktop" -ForegroundColor Yellow
-        Write-Host "`t[-] Is the file on your desktop? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -ne "Y"){
-            exit 1
-        }
-        if (-Not (Test-Path $configPath)) {
-            Write-Host "`t[!] Configuration file still missing: " $configPath -ForegroundColor Red
-            Write-Host "`t[!] Exiting..." -ForegroundColor Red
-            Start-Sleep 3
-            exit 1
-        }
-    }
 } else {
-    # User user-provided configuration file
-    if (-not (Test-Path $customConfig)) {
-        Write-Host "`t[!] Configuration file path is invalid: " $customConfig -ForegroundColor Red
+    if ($customConfig.StartsWith("http")) {
+        # Download configuration file from user-provided URL
+        Write-Host "[+] Downloading configuration file..."
+        (New-Object System.Net.WebClient).DownloadFile($customConfig, $configPath)
+    } else {
+        $configPath = $customConfig
+    }
+}
+
+# Check the configuration file exists
+if (-Not (Test-Path $configPath)) {
+    Write-Host "`t[!] Configuration file missing: " $configPath -ForegroundColor Red
+    Write-Host "`t[-] Please download config.xml from $configPathUrl to your desktop" -ForegroundColor Yellow
+    Write-Host "`t[-] Is the file on your desktop? (Y/N): " -ForegroundColor Yellow -NoNewline
+    $response = Read-Host
+    if ($response -notin @("y","Y")) {
+        exit 1
+    }
+    if (-Not (Test-Path $configPath)) {
+        Write-Host "`t[!] Configuration file still missing: " $configPath -ForegroundColor Red
         Write-Host "`t[!] Exiting..." -ForegroundColor Red
         Start-Sleep 3
         exit 1
     }
-    $configPath = $customConfig
 }
 
 # Get config contents
 Start-Sleep 1
 $configXml = [xml](Get-Content $configPath)
 
-if (-not $noEdit) {
+if (-not $noGui.IsPresent) {
     Write-Host "[+] Allowing user to edit configuration file..."
     ################################################################################
     ## BEGIN GUI
     ################################################################################
     Add-Type -AssemblyName System.Windows.Forms
 
-    function Get-Folder1($textbox) {
+    function Get-Folder($textBox, $envVar) {
         $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
         $folderBrowserDialog.RootFolder = 'MyComputer'
-        $folderBrowserDialog.ShowDialog()
-        $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs['VM_COMMON_DIR'] -Leaf))
-    }
-
-    function Get-Folder2($textbox) {
-        $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-        $folderBrowserDialog.RootFolder = 'MyComputer'
-        $folderBrowserDialog.ShowDialog()
-        $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs['TOOL_LIST_DIR'] -Leaf))
-    }
-
-    function Get-Folder3($textbox) {
-        $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-        $folderBrowserDialog.RootFolder = 'MyComputer'
-        $folderBrowserDialog.ShowDialog()
-        $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs['TOOL_LIST_SHORTCUT'] -Leaf))
-    }
-
-    function Get-Folder4($textbox) {
-        $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-        $folderBrowserDialog.RootFolder = 'MyComputer'
-        $folderBrowserDialog.ShowDialog()
-        $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs['RAW_TOOLS_DIR'] -Leaf))
+        if ($folderBrowserDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+            $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs[$envVar] -Leaf))
+        }
     }
 
     function Get-InstallablePackages {
-        if (Get-Command clist -ErrorAction:SilentlyContinue) {
-            choco list -s "https://www.myget.org/F/vm-packages/api/v2" -r | ForEach-Object {
-                $Name, $Version = $_ -split '\|'
-                New-Object -TypeName psobject -Property @{
-                    'Name' = $Name
-                    'Version' = $Version
-                }
+        $availablePackagesPath = "$desktopPath\available_packages.txt"
+        if (-not (Test-Path $availablePackagesPath)) {
+            Write-Host "[+] Downloading list of available packages, may take a bit. Please be patient..."
+            choco list -s "https://www.myget.org/F/vm-packages/api/v2" -r | Out-File $availablePackagesPath
+        }
+        (Get-Content $availablePackagesPath) | ForEach-Object {
+            $Name, $Version = $_ -split '\|'
+            New-Object -TypeName psobject -Property @{
+                'Name' = $Name
+                'Version' = $Version
             }
         }
     }
 
     function Get-InstalledPackages {
-        if (Get-Command clist -ErrorAction:SilentlyContinue) {
-            choco list -lo -r | ForEach-Object {
-                $Name, $Version = $_ -split '\|'
-                New-Object -TypeName psobject -Property @{
-                    'Name' = $Name
-                    'Version' = $Version
-                }
+        choco list -l -r | ForEach-Object {
+            $Name, $Version = $_ -split '\|'
+            New-Object -TypeName psobject -Property @{
+                'Name' = $Name
+                'Version' = $Version
             }
         }
     }
@@ -291,12 +366,14 @@ if (-not $noEdit) {
         {
             $selectedPackagesBox.Items.Add($package) | Out-Null
         }
+        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
 
         $unselectedPackagesBox.Items.Clear()
         foreach($package in $allPackages)
         {
             $unselectedPackagesBox.Items.Add($package) | Out-Null
         }
+        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
     }
 
     function Add-SelectedPackages {
@@ -307,12 +384,29 @@ if (-not $noEdit) {
             $selectedPackagesBox.Items.Add($package) | Out-Null
             $selectedPackagesBox.EndUpdate()
         }
+        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
 
         $unselectedPackagesBox.BeginUpdate()
         while ($unselectedPackagesBox.SelectedItems.count -gt 0) {
             $unselectedPackagesBox.Items.RemoveAt($unselectedPackagesBox.SelectedIndex)
         }
         $unselectedPackagesBox.EndUpdate()
+        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
+    }
+
+    function Add-AllPackages {
+        foreach($package in $unselectedPackagesBox.Items)
+        {
+            $selectedPackagesBox.BeginUpdate()
+            $selectedPackagesBox.Items.Add($package) | Out-Null
+            $selectedPackagesBox.EndUpdate()
+        }
+        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
+
+        $unselectedPackagesBox.BeginUpdate()
+        $unselectedPackagesBox.Items.Clear()
+        $unselectedPackagesBox.EndUpdate()
+        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
     }
 
     function Remove-SelectedPackages {
@@ -323,12 +417,29 @@ if (-not $noEdit) {
             $unselectedPackagesBox.Items.Add($package) | Out-Null
             $unselectedPackagesBox.EndUpdate()
         }
+        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
 
         $selectedPackagesBox.BeginUpdate()
         while ($selectedPackagesBox.SelectedItems.count -gt 0) {
             $selectedPackagesBox.Items.RemoveAt($selectedPackagesBox.SelectedIndex)
         }
         $selectedPackagesBox.EndUpdate()
+        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
+    }
+
+    function Remove-AllPackages {
+        foreach($package in $selectedPackagesBox.Items)
+        {
+            $unselectedPackagesBox.BeginUpdate()
+            $unselectedPackagesBox.Items.Add($package) | Out-Null
+            $unselectedPackagesBox.EndUpdate()
+        }
+        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
+
+        $selectedPackagesBox.BeginUpdate()
+        $selectedPackagesBox.Items.Clear()
+        $selectedPackagesBox.EndUpdate()
+        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
     }
 
     # Gather lists of packages (i.e., available, already installed, to install)
@@ -338,73 +449,89 @@ if (-not $noEdit) {
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
 
-    $form                            = New-Object system.Windows.Forms.Form
-    $form.ClientSize                 = New-Object System.Drawing.Point(717,740)
-    $form.text                       = "FLARE VM Install Customization"
-    $form.TopMost                    = $true
-    $form.MaximizeBox                = $false
-    $form.FormBorderStyle            = 'FixedDialog'
-    $form.StartPosition              = 'CenterScreen'
+    $form                   = New-Object system.Windows.Forms.Form
+    $form.ClientSize        = New-Object System.Drawing.Point(717,740)
+    $form.text              = "FLARE VM Install Customization"
+    $form.TopMost           = $true
+    $form.MaximizeBox       = $false
+    $form.FormBorderStyle   = 'FixedDialog'
+    $form.StartPosition     = 'CenterScreen'
 
-    $envVarGroup                     = New-Object system.Windows.Forms.Groupbox
-    $envVarGroup.height              = 245
-    $envVarGroup.width               = 690
-    $envVarGroup.text                = "Environment Variable Customization"
-    $envVarGroup.location            = New-Object System.Drawing.Point(15,59)
+    $envVarGroup            = New-Object system.Windows.Forms.Groupbox
+    $envVarGroup.height     = 245
+    $envVarGroup.width      = 690
+    $envVarGroup.text       = "Environment Variable Customization"
+    $envVarGroup.location   = New-Object System.Drawing.Point(15,59)
 
-    $packageGroup                    = New-Object system.Windows.Forms.Groupbox
-    $packageGroup.height             = 380
-    $packageGroup.width              = 540
-    $packageGroup.text               = "Package Installation Customization"
-    $packageGroup.location           = New-Object System.Drawing.Point(81,313)
+    $packageGroup           = New-Object system.Windows.Forms.Groupbox
+    $packageGroup.height    = 380
+    $packageGroup.width     = 540
+    $packageGroup.text      = "Package Installation Customization"
+    $packageGroup.location  = New-Object System.Drawing.Point(81,313)
 
-    $removePackageButton             = New-Object system.Windows.Forms.Button
-    $removePackageButton.text        = "<"
-    $removePackageButton.width       = 22
-    $removePackageButton.height      = 26
-    $removePackageButton.location    = New-Object System.Drawing.Point(258,170)
-    $removePackageButton.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $welcomeLabel           = New-Object system.Windows.Forms.Label
+    $welcomeLabel.text      = "Welcome to FLARE VM's custom installer. Please select your options below.`nDefault values will be used if you make no modifications."
+    $welcomeLabel.AutoSize  = $true
+    $welcomeLabel.width     = 25
+    $welcomeLabel.height    = 10
+    $welcomeLabel.location  = New-Object System.Drawing.Point(15,14)
+    $welcomeLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+
+    $selectedPackagesBox                 = New-Object system.Windows.Forms.ListBox
+    $selectedPackagesBox.text            = "listBox"
+    $selectedPackagesBox.SelectionMode   = 'MultiSimple'
+    $selectedPackagesBox.Sorted          = $true
+    $selectedPackagesBox.width           = 246
+    $selectedPackagesBox.height          = 322
+    $selectedPackagesBox.location        = New-Object System.Drawing.Point(288,40)
+
+    $unselectedPackagesBox               = New-Object system.Windows.Forms.ListBox
+    $unselectedPackagesBox.text          = "listBox"
+    $unselectedPackagesBox.SelectionMode = 'MultiSimple'
+    $unselectedPackagesBox.Sorted        = $true
+    $unselectedPackagesBox.width         = 246
+    $unselectedPackagesBox.height        = 300
+    $unselectedPackagesBox.location      = New-Object System.Drawing.Point(6,65)
+
+    $packageTypeCombo                  = New-Object system.Windows.Forms.ComboBox
+    $packageTypeCombo.width            = 246
+    $packageTypeCombo.height           = 20
+    $packageTypeCombo.location         = New-Object System.Drawing.Point(6,40)
+    $packageTypeCombo.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $packageTypeCombo.Items.Add('All') | Out-Null
+    $packageTypeCombo.SelectedIndex    = 0
+
+    $removePackageButton               = New-Object system.Windows.Forms.Button
+    $removePackageButton.text          = "<"
+    $removePackageButton.width         = 24
+    $removePackageButton.height        = 26
+    $removePackageButton.location      = New-Object System.Drawing.Point(258,170)
+    $removePackageButton.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $removePackageButton.Add_Click({Remove-SelectedPackages})
 
-    $okButton                        = New-Object system.Windows.Forms.Button
-    $okButton.text                   = "OK"
-    $okButton.width                  = 90
-    $okButton.height                 = 30
-    $okButton.location               = New-Object System.Drawing.Point(481,700)
-    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $removeAllPackageButton            = New-Object system.Windows.Forms.Button
+    $removeAllPackageButton.text       = "<<"
+    $removeAllPackageButton.width      = 24
+    $removeAllPackageButton.height     = 26
+    $removeAllPackageButton.location   = New-Object System.Drawing.Point(258,140)
+    $removeAllPackageButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',7,[System.Drawing.FontStyle]::Bold)
+    $removeAllPackageButton.Add_Click({Remove-AllPackages})
 
-    $cancelButton                    = New-Object system.Windows.Forms.Button
-    $cancelButton.text               = "Cancel"
-    $cancelButton.width              = 90
-    $cancelButton.height             = 30
-    $cancelButton.location           = New-Object System.Drawing.Point(587,700)
-    $cancelButton.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-
-    $selectedPackagesBox                    = New-Object system.Windows.Forms.ListBox
-    $selectedPackagesBox.text               = "listBox"
-    $selectedPackagesBox.SelectionMode      = 'MultiSimple'
-    $selectedPackagesBox.Sorted             = $true
-    $selectedPackagesBox.width              = 246
-    $selectedPackagesBox.height             = 330
-    $selectedPackagesBox.location           = New-Object System.Drawing.Point(288,40)
-
-    $unselectedPackagesBox                  = New-Object system.Windows.Forms.ListBox
-    $unselectedPackagesBox.text             = "listBox"
-    $unselectedPackagesBox.SelectionMode    = 'MultiSimple'
-    $unselectedPackagesBox.Sorted           = $true
-    $unselectedPackagesBox.width            = 246
-    $unselectedPackagesBox.height           = 308
-    $unselectedPackagesBox.location         = New-Object System.Drawing.Point(6,65)
-
-    $addPackageButton                = New-Object system.Windows.Forms.Button
-    $addPackageButton.text           = ">"
-    $addPackageButton.width          = 22
-    $addPackageButton.height         = 26
-    $addPackageButton.location       = New-Object System.Drawing.Point(258,206)
-    $addPackageButton.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $addPackageButton                 = New-Object system.Windows.Forms.Button
+    $addPackageButton.text            = ">"
+    $addPackageButton.width           = 24
+    $addPackageButton.height          = 26
+    $addPackageButton.location        = New-Object System.Drawing.Point(258,206)
+    $addPackageButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $addPackageButton.Add_Click({Add-SelectedPackages})
+
+    $addAllPackageButton              = New-Object system.Windows.Forms.Button
+    $addAllPackageButton.text         = ">>"
+    $addAllPackageButton.width        = 24
+    $addAllPackageButton.height       = 26
+    $addAllPackageButton.location     = New-Object System.Drawing.Point(258,236)
+    $addAllPackageButton.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',7,[System.Drawing.FontStyle]::Bold)
+    $addAllPackageButton.Add_Click({Add-AllPackages})
 
     $dontInstallLabel                = New-Object system.Windows.Forms.Label
     $dontInstallLabel.text           = "Available to Install"
@@ -414,6 +541,22 @@ if (-not $noEdit) {
     $dontInstallLabel.location       = New-Object System.Drawing.Point(7,20)
     $dontInstallLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
+    $numUnselectedLabel              = New-Object system.Windows.Forms.Label
+    $numUnselectedLabel.text         = "Total: ???"
+    $numUnselectedLabel.AutoSize     = $true
+    $numUnselectedLabel.width        = 25
+    $numUnselectedLabel.height       = 10
+    $numUnselectedLabel.location     = New-Object System.Drawing.Point(6,355)
+    $numUnselectedLabel.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+
+    $numSelectedLabel                = New-Object system.Windows.Forms.Label
+    $numSelectedLabel.text           = "Total: ???"
+    $numSelectedLabel.AutoSize       = $true
+    $numSelectedLabel.width          = 25
+    $numSelectedLabel.height         = 10
+    $numSelectedLabel.location       = New-Object System.Drawing.Point(288,355)
+    $numSelectedLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+
     $doInstallLabel                  = New-Object system.Windows.Forms.Label
     $doInstallLabel.text             = "To Install"
     $doInstallLabel.AutoSize         = $true
@@ -421,6 +564,14 @@ if (-not $noEdit) {
     $doInstallLabel.height           = 10
     $doInstallLabel.location         = New-Object System.Drawing.Point(289,20)
     $doInstallLabel.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+
+    $resetButton                 = New-Object system.Windows.Forms.Button
+    $resetButton.text            = "Reset"
+    $resetButton.width           = 48
+    $resetButton.height          = 18
+    $resetButton.location        = New-Object System.Drawing.Point(485,358)
+    $resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+    $resetButton.Add_Click({Set-InitialPackages})
 
     $vmCommonDirText                 = New-Object system.Windows.Forms.TextBox
     $vmCommonDirText.multiline       = $false
@@ -436,7 +587,8 @@ if (-not $noEdit) {
     $vmCommonDirSelect.height        = 30
     $vmCommonDirSelect.location      = New-Object System.Drawing.Point(588,17)
     $vmCommonDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $vmCommonDirSelect.Add_Click({Get-Folder1($vmCommonDirText)})
+    $selectFolderArgs1 = @{textBox=$vmCommonDirText; envVar="VM_COMMON_DIR"}
+    $vmCommonDirSelect.Add_Click({Get-Folder @selectFolderArgs1})
 
     $vmCommonDirLabel                = New-Object system.Windows.Forms.Label
     $vmCommonDirLabel.text           = "%VM_COMMON_DIR%"
@@ -444,7 +596,15 @@ if (-not $noEdit) {
     $vmCommonDirLabel.width          = 25
     $vmCommonDirLabel.height         = 10
     $vmCommonDirLabel.location       = New-Object System.Drawing.Point(2,24)
-    $vmCommonDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+    $vmCommonDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+
+    $vmCommonDirNote                 = New-Object system.Windows.Forms.Label
+    $vmCommonDirNote.text            = "Shared module and metadata for VM (e.g., config, logs, etc...)"
+    $vmCommonDirNote.AutoSize        = $true
+    $vmCommonDirNote.width           = 25
+    $vmCommonDirNote.height          = 10
+    $vmCommonDirNote.location        = New-Object System.Drawing.Point(190,46)
+    $vmCommonDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $toolListDirText                 = New-Object system.Windows.Forms.TextBox
     $toolListDirText.multiline       = $false
@@ -460,7 +620,8 @@ if (-not $noEdit) {
     $toolListDirSelect.height        = 30
     $toolListDirSelect.location      = New-Object System.Drawing.Point(588,64)
     $toolListDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $toolListDirSelect.Add_Click({Get-Folder2($toolListDirText)})
+    $selectFolderArgs2 = @{textBox=$toolListDirText; envVar="TOOL_LIST_DIR"}
+    $toolListDirSelect.Add_Click({Get-Folder @selectFolderArgs2})
 
     $toolListDirLabel                = New-Object system.Windows.Forms.Label
     $toolListDirLabel.text           = "%TOOL_LIST_DIR%"
@@ -468,7 +629,15 @@ if (-not $noEdit) {
     $toolListDirLabel.width          = 25
     $toolListDirLabel.height         = 10
     $toolListDirLabel.location       = New-Object System.Drawing.Point(2,71)
-    $toolListDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+    $toolListDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+
+    $toolListDirNote                 = New-Object system.Windows.Forms.Label
+    $toolListDirNote.text            = "Folder to store tool categories and shortcuts"
+    $toolListDirNote.AutoSize        = $true
+    $toolListDirNote.width           = 25
+    $toolListDirNote.height          = 10
+    $toolListDirNote.location        = New-Object System.Drawing.Point(190,94)
+    $toolListDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $toolListShortCutText            = New-Object system.Windows.Forms.TextBox
     $toolListShortCutText.multiline  = $false
@@ -482,9 +651,10 @@ if (-not $noEdit) {
     $toolListShortcutSelect.text     = "Select Folder"
     $toolListShortcutSelect.width    = 95
     $toolListShortcutSelect.height   = 30
-    $toolListShortcutSelect.location  = New-Object System.Drawing.Point(588,109)
+    $toolListShortcutSelect.location = New-Object System.Drawing.Point(588,109)
     $toolListShortcutSelect.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $toolListShortcutSelect.Add_Click({Get-Folder3($toolListShortCutText)})
+    $selectFolderArgs3 = @{textBox=$toolListShortCutText; envVar="TOOL_LIST_SHORTCUT"}
+    $toolListShortcutSelect.Add_Click({Get-Folder @selectFolderArgs3})
 
     $toolListShortcutLabel           = New-Object system.Windows.Forms.Label
     $toolListShortcutLabel.text      = "%TOOL_LIST_SHORTCUT%"
@@ -492,23 +662,7 @@ if (-not $noEdit) {
     $toolListShortcutLabel.width     = 25
     $toolListShortcutLabel.height    = 10
     $toolListShortcutLabel.location  = New-Object System.Drawing.Point(2,116)
-    $toolListShortcutLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-
-    $vmCommonDirNote                 = New-Object system.Windows.Forms.Label
-    $vmCommonDirNote.text            = "Shared module and metadata for VM (e.g., config, logs, etc...)"
-    $vmCommonDirNote.AutoSize        = $true
-    $vmCommonDirNote.width           = 25
-    $vmCommonDirNote.height          = 10
-    $vmCommonDirNote.location        = New-Object System.Drawing.Point(190,46)
-    $vmCommonDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-    $toolListDirNote                 = New-Object system.Windows.Forms.Label
-    $toolListDirNote.text            = "Folder to store tool categories and shortcuts"
-    $toolListDirNote.AutoSize        = $true
-    $toolListDirNote.width           = 25
-    $toolListDirNote.height          = 10
-    $toolListDirNote.location        = New-Object System.Drawing.Point(190,94)
-    $toolListDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $toolListShortcutLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
 
     $toolListShortcutNote            = New-Object system.Windows.Forms.Label
     $toolListShortcutNote.text       = "Shortcut to %TOOL_LIST_DIR%"
@@ -532,7 +686,8 @@ if (-not $noEdit) {
     $rawToolsDirSelect.height        = 30
     $rawToolsDirSelect.location      = New-Object System.Drawing.Point(588,153)
     $rawToolsDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $rawToolsDirSelect.Add_Click({Get-Folder4($rawToolsDirText)})
+    $selectFolderArgs4 = @{textBox=$rawToolsDirText; envVar="RAW_TOOLS_DIR"}
+    $rawToolsDirSelect.Add_Click({Get-Folder @selectFolderArgs4})
 
     $rawToolsDirLabel                = New-Object system.Windows.Forms.Label
     $rawToolsDirLabel.text           = "%RAW_TOOLS_DIR%"
@@ -540,7 +695,7 @@ if (-not $noEdit) {
     $rawToolsDirLabel.width          = 25
     $rawToolsDirLabel.height         = 10
     $rawToolsDirLabel.location       = New-Object System.Drawing.Point(2,160)
-    $rawToolsDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+    $rawToolsDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
 
     $rawToolsDirNote                 = New-Object system.Windows.Forms.Label
     $rawToolsDirNote.text            = "Folder to store downloaded tools"
@@ -572,28 +727,28 @@ if (-not $noEdit) {
     $metapackageNote3.width          = 25
     $metapackageNote3.height         = 10
     $metapackageNote3.location       = New-Object System.Drawing.Point(182,210)
-    $metapackageNote3.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+    $metapackageNote3.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]::Bold)
 
-    $welcomeLabel                    = New-Object system.Windows.Forms.Label
-    $welcomeLabel.text               = "Welcome to FLARE VM's custom installer. Please select your options below.`nDefault values will be used if you make no modifications."
-    $welcomeLabel.AutoSize           = $true
-    $welcomeLabel.width              = 25
-    $welcomeLabel.height             = 10
-    $welcomeLabel.location           = New-Object System.Drawing.Point(15,14)
-    $welcomeLabel.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $okButton                        = New-Object system.Windows.Forms.Button
+    $okButton.text                   = "OK"
+    $okButton.width                  = 90
+    $okButton.height                 = 30
+    $okButton.location               = New-Object System.Drawing.Point(481,700)
+    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
 
-    $packageTypeCombo                = New-Object system.Windows.Forms.ComboBox
-    $packageTypeCombo.width          = 246
-    $packageTypeCombo.height         = 20
-    $packageTypeCombo.location       = New-Object System.Drawing.Point(6,40)
-    $packageTypeCombo.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $packageTypeCombo.Items.Add('All') | Out-Null
-    $packageTypeCombo.SelectedIndex = 0
+    $cancelButton                    = New-Object system.Windows.Forms.Button
+    $cancelButton.text               = "Cancel"
+    $cancelButton.width              = 90
+    $cancelButton.height             = 30
+    $cancelButton.location           = New-Object System.Drawing.Point(587,700)
+    $cancelButton.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
 
     $form.controls.AddRange(@($envVarGroup,$packageGroup,$okButton,$cancelButton,$welcomeLabel))
     $form.AcceptButton = $okButton
     $form.CancelButton = $cancelButton
-    $packageGroup.controls.AddRange(@($unselectedPackagesBox,$selectedPackagesBox,$removePackageButton,$addPackageButton,$dontInstallLabel,$doInstallLabel,$packageTypeCombo))
+    $packageGroup.controls.AddRange(@($unselectedPackagesBox,$selectedPackagesBox,$removePackageButton,$removeAllPackageButton,$addPackageButton,$addAllPackageButton,$dontInstallLabel,$doInstallLabel,$packageTypeCombo,$numSelectedLabel,$numUnselectedLabel,$resetButton))
     $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote,$metapackageNote1,$metapackageNote2,$metapackageNote3))
 
     Set-InitialPackages
@@ -638,7 +793,9 @@ if (-not $noEdit) {
             $newXmlNode.SetAttribute("name", $package);
         }
     } else {
-        Write-Host "[+] Cancel pressed, using default settings and installing default packages..."
+        Write-Host "[+] Cancel pressed, stopping installation..."
+        Start-Sleep 3
+        exit 1
     }
 
     ################################################################################
@@ -646,12 +803,11 @@ if (-not $noEdit) {
     ################################################################################
 }
 
-
 # Parse config and set initial environment variables
 Write-Host "[+] Parsing configuration file..."
 foreach ($env in $configXml.config.envs.env) {
     $path = [Environment]::ExpandEnvironmentVariables($($env.value))
-    Write-Host "`t[+] Setting ENV var: $($env.name) to: $path" -ForegroundColor Green
+    Write-Host "`t[+] Setting %$($env.name)% to: $path" -ForegroundColor Green
     [Environment]::SetEnvironmentVariable("$($env.name)", $path, "Machine")
 }
 refreshenv
@@ -662,11 +818,12 @@ Write-Host "[+] Installing shared module..."
 choco install common.vm -y --force
 refreshenv
 
-# Save the modified config to where the installer will look for it
+# Save the modified config file
 Write-Host "[+] Saving modified configuration file..."
+$configXml.save($configPath)
 $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
 
-if (-not $noWait) {
+if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
     function Wait-ForInstall ($seconds) {
         $doneDT = (Get-Date).AddSeconds($seconds)
@@ -685,13 +842,13 @@ if (-not $noWait) {
 - This install is not 100% unattended. Please monitor the install for possible failures. If install 
 fails, you may restart the install by re-running the install script with the following command:
 
-    .\install.ps1 -nochecks 1 [<password>]
+    .\install.ps1 -password <password> -noWait -noGui -noChecks
 
 - You can check which packages failed to install by listing the C:\ProgramData\chocolatey\lib-bad 
 directory. Failed packages are stored by folder name. You may attempt manual installation with the 
 following command:
 
-    cinst -y <package_name>
+    choco install -y <package_name>
 
 - For any issues, please submit to GitHub:
 
@@ -704,4 +861,10 @@ following command:
 }
 
 # Invoke installer package
-Install-BoxstarterPackage -packageName "flarevm.installer.vm" -credential $credentials
+Write-Host "[+] Beginning install of configured packages..." -ForegroundColor Green
+if ($noPassword.IsPresent) {
+    Install-BoxstarterPackage -packageName "flarevm.installer.vm"
+} else {
+    Install-BoxstarterPackage -packageName "flarevm.installer.vm" -credential $credentials
+}
+
