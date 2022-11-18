@@ -443,9 +443,10 @@ if (-not $noGui.IsPresent) {
     }
 
     # Gather lists of packages (i.e., available, already installed, to install)
+    $excludedPackages = @("flarevm.installer.vm", "common.vm")
     $installedPackages = (Get-InstalledPackages).Name
     $packagesToInstall = $configXml.config.packages.package.name | Where-Object { $installedPackages -notcontains $_ }
-    $allPackages = (Get-InstallablePackages).Name | Where-Object { $packagesToInstall -notcontains $_ -and $installedPackages -notcontains $_}
+    $allPackages = (Get-InstallablePackages).Name | Where-Object { $packagesToInstall -notcontains $_ -and $installedPackages -notcontains $_ -and $excludedPackages -notcontains $_}
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
 
