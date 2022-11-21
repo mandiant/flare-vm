@@ -760,7 +760,7 @@ if (-not $noGui.IsPresent) {
     $form.controls.AddRange(@($envVarGroup,$packageGroup,$okButton,$cancelButton,$welcomeLabel))
     $form.AcceptButton = $okButton
     $form.CancelButton = $cancelButton
-    $packageGroup.controls.AddRange(@($unselectedPackagesBox,$selectedPackagesBox,$removePackageButton,$removeAllPackageButton,$addPackageButton,$addAllPackageButton,$dontInstallLabel,$doInstallLabel,$packageTypeCombo,$numSelectedLabel,$numUnselectedLabel,$resetButton))
+    $packageGroup.controls.AddRange(@($unselectedPackagesBox,$selectedPackagesBox,$removePackageButton,$removeAllPackageButton,$addPackageButton,$addAllPackageButton,$dontInstallLabel,$doInstallLabel,$numSelectedLabel,$numUnselectedLabel,$resetButton))
     $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote,$metapackageNote1,$metapackageNote2,$metapackageNote3))
 
     Set-InitialPackages
