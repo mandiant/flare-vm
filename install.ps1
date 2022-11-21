@@ -834,11 +834,6 @@ Write-Host "[+] Installing shared module..."
 choco install common.vm -y --force
 refreshenv
 $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
-Start-Sleep 1
-
-# Log basic system info to assist future troubleshooting
-Write-Host "[+] Logging basic system information to assist troubleshooting..."
-Import-Module "${Env:VM_COMMON_DIR}\vm.common\vm.common.psm1" -Force -DisableNameChecking
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
