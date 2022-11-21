@@ -260,7 +260,7 @@ Disable-MicrosoftUpdate
 try {
   New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -PropertyType DWord -Value 2 -ErrorAction Stop -Force | Out-Null
 } catch {
-  Write-Host "`t[!] Failed to disable Microsoft Store updates" -ForegroundColor Red
+  Write-Host "`t[!] Failed to disable Microsoft Store updates" -ForegroundColor Yellow
 }
 
 # Set Boxstarter options
@@ -834,6 +834,10 @@ Write-Host "[+] Installing shared module..."
 choco install common.vm -y --force
 refreshenv
 $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
+
+# Log basic system information to assist with troubleshooting
+Write-Host "[+] Logging basic system information to assist with any future troubleshooting..."
+VM-Get-Host-Info
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
