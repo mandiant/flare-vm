@@ -7,19 +7,41 @@
         <env name="RAW_TOOLS_DIR" value="%SystemDrive%\Tools"/>
     </envs>
     <packages>
-        <package name="git.install"/>
-        <package name="die.vm"/>
-        <package name="diesss.vm"/>
-        <package name="map.vm"/>
+        <package name="010editor.vm"/>
         <package name="7zip.vm"/>
+        <package name="apimonitor.vm"/>
+        <package name="apktool.vm"/>
         <package name="capa.vm"/>
-        <package name="peid.vm"/>
         <package name="cmder.vm"/>
-        <package name="common.vm"/>
+        <package name="cyberchef.vm"/>
         <package name="cygwin.vm"/>
+        <package name="die.vm"/>
+        <package name="dnspyex.vm"/>
+        <package name="explorersuite.vm"/>
+        <package name="fakenet-ng.vm"/>
+        <package name="floss.vm"/>
         <package name="ghidra.vm"/>
-        <package name="x64dbg.vm"/>
+        <package name="hashmyfiles.vm"/>
         <package name="idafree.vm"/>
+        <package name="libraries.python2.vm"/>
+        <package name="libraries.python3.vm"/>
+        <package name="map.vm"/>
+        <package name="notepadplusplus.vm"/>
+        <package name="notepadpp.plugin.compare.vm"/>
+        <package name="ollydbg.ollydumpex.vm"/>
         <package name="ollydbg.vm"/>
+        <package name="ollydbg2.ollydumpex.vm"/>
+        <package name="ollydbg2.vm"/>
+        <package name="peid.vm"/>
+        <package name="processdump.vm"/>
+        <package name="regshot.vm"/>
+        <package name="rundotnetdll.vm"/>
+        <package name="sysinternals.vm"/>
+        <package name="uniextract2.vm"/>
+        <package name="vcbuildtools.vm"/>
+        <package name="wireshark.vm"/>
+        <package name="x64dbg.ollydumpex.vm"/>
+        <package name="x64dbg.vm"/>
+        <package name="x64dbgpy.vm"/>
     </packages>
 </config>
