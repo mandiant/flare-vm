@@ -500,16 +500,17 @@ if (-not $noGui.IsPresent) {
     $unselectedPackagesBox.SelectionMode = 'MultiSimple'
     $unselectedPackagesBox.Sorted        = $true
     $unselectedPackagesBox.width         = 246
-    $unselectedPackagesBox.height        = 300
-    $unselectedPackagesBox.location      = New-Object System.Drawing.Point(6,65)
+    $unselectedPackagesBox.height        = 322
+    $unselectedPackagesBox.location      = New-Object System.Drawing.Point(6,40)
 
-    $packageTypeCombo                  = New-Object system.Windows.Forms.ComboBox
-    $packageTypeCombo.width            = 246
-    $packageTypeCombo.height           = 20
-    $packageTypeCombo.location         = New-Object System.Drawing.Point(6,40)
-    $packageTypeCombo.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $packageTypeCombo.Items.Add('All') | Out-Null
-    $packageTypeCombo.SelectedIndex    = 0
+    # TODO: Add categories in the future
+    #$packageTypeCombo                  = New-Object system.Windows.Forms.ComboBox
+    #$packageTypeCombo.width            = 246
+    #$packageTypeCombo.height           = 20
+    #$packageTypeCombo.location         = New-Object System.Drawing.Point(6,40)
+    #$packageTypeCombo.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    #$packageTypeCombo.Items.Add('All') | Out-Null
+    #$packageTypeCombo.SelectedIndex    = 0
 
     $removePackageButton               = New-Object system.Windows.Forms.Button
     $removePackageButton.text          = "<"
