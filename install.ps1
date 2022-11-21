@@ -37,6 +37,13 @@
         Switch parameter to skip validation checks (not recommended).
 
     .EXAMPLE
+        .\install.ps1
+
+        Description
+        ---------------------------------------
+        Execute the installer to configure FLARE VM.
+
+    .EXAMPLE
         .\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
 
         Description
