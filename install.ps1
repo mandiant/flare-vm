@@ -16,7 +16,7 @@
           4) Execute the script by running ".\install.ps1"
 
     .PARAMETER password
-        Current user password to allow reboot resiliency via Boxstarter. The script prompts for the password if no provided.
+        Current user password to allow reboot resiliency via Boxstarter. The script prompts for the password if not provided.
 
     .PARAMETER noPassword
         Switch parameter indicating a password is not needed for reboots.
@@ -42,6 +42,7 @@
         Description
         ---------------------------------------
         CLI-only installation with minimal user interaction (some packages may require user interaction).
+        To prevent reboots, also add the "-noReboots" switch.
 
     .EXAMPLE
         .\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml"
@@ -804,6 +805,11 @@ if (-not $noGui.IsPresent) {
     ################################################################################
 }
 
+# Save the config file
+Write-Host "[+] Saving configuration file..."
+$configXml.save($configPath)
+$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
+
 # Parse config and set initial environment variables
 Write-Host "[+] Parsing configuration file..."
 foreach ($env in $configXml.config.envs.env) {
@@ -818,11 +824,64 @@ refreshenv
 Write-Host "[+] Installing shared module..."
 choco install common.vm -y --force
 refreshenv
+Start-Sleep 1
 
-# Save the modified config file
-Write-Host "[+] Saving modified configuration file..."
-$configXml.save($configPath)
-$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
+# Log basic system info to assist future troubleshooting
+Write-Host "[+] Logging basic system information to assist troubleshooting..."
+Import-Module "${Env:VM_COMMON_DIR}\vm.common\vm.common.psm1" -Force -DisableNameChecking
+VM-Write-Log "INFO" "PowerShell Version: $($PSVersionTable.PSVersion)"
+
+$version = choco --version
+VM-Write-Log "INFO" "Chocolatey Version: $version"
+
+choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
+VM-Write-Log "INFO" "Boxstarter Version: $version"
+
+$systemInfo = Get-WMIObject win32_operatingsystem
+VM-Write-Log "INFO" "System Info:"
+VM-Write-Log "INFO" "`t[System] Name: $($systemInfo.Name)"
+VM-Write-Log "INFO" "`t[System] Version: $($systemInfo.Version)"
+VM-Write-Log "INFO" "`t[System] BuildNumber: $($systemInfo.BuildNumber)"
+VM-Write-Log "INFO" "`t[System] Architecture: $($systemInfo.OSArchitecture)"
+
+# Credit: https://blog.idera.com/database-tools/identifying-antivirus-engine-state
+# Define bit flags
+[Flags()] enum ProductState
+{
+    Off         = 0x0000
+    On          = 0x1000
+    Snoozed     = 0x2000
+    Expired     = 0x3000
+}
+
+[Flags()] enum SignatureStatus
+{
+    UpToDate     = 0x00
+    OutOfDate    = 0x10
+}
+
+[Flags()] enum ProductOwner
+{
+    NonMicrosoft = 0x000
+    Microsoft    = 0x100
+}
+
+[Flags()] enum ProductFlags
+{
+    SignatureStatus = 0x00F0
+    ProductOwner    = 0x0F00
+    ProductState    = 0xF000
+}
+
+$avInfo = Get-CimInstance -Namespace "root\SecurityCenter2" -Class AntiVirusProduct -ComputerName ${Env:computername}
+[UInt32]$avState = $avInfo.productState
+
+# Decode bit flags by masking the relevant bits, then converting
+VM-Write-Log "INFO" "AV Info:"
+VM-Write-Log "INFO" "`t[AV] DisplayName: $($avInfo.displayName)"
+VM-Write-Log "INFO" "`t[AV] ProductOwner: $([ProductOwner]($avState -band [ProductFlags]::ProductOwner))"
+VM-Write-Log "INFO" "`t[AV] ProductState: $([ProductState]($avState -band [ProductFlags]::ProductState))"
+VM-Write-Log "INFO" "`t[AV] SignatureStatus: $([SignatureStatus]($avState -band [ProductFlags]::SignatureStatus))"
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
