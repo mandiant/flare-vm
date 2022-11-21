@@ -199,11 +199,12 @@ if (-not $noChecks.IsPresent) {
     }
 }
 
-if (-not $noPassword.IsPresent -and [string]::IsNullOrEmpty($password)) {
+if (-not $noPassword.IsPresent) {
     # Get user credentials for autologin during reboots
-    Write-Host "[+] Getting user credentials ..."
-    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
     if ([string]::IsNullOrEmpty($password)) {
+        Write-Host "[+] Getting user credentials ..."
+        Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
+        Start-Sleep -Milliseconds 500
         $credentials = Get-Credential ${Env:username}
     } else {
         $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
