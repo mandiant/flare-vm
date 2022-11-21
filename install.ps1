@@ -816,7 +816,6 @@ if (-not $noGui.IsPresent) {
 # Save the config file
 Write-Host "[+] Saving configuration file..."
 $configXml.save($configPath)
-$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
 
 # Parse config and set initial environment variables
 Write-Host "[+] Parsing configuration file..."
@@ -832,6 +831,7 @@ refreshenv
 Write-Host "[+] Installing shared module..."
 choco install common.vm -y --force
 refreshenv
+$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
 Start-Sleep 1
 
 # Log basic system info to assist future troubleshooting
