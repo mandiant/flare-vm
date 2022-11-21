@@ -785,24 +785,24 @@ if (-not $noGui.IsPresent) {
 
         # Add environment variables
         $envs = $configXml.SelectSingleNode('//envs')
-        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"));
-        $newXmlNode.SetAttribute("name", "VM_COMMON_DIR");
+        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
+        $newXmlNode.SetAttribute("name", "VM_COMMON_DIR")
         $newXmlNode.SetAttribute("value", $vmCommonDirText.text);
-        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"));
-        $newXmlNode.SetAttribute("name", "TOOL_LIST_DIR");
+        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
+        $newXmlNode.SetAttribute("name", "TOOL_LIST_DIR")
         $newXmlNode.SetAttribute("value", $toolListDirText.text);
-        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"));
-        $newXmlNode.SetAttribute("name", "TOOL_LIST_SHORTCUT");
+        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
+        $newXmlNode.SetAttribute("name", "TOOL_LIST_SHORTCUT")
         $newXmlNode.SetAttribute("value", $toolListShortCutText.text);
-        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"));
-        $newXmlNode.SetAttribute("name", "RAW_TOOLS_DIR");
-        $newXmlNode.SetAttribute("value", $rawToolsDirText.text);
+        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
+        $newXmlNode.SetAttribute("name", "RAW_TOOLS_DIR")
+        $newXmlNode.SetAttribute("value", $rawToolsDirText.text)
 
         # Add selected packages
         $packages = $configXml.SelectSingleNode('//packages')
         foreach($package in $selectedPackagesBox.Items) {
-            $newXmlNode = $packages.AppendChild($configXml.CreateElement("package"));
-            $newXmlNode.SetAttribute("name", $package);
+            $newXmlNode = $packages.AppendChild($configXml.CreateElement("package"))
+            $newXmlNode.SetAttribute("name", $package)
         }
     } else {
         Write-Host "[+] Cancel pressed, stopping installation..."
@@ -839,59 +839,6 @@ Start-Sleep 1
 # Log basic system info to assist future troubleshooting
 Write-Host "[+] Logging basic system information to assist troubleshooting..."
 Import-Module "${Env:VM_COMMON_DIR}\vm.common\vm.common.psm1" -Force -DisableNameChecking
-VM-Write-Log "INFO" "PowerShell Version: $($PSVersionTable.PSVersion)"
-
-$version = choco --version
-VM-Write-Log "INFO" "Chocolatey Version: $version"
-
-choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
-VM-Write-Log "INFO" "Boxstarter Version: $version"
-
-$systemInfo = Get-WMIObject win32_operatingsystem
-VM-Write-Log "INFO" "System Info:"
-VM-Write-Log "INFO" "`t[System] Name: $($systemInfo.Name)"
-VM-Write-Log "INFO" "`t[System] Version: $($systemInfo.Version)"
-VM-Write-Log "INFO" "`t[System] BuildNumber: $($systemInfo.BuildNumber)"
-VM-Write-Log "INFO" "`t[System] Architecture: $($systemInfo.OSArchitecture)"
-
-# Credit: https://blog.idera.com/database-tools/identifying-antivirus-engine-state
-# Define bit flags
-[Flags()] enum ProductState
-{
-    Off         = 0x0000
-    On          = 0x1000
-    Snoozed     = 0x2000
-    Expired     = 0x3000
-}
-
-[Flags()] enum SignatureStatus
-{
-    UpToDate     = 0x00
-    OutOfDate    = 0x10
-}
-
-[Flags()] enum ProductOwner
-{
-    NonMicrosoft = 0x000
-    Microsoft    = 0x100
-}
-
-[Flags()] enum ProductFlags
-{
-    SignatureStatus = 0x00F0
-    ProductOwner    = 0x0F00
-    ProductState    = 0xF000
-}
-
-$avInfo = Get-CimInstance -Namespace "root\SecurityCenter2" -Class AntiVirusProduct -ComputerName ${Env:computername}
-[UInt32]$avState = $avInfo.productState
-
-# Decode bit flags by masking the relevant bits, then converting
-VM-Write-Log "INFO" "AV Info:"
-VM-Write-Log "INFO" "`t[AV] DisplayName: $($avInfo.displayName)"
-VM-Write-Log "INFO" "`t[AV] ProductOwner: $([ProductOwner]($avState -band [ProductFlags]::ProductOwner))"
-VM-Write-Log "INFO" "`t[AV] ProductState: $([ProductState]($avState -band [ProductFlags]::ProductState))"
-VM-Write-Log "INFO" "`t[AV] SignatureStatus: $([SignatureStatus]($avState -band [ProductFlags]::SignatureStatus))"
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
