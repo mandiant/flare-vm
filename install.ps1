@@ -330,7 +330,7 @@ Start-Sleep 1
 $configXml = [xml](Get-Content $configPath)
 
 if (-not $noGui.IsPresent) {
-    Write-Host "[+] Allowing user to edit configuration file..."
+    Write-Host "[+] Starting GUI to allow user to edit configuration file..."
     ################################################################################
     ## BEGIN GUI
     ################################################################################
