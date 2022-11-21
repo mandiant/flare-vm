@@ -293,6 +293,7 @@ Write-Host "[+] Checking for configuration file..."
 $configPath = Join-Path $desktopPath "config.xml"
 if ([string]::IsNullOrEmpty($customConfig)) {
     # Download configuration file from GitHub
+    # TODO: Fix this path once PR pushed
     $configPathUrl = 'https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml'
     if (-Not (Test-Path $configPath)) {
         Write-Host "[+] Downloading configuration file..."
