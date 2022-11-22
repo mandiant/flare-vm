@@ -202,7 +202,7 @@ if (-not $noChecks.IsPresent) {
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Do you need to take a VM snapshot before continuing? (Y/N): " -ForegroundColor Yellow -NoNewline
     $response = Read-Host
-    if ($response -notin @("n","N")) {
+    if ($response -in @("y","Y")) {
         exit 1
     }
 }
