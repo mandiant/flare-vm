@@ -71,6 +71,7 @@ param (
   [switch]$noReboots,
   [switch]$noChecks
 )
+$ErrorActionPreference = "Stop"
 
 # Set path to user's desktop
 $desktopPath = [Environment]::GetFolderPath("Desktop")
