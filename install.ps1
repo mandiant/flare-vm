@@ -838,6 +838,7 @@ $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
 
 # Log basic system information to assist with troubleshooting
 Write-Host "[+] Logging basic system information to assist with any future troubleshooting..."
+Import-Module "${Env:VM_COMMON_DIR}\vm.common\vm.common.psm1" -Force -DisableNameChecking
 VM-Get-Host-Info
 
 if (-not $noWait.IsPresent) {
