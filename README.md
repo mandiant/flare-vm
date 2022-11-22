@@ -54,26 +54,21 @@ Installation
   * `.\install.ps1`
     * You can also pass your password as an argument: `.\install.ps1 -password <password>`
 
+After installation it is recommended to switch to "host-only" networking mode adn take a VM snapshot.
 
-* Disable Windows Defender
-* Open `PowerShell` as an Administrator
-* Enable script execution by running:
-  * `Set-ExecutionPolicy Unrestricted`
-* Download the the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1) to your desktop
-  * `iex ((New-Object net.webclient).DownloadString('https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1'))`
-* Close and reopen `PowerShell` as an Administrator
-* `choco install flarevm.bootstrap.vm -y`
-
-
-* Download and copy [install.ps1](https://github.com/fireeye/flare-vm/raw/master/install.ps1) onto your new VM
-* Open `PowerShell` as an Administrator
-* Unblock the install file by running:
-  * `Unblock-File .\install.ps1`
-* Enable script execution by running:
-  * `Set-ExecutionPolicy Unrestricted`
-* Finally, execute the installer script as follow:
-  * `.\install.ps1`
-  * You can also pass your password as an argument: `.\install.ps1 -password <password>`
+Contributing
+===
+Want to get started contributing? See the links below to learn how.
+* FLARE VM installation script and configuration
+  * https://github.com/mandiant/flare-vm
+* Submit ideas and issues related to the installer script and configuration
+  * https://github.com/mandiant/flare-vm/* sues
+* Repository of all tool packages
+  * https://github.com/mandiant/VM-Packages
+* Documentation and contribution guides for tool packages
+  * https://github.com/mandiant/VM-Packages/wiki
+* Submit new tool packages or report related issues
+  * https://github.com/mandiant/VM-Packages/issues
 
 Legal Notice
 ============
