@@ -43,6 +43,7 @@ Installation
     * https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo
     * https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10
     * https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1
+* Take a VM snapshot so you can always revert to a state before FLARE VM installation
 * Open a `PowerShell` window as administrator
 * Download the the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1) to your desktop
   * `iex ((New-Object net.webclient).DownloadString('https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1'))`
@@ -53,8 +54,7 @@ Installation
 * Finally, execute the installer script as follow:
   * `.\install.ps1`
     * You can also pass your password as an argument: `.\install.ps1 -password <password>`
-
-After installation it is recommended to switch to "host-only" networking mode adn take a VM snapshot.
+* After installation it is recommended to switch to "host-only" networking mode and take a VM snapshot
 
 Contributing
 ===
