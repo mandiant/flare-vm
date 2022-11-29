@@ -23,7 +23,6 @@
         <package name="ghidra.vm"/>
         <package name="hashmyfiles.vm"/>
         <package name="idafree.vm"/>
-        <package name="libraries.python2.vm"/>
         <package name="libraries.python3.vm"/>
         <package name="map.vm"/>
         <package name="notepadplusplus.vm"/>
