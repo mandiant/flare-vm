@@ -33,6 +33,7 @@ Installation
 
 * Prepare a Windows 10+ virtual machine
   * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/)
+  * We recommend to avoid usernames that contain a space or other special characters
   * We recommend a disk capacity of at least 70-80 GB and memory of at least 2 GB
   * Disable Windows Updates (at least until installation is finished)
 * Disable Tamper Protection and any Anti-Malware solution (especially Windows Defender), preferably via GPO). See below for resource links:
