@@ -17,37 +17,42 @@
   <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
 </p>
 
+# FLARE VM
 Welcome to FLARE VM - a collection of software installations scripts for Windows systems that allows you to easily setup and maintain a reverse engineering environment on a virtual machine (VM). FLARE VM was designed to solve the problem of reverse engineering tool curation and relies on two main technologies: [Chocolatey](https://chocolatey.org) and [Boxstarter](https://boxstarter.org). Chocolatey is a Windows-based Nuget package management system, where a "package" is essentially a ZIP file containing PowerShell installation scripts that download and configure a specific tool. Boxstarter leverages Chocolatey packages to automate the installation of software and create repeatable, scripted Windows environments.
 
-Updates
-===
+## Updates
 
-Our most recent updates make FLARE VM even more open and maintainable to allow the community to easily add and update tools and make them quickly available to everyone. We've worked hard to open source the packages which detail how to install and configure analysis tools. The FLARE VM project now uses automatic testing, updating, and releasing to make updated packages immediately installable. Read on for more details and all the relevant project and documentation links.
+Our latest updates make FLARE VM more open and maintainable to allow the community to easily add and update tools and make them quickly available to everyone. We've worked hard to open source the packages (see the [VM-packages](https://github.com/mandiant/VM-Packages) repo) which detail how to install and configure analysis tools. The FLARE VM project now uses automatic testing, updating, and releasing to make updated packages immediately installable. See this [blog](insert URL) for more information regarding changes!
 
-See this [blog](insert URL) for more information regarding changes!
+### Updates TL;DR
 
-Installation
-===
+* Windows 7 is no longer supported
+* FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
+* Please do a fresh install instead of trying to updated older FLARE VM
+* You can contribute now!!
+
+## Installation
 
 > **Note:** FLARE VM should ONLY be installed on a virtual machine!
 
 * Prepare a Windows 10+ virtual machine
-  * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/)
-  * We recommend to avoid usernames that contain a space or other special characters
-  * We recommend a disk capacity of at least 70-80 GB and memory of at least 2 GB
+  * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
+  * We recommend:
+    * Avoiding usernames containing a space or other special characters
+    * Using a disk capacity of at least 70-80 GB and memory of at least 2 GB
   * Disable Windows Updates (at least until installation is finished)
-* Disable Tamper Protection and any Anti-Malware solution (especially Windows Defender), preferably via GPO). See below for resource links:
-  * Disabling Tamper Protection:
-    * https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87
-    * https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html
-  * Disabling Windows Defender:
-    * https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo
-    * https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10
-    * https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1
+  * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via GPO. See below for resource links:
+    * Disabling Tamper Protection
+      * https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87
+      * https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html
+    * Disabling Windows Defender
+      * https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo
+      * https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10
+      * https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1
 * Take a VM snapshot so you can always revert to a state before FLARE VM installation
 * Open a `PowerShell` window as administrator
 * Download the the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1) to your desktop
-  * `iex ((New-Object net.webclient).DownloadString('https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1'))`
+  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
 * Unblock the installation script by running:
   * `Unblock-File .\install.ps1`
 * Enable script execution by running:
@@ -57,13 +62,10 @@ Installation
     * You can also pass your password as an argument: `.\install.ps1 -password <password>`
 * After installation it is recommended to switch to "host-only" networking mode and take a VM snapshot
 
-Contributing
-===
+## Contributing
 Want to get started contributing? See the links below to learn how.
 * FLARE VM installation script and configuration
   * https://github.com/mandiant/flare-vm
-* Submit ideas and issues related to the installer script and configuration
-  * https://github.com/mandiant/flare-vm/* sues
 * Repository of all tool packages
   * https://github.com/mandiant/VM-Packages
 * Documentation and contribution guides for tool packages
@@ -71,8 +73,35 @@ Want to get started contributing? See the links below to learn how.
 * Submit new tool packages or report related issues
   * https://github.com/mandiant/VM-Packages/issues
 
-Legal Notice
-============
+## Troubleshooting
+If your installation fails, please attempt to identify the reason for the installation error by reading through the logs files listed below on your system:
+* `%VM_COMMON_DIR%\log.txt`
+* `%PROGRAMDATA%\chocolatey\logs\chocolatey.log`
+* `%LOCALAPPDATA%\Boxstarter\boxstarter.log`
+
+### Installer Error
+If the installation failed due to an issue in the installation script (e.g., `install.ps1`), file an issue here: https://github.com/mandiant/flare-vm/issues
+
+> **Note:** Rarely should `install.ps1` be the reason for an installation failure. Most likely it is a specific package or set of packages that are failing (see below).
+
+### Package Error
+Packages fail to install from time to time -- this is normal. The most common reasons are outlined below:
+
+1. Failure or timeout from MyGet to download the `.nupkg` file
+2. Failure or timeout due to remote host
+3. Intrusion Detection System (IDS) or AV product (e.g., Windows Defender) prevents a tool download or removes the tool from the system
+4. Host specific requirements
+    1. Untested host
+    2. Not enough disk space to install tools
+5. Tool fails to build due to dependencies
+6. Broken tool URL (e.g., `HTTP STATUS 404`)
+7. Tool's hash has changed from what is hardcoded in the package installation script
+
+Reasons 1-4 are difficult, so if an issue related to those is filed it is unlikely we will be able to assist.
+
+We can help with reasons 5-7 and welcome the community to contribute fixes as well!
+
+## Legal Notice
 <pre>This download configuration script is provided to assist cyber security analysts
 in creating handy and versatile toolboxes for malware analysis environments. It
 provides a convenient interface for them to obtain a useful set of analysis
