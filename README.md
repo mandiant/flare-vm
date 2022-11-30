@@ -1,53 +1,45 @@
 <pre>
-                                                                                                    
-                                                                           .'.                      
-                                                                         .:oc.                      
-                                                                       .:odl'                       
-                                                                     .;oddo'                        
-                                                                   .,ldddo,                         
-                                                                  ,lddddo;                          
-                                                                'coddddd:.                          
-                                                              .coddddddc.                           
-                                                            .:odddddddc.                            
-                                                          .;oddddddddl.                             
-                                                        .;ldddddddddl'                              
-                                                      .,lddddddddddo,                               
-                         .........                   'coddddddddddd:.........                       
-                       .:llllllllllc'             ..codddddddddddddollllllllll;.                    
-                        ;ododdddddddo'          .:loddddddddddddddddddoddddddo'                     
-                         ;oddddddddddl.       .:ododddddddddddddddddddddddddo,                      
-                         .:dddddddddddl.    .;lddddddddddddddddddddddddddddo,                       
-                          .:dddddodddddc.  .cdddddddddddddddddddddddddddddo;                        
-                           .cdddddddddddc. .,::::::::::::::::ldddddddddddo;                         
-                            .cddddddddddd:.                 .cddddddddddd:.                         
-                             :dddddddddddd;                .:ddodddddddd:.                          
-                            ;xxdddddddddddo;              .:dddddddddddl.                           
-                           ,dkxxdddddddddddo,             ;oddddoddddddxc.                          
-                          'dkxkkxdddddddddddo'           ,odddddodddddxkx:                          
-                         'dkxkkkkxdddddddddddl'         ,odddddddddddxkkkx:                         
-                        .okkkkkxkxxdddddddddddl.       'odddddddddddxxxkkkx;                        
-                       .okkkkkkkkkxxdddddddddddl.     'ldddddddddddxkkkkkkkx;                       
-                      .okkkkkkkkkkxc:oddddddddddc.   .ldddddddddddxxkkkkkkxkd,                      
-                     .lkkxkkkkkkkxc. ;oddddddddddc,..lddddddddddoldkkkkkkkkxkd'                     
-                    .lkkkkkkkkkxkl.   ;odddddddddoollodddddddddo, ,xkxkkkkkkkkd'                    
-                   .cxkkkkkkkkkkl.     ;ododddddddddddddddddddo,   ;xkkkkkkkkkkd'                   
-                  .cxkkkkkkkkkko.      .:ddddddddddddddddddddo;     :xkkkkkkkkkko.                  
-                  :xkxkkkkkkkkd'        .:ddddddddddddddddddo;       :xkkkkkkkkkko.                 
-                 :xkkkkkkkkkkd,          .cddddddddddddddddd:.       .ckkkkkkkkkkkl.                
-                ;xkkkkkkkkkkx;            .cddddddddddddddd:.         .lkkkkkkkkkkkl.               
-               ;xkkkkkkkkkkx:              .cdddddddddddddc.           .okkkkkkkkkkkc.              
-              ,xkxkkkkkkkkx:                .lddddddoddddc.             .okxkkkkkkkkxc.             
-             ,dkkkkkkkkkkkc.                 .ldddddddddc.               'okxkkkkkkkkx:             
-            'dkkkkxkkkkkkl.                   'lddoddodl.                 'dkxxkkkkkkkx:            
-           'dkxkkkkkkkxko.                     'odddddl.                   ,dkkkkkkxkkkx;           
-          .cxxxxxxxxxxdl.                       ,odddl.                     ,xkkkkkkkkkkx,          
-           ............                          .,;;.                       .;;;;;;;;;;;.          
-                                                                                                    
-          ________________________________________________________________________________          
-                                             Developed by                                           
-                                         flarevm@mandiant.com                                       
-                                        FLARE Team at Mandiant                                      
-          ________________________________________________________________________________          
+                                                                                
+                                                           .;,                  
+                                                         .;oo'                  
+                                                       .,ldo,                   
+                                                      ,lddo;                    
+                                                    'cdddo;                     
+                                                  .codddd:.                     
+                                                .:odddodc.                      
+                                              .;oddddddl.                       
+                                            .,ldddddddl'                        
+                                          .,lddddddddo,                         
+                  .;cccccccc;.          .'cdoddddddddolccccccc:.                
+                   ,odddddodd:.       .coododddddddddddddddddo;                 
+                    ,odddddddd:.    .:odddddddddddddddddddddd:.                 
+                     ;odddddddo;  .;oddddddddddddddddddddddd:.                  
+                      ;odddddddo; .,::::::::::::codddddddddc.                   
+                      .:ddddddddo,              'lddddddddc.                    
+                      .cdddddddddo'            .lddddddddl.                     
+                     .ckxdddddddddl.          .cdddddddddl.                     
+                    .:xkkxdddddddodl.        .:dddddddddxkl.                    
+                    :xkkkkxdddddddddc.      .:dddddddddxxkkl.                   
+                   ;xkkkkkxxdddddddddc.     ;dddddddddxkkkkkc.                  
+                  ;xkkkkkkkxllddddddddc.   ;oddddddddxxkkkkxxc.                 
+                 ,dkkkkkkkxc..ldddddddd:..,odddddddoldkkkkkkkx:.                
+                ,dkxkkkkkkl.  'ldddddddoolodddddddo,.;xkkkkkkkx:                
+               'dkkkkxkkkl.    'ododdddddddddddddo;   :xkkkkkxkx;               
+              'dkkkkkkkko.      ,odddddddddddoddo;     :xkkkkkkkx;              
+             .okkkkkkxkd'        ,oddddddddddodd:.     .ckkkkkkkkx,             
+            .okkkkkkkkd,          ;oddddddddddd:.       .lkkkxkkxkd,            
+           .lkkkxkkkkx;            ;oddddddddd:.         .lkkxkkkkkd'           
+          .lkkkkkkkkx;              ;odddddddc.           .okkkkkkkkd'          
+         .lkkkkkkkkx:               .:odddodc.             .okkkkkkxko.         
+        .ckkkkkkkkkc.                .:ddddc.               'dkxxxxxxko.        
+        .;c::cc:c:,.                  .:llc.                 'loooooooo;        
+                                        ..                          .           
+                                                                                
+        ________________________________________________________________        
+                                    Developed by                                
+                                flarevm@mandiant.com                            
+                               FLARE Team at Mandiant                           
+        ________________________________________________________________        
 </pre>
 
 # FLARE VM
