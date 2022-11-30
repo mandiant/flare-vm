@@ -1,23 +1,54 @@
-<p align="center">
-  <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
-</p>
-
-<table align="center">
 <pre>
-      ______ _               _____  ______   __      ____  __
-     |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
-     | |__  | |       /  \  | |__) | |__      \ \  / /| \  / |
-     |  __| | |      / /\ \ |  _  /|  __|      \ \/ / | |\/| |
-     | |    | |____ / ____ \| | \ \| |____      \  /  | |  | |
-     |_|    |______/_/    \_\_|  \_\______|      \/   |_|  |_|
-
-      ________________________________________________________
-                           Developed by
-                       flarevm@mandiant.com
-                      FLARE Team at Mandiant
-      ________________________________________________________
+                                                                                                    
+                                                                           .'.                      
+                                                                         .:oc.                      
+                                                                       .:odl'                       
+                                                                     .;oddo'                        
+                                                                   .,ldddo,                         
+                                                                  ,lddddo;                          
+                                                                'coddddd:.                          
+                                                              .coddddddc.                           
+                                                            .:odddddddc.                            
+                                                          .;oddddddddl.                             
+                                                        .;ldddddddddl'                              
+                                                      .,lddddddddddo,                               
+                         .........                   'coddddddddddd:.........                       
+                       .:llllllllllc'             ..codddddddddddddollllllllll;.                    
+                        ;ododdddddddo'          .:loddddddddddddddddddoddddddo'                     
+                         ;oddddddddddl.       .:ododddddddddddddddddddddddddo,                      
+                         .:dddddddddddl.    .;lddddddddddddddddddddddddddddo,                       
+                          .:dddddodddddc.  .cdddddddddddddddddddddddddddddo;                        
+                           .cdddddddddddc. .,::::::::::::::::ldddddddddddo;                         
+                            .cddddddddddd:.                 .cddddddddddd:.                         
+                             :dddddddddddd;                .:ddodddddddd:.                          
+                            ;xxdddddddddddo;              .:dddddddddddl.                           
+                           ,dkxxdddddddddddo,             ;oddddoddddddxc.                          
+                          'dkxkkxdddddddddddo'           ,odddddodddddxkx:                          
+                         'dkxkkkkxdddddddddddl'         ,odddddddddddxkkkx:                         
+                        .okkkkkxkxxdddddddddddl.       'odddddddddddxxxkkkx;                        
+                       .okkkkkkkkkxxdddddddddddl.     'ldddddddddddxkkkkkkkx;                       
+                      .okkkkkkkkkkxc:oddddddddddc.   .ldddddddddddxxkkkkkkxkd,                      
+                     .lkkxkkkkkkkxc. ;oddddddddddc,..lddddddddddoldkkkkkkkkxkd'                     
+                    .lkkkkkkkkkxkl.   ;odddddddddoollodddddddddo, ,xkxkkkkkkkkd'                    
+                   .cxkkkkkkkkkkl.     ;ododddddddddddddddddddo,   ;xkkkkkkkkkkd'                   
+                  .cxkkkkkkkkkko.      .:ddddddddddddddddddddo;     :xkkkkkkkkkko.                  
+                  :xkxkkkkkkkkd'        .:ddddddddddddddddddo;       :xkkkkkkkkkko.                 
+                 :xkkkkkkkkkkd,          .cddddddddddddddddd:.       .ckkkkkkkkkkkl.                
+                ;xkkkkkkkkkkx;            .cddddddddddddddd:.         .lkkkkkkkkkkkl.               
+               ;xkkkkkkkkkkx:              .cdddddddddddddc.           .okkkkkkkkkkkc.              
+              ,xkxkkkkkkkkx:                .lddddddoddddc.             .okxkkkkkkkkxc.             
+             ,dkkkkkkkkkkkc.                 .ldddddddddc.               'okxkkkkkkkkx:             
+            'dkkkkxkkkkkkl.                   'lddoddodl.                 'dkxxkkkkkkkx:            
+           'dkxkkkkkkkxko.                     'odddddl.                   ,dkkkkkkxkkkx;           
+          .cxxxxxxxxxxdl.                       ,odddl.                     ,xkkkkkkkkkkx,          
+           ............                          .,;;.                       .;;;;;;;;;;;.          
+                                                                                                    
+          ________________________________________________________________________________          
+                                             Developed by                                           
+                                         flarevm@mandiant.com                                       
+                                        FLARE Team at Mandiant                                      
+          ________________________________________________________________________________          
 </pre>
-</table>
 
 # FLARE VM
 Welcome to FLARE VM - a collection of software installations scripts for Windows systems that allows you to easily setup and maintain a reverse engineering environment on a virtual machine (VM). FLARE VM was designed to solve the problem of reverse engineering tool curation and relies on two main technologies: [Chocolatey](https://chocolatey.org) and [Boxstarter](https://boxstarter.org). Chocolatey is a Windows-based Nuget package management system, where a "package" is essentially a ZIP file containing PowerShell installation scripts that download and configure a specific tool. Boxstarter leverages Chocolatey packages to automate the installation of software and create repeatable, scripted Windows environments.
@@ -31,8 +62,8 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 * Windows 7 is no longer supported
 * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
 * Please do a fresh install instead of trying to update an older FLARE VM
+* The installer has a GUI and can be ran in CLI-only
 * Contributing is encouraged!!
-* The installer has a GUI!
 
 ## Installation
 
@@ -101,7 +132,7 @@ PARAMETERS
         Switch parameter to skip validation checks (not recommended).
 ```
 
-To run the installer in CLI-only mode, use the following combination of parameters:
+To run the installer in **CLI-only mode**, use the following combination of parameters:
 
 ```
 .\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
