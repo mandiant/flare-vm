@@ -1,5 +1,4 @@
 <pre>
-                                                                                   
                                                               .;,                  
                                                             .;oo'                  
                                                           .,ldo,                   
@@ -33,8 +32,6 @@
             .lkkkkkkkkx:               .:odddodc.             .okkkkkkxko.         
            .ckkkkkkkkkc.                .:ddddc.               'dkxxxxxxko.        
            .;c::cc:c:,.                  .:llc.                 'loooooooo;        
-                                                                                   
-                                                                                   
            ________________________________________________________________        
                                        Developed by                                
                                    flarevm@mandiant.com                            
@@ -139,7 +136,11 @@ The installer will download [config.xml](https://github.com/mandiant/flare-vm/bl
 ```
 
 ## Post Installation
+Previous versions of FLARE VM attempted to configure Windows settings post-installation with the goal of streamlining the system for malware analysis (e.g., disabling noisy services). This version of FLARE VM does not currently attempt to further configure Windows (e.g., removing bloatware). It is up to the user to manually configure their environment further.
 
+Below are links for post-installation tweaks for Windows 10+.
+* https://github.com/Sycnex/Windows10Debloater
+* https://github.com/Disassembler0/Win10-Initial-Setup-Script
 
 ## Contributing
 Want to get started contributing? See the links below to learn how.
