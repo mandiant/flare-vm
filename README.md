@@ -17,19 +17,22 @@
   <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
 </p>
 
+![flarevm](https://github.com/mandiant/flare-vm/blob/update_installer/flarevm.png)
+
 # FLARE VM
 Welcome to FLARE VM - a collection of software installations scripts for Windows systems that allows you to easily setup and maintain a reverse engineering environment on a virtual machine (VM). FLARE VM was designed to solve the problem of reverse engineering tool curation and relies on two main technologies: [Chocolatey](https://chocolatey.org) and [Boxstarter](https://boxstarter.org). Chocolatey is a Windows-based Nuget package management system, where a "package" is essentially a ZIP file containing PowerShell installation scripts that download and configure a specific tool. Boxstarter leverages Chocolatey packages to automate the installation of software and create repeatable, scripted Windows environments.
 
 ## Updates
 
-Our latest updates make FLARE VM more open and maintainable to allow the community to easily add and update tools and make them quickly available to everyone. We've worked hard to open source the packages (see the [VM-packages](https://github.com/mandiant/VM-Packages) repo) which detail how to install and configure analysis tools. The FLARE VM project now uses automatic testing, updating, and releasing to make updated packages immediately installable. See this [blog](insert URL) for more information regarding changes!
+Our latest updates make FLARE VM more open and maintainable to allow the community to easily add and update tools and make them quickly available to everyone. We've worked hard to open source the packages (see the [VM-packages](https://github.com/mandiant/VM-Packages) repo) which detail how to install and configure analysis tools. The FLARE VM project now uses automatic testing, updating, and releasing to make updated packages immediately installable. See this [blog](insert URL) for more information regarding recent changes!
 
-### Updates TL;DR
+### Good to Know Now
 
 * Windows 7 is no longer supported
 * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
-* Please do a fresh install instead of trying to updated older FLARE VM
-* You can contribute now!!
+* Please do a fresh install instead of trying to update an older FLARE VM
+* Contributing is encouraged!!
+* The installer has a GUI!
 
 ## Installation
 
@@ -62,19 +65,72 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
     * You can also pass your password as an argument: `.\install.ps1 -password <password>`
 * After installation it is recommended to switch to "host-only" networking mode and take a VM snapshot
 
+### Installer GUI
+
+The installer now features a GUI to enable easy customizations! You may customize:
+* Package selection
+* Environment variable paths
+
+![Installer GUI](https://github.com/mandiant/flare-vm/blob/update_installer/intaller_gui.png)
+
+### Installer CLI
+
+Get full usage information by running `Get-Help .\install.ps1  -Detailed`. Below are the CLI parameter descriptions.
+
+```
+PARAMETERS
+    -password <String>
+        Current user password to allow reboot resiliency via Boxstarter. The script prompts for the password if not provided.
+
+    -noPassword [<SwitchParameter>]
+        Switch parameter indicating a password is not needed for reboots.
+
+    -customConfig <String>
+        Path to a configuration XML file. May be a file path or URL.
+
+    -noWait [<SwitchParameter>]
+        Switch parameter to skip installation message before installation begins.
+
+    -noGui [<SwitchParameter>]
+        Switch parameter to skip customization GUI.
+
+    -noReboots [<SwitchParameter>]
+        Switch parameter to prevent reboots.
+
+    -noChecks [<SwitchParameter>]
+        Switch parameter to skip validation checks (not recommended).
+```
+
+To run the installer in CLI-only mode, use the following combination of parameters:
+
+```
+.\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
+```
+
+### Default FLARE VM Tools
+
+The installer will download [config.xml](https://github.com/mandiant/flare-vm/blob/update_installer/config.xml) from the FLARE VM repository. This file contains the default list of packages FLARE VM will install. You may use your own list of default packages by specifying the CLI-argument `-customConfig` and providing either a local file path or URL to your `config.xml` file. For example:
+
+```
+.\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml"
+```
+
+## Post Installation
+
+
 ## Contributing
 Want to get started contributing? See the links below to learn how.
-* FLARE VM installation script and configuration
-  * https://github.com/mandiant/flare-vm
-* Repository of all tool packages
-  * https://github.com/mandiant/VM-Packages
-* Documentation and contribution guides for tool packages
-  * https://github.com/mandiant/VM-Packages/wiki
-* Submit new tool packages or report related issues
-  * https://github.com/mandiant/VM-Packages/issues
+
+### Installer
+* [FLARE VM installation script, GUI, and configuration](https://github.com/mandiant/flare-vm)
+
+### Tool Packages
+* [Repository of all tool packages (VM-packages)](https://github.com/mandiant/VM-Packages)
+* [Documentation and contribution guides for tool packages](https://github.com/mandiant/VM-Packages/wiki)
+* [Submit new tool packages or report package related issues](https://github.com/mandiant/VM-Packages/issues)
 
 ## Troubleshooting
-If your installation fails, please attempt to identify the reason for the installation error by reading through the logs files listed below on your system:
+If your installation fails, please attempt to identify the reason for the installation error by reading through the log files listed below on your system:
 * `%VM_COMMON_DIR%\log.txt`
 * `%PROGRAMDATA%\chocolatey\logs\chocolatey.log`
 * `%LOCALAPPDATA%\Boxstarter\boxstarter.log`
@@ -87,31 +143,20 @@ If the installation failed due to an issue in the installation script (e.g., `in
 ### Package Error
 Packages fail to install from time to time -- this is normal. The most common reasons are outlined below:
 
-1. Failure or timeout from MyGet to download the `.nupkg` file
-2. Failure or timeout due to remote host
+1. Failure or timeout from Chocolatey or MyGet to download a `.nupkg` file
+2. Failure or timeout due to remote host when downloading a tool
 3. Intrusion Detection System (IDS) or AV product (e.g., Windows Defender) prevents a tool download or removes the tool from the system
-4. Host specific requirements
+4. Host specific requirement issue
     1. Untested host
     2. Not enough disk space to install tools
 5. Tool fails to build due to dependencies
-6. Broken tool URL (e.g., `HTTP STATUS 404`)
-7. Tool's hash has changed from what is hardcoded in the package installation script
+6. Old tool URL (e.g., `HTTP STATUS 404`)
+7. Tool's SHA256 hash has changed from what is hardcoded in the package installation script
 
-Reasons 1-4 are difficult, so if an issue related to those is filed it is unlikely we will be able to assist.
+Reasons **1-4** are difficult for us to fix since we do not control them. If an issue related to reasons **1-4** is filed, it is unlikely we will be able to assist.
 
-We can help with reasons 5-7 and welcome the community to contribute fixes as well!
+We can help with reasons **5-7** and welcome the community to contribute fixes as well! Please file GitHub issues related to package failures at: https://github.com/mandiant/VM-Packages/issues
 
 ## Legal Notice
-<pre>This download configuration script is provided to assist cyber security analysts
-in creating handy and versatile toolboxes for malware analysis environments. It
-provides a convenient interface for them to obtain a useful set of analysis
-tools directly from their original sources. Installation and use of this script
-is subject to the Apache 2.0 License.
-
-You as a user of this script must review, accept and comply with the license
-terms of each downloaded/installed package. By proceeding with the
-installation, you are accepting the license terms of each package, and
-acknowledging that your use of each package will be subject to its respective
-license terms.
-</pre>
+> This download configuration script is provided to assist cyber security analysts in creating handy and versatile toolboxes for malware analysis environments. It provides a convenient interface for them to obtain a useful set of analysis tools directly from their original sources. Installation and use of this script is subject to the Apache 2.0 License. You as a user of this script must review, accept and comply with the license terms of each downloaded/installed package. By proceeding with the installation, you are accepting the license terms of each package, and acknowledging that your use of each package will be subject to its respective license terms.
 
