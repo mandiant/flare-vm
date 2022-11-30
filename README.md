@@ -51,7 +51,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 * Windows 7 is no longer supported
 * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
 * Please do a fresh install instead of trying to update an older FLARE VM
-* The installer has a GUI and can be ran in CLI-only
+* The installer has a GUI and can also run in CLI-only mode
 * Contributing is encouraged!!
 
 ## Installation
@@ -65,7 +65,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
     * Using a disk capacity of at least 70-80 GB and memory of at least 2 GB
   * Disable Windows Updates (at least until installation is finished)
     * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
-  * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via GPO.
+  * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via Group Policy.
     * Disabling Tamper Protection
       * https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87
       * https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html
@@ -74,8 +74,8 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
       * https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10
       * https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1
 * Take a VM snapshot so you can always revert to a state before FLARE VM installation
-* Open a `PowerShell` window as administrator
-* Download the the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1) to your desktop
+* Open a `PowerShell` prompt as administrator
+* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1) to your desktop
   * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
 * Unblock the installation script by running:
   * `Unblock-File .\install.ps1`
@@ -96,7 +96,13 @@ The installer now features a GUI to enable easy customizations! You may customiz
 
 ### Installer CLI
 
-Get full usage information by running `Get-Help .\install.ps1  -Detailed`. Below are the CLI parameter descriptions.
+To run the installer in **CLI-only mode**, use the following combination of parameters:
+
+```
+.\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
+```
+
+Get full usage information by running `Get-Help .\install.ps1 -Detailed`. Below are the CLI parameter descriptions.
 
 ```
 PARAMETERS
@@ -120,12 +126,6 @@ PARAMETERS
 
     -noChecks [<SwitchParameter>]
         Switch parameter to skip validation checks (not recommended).
-```
-
-To run the installer in **CLI-only mode**, use the following combination of parameters:
-
-```
-.\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
 ```
 
 ### Default FLARE VM Tools
