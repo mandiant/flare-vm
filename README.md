@@ -1,3 +1,8 @@
+<p align="center">
+  <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
+</p>
+
+<table align="center">
 <pre>
       ______ _               _____  ______   __      ____  __
      |  ____| |        /\   |  __ \|  ____|  \ \    / /  \/  |
@@ -12,12 +17,7 @@
                       FLARE Team at Mandiant
       ________________________________________________________
 </pre>
-
-<p align="center">
-  <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
-</p>
-
-![flarevm](https://github.com/mandiant/flare-vm/blob/update_installer/flarevm.png)
+</table>
 
 # FLARE VM
 Welcome to FLARE VM - a collection of software installations scripts for Windows systems that allows you to easily setup and maintain a reverse engineering environment on a virtual machine (VM). FLARE VM was designed to solve the problem of reverse engineering tool curation and relies on two main technologies: [Chocolatey](https://chocolatey.org) and [Boxstarter](https://boxstarter.org). Chocolatey is a Windows-based Nuget package management system, where a "package" is essentially a ZIP file containing PowerShell installation scripts that download and configure a specific tool. Boxstarter leverages Chocolatey packages to automate the installation of software and create repeatable, scripted Windows environments.
@@ -71,7 +71,7 @@ The installer now features a GUI to enable easy customizations! You may customiz
 * Package selection
 * Environment variable paths
 
-![Installer GUI](https://github.com/mandiant/flare-vm/blob/update_installer/intaller_gui.png)
+![Installer GUI](https://github.com/mandiant/flare-vm/blob/update_installer/installer_gui.png)
 
 ### Installer CLI
 
