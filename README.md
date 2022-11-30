@@ -64,6 +64,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
     * Avoiding usernames containing a space or other special characters
     * Using a disk capacity of at least 70-80 GB and memory of at least 2 GB
   * Disable Windows Updates (at least until installation is finished)
+    * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
   * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via GPO. See below for resource links:
     * Disabling Tamper Protection
       * https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87
