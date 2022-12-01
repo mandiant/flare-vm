@@ -268,8 +268,10 @@ try {
 $Boxstarter.RebootOk = (-not $noReboots.IsPresent)
 $Boxstarter.NoPassword = $noPassword.IsPresent
 $Boxstarter.AutoLogin = $true
+$Boxstarter.SuppressLogging = $True
 $global:VerbosePreference = "SilentlyContinue"
 Set-BoxstarterConfig -NugetSources "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2;https://chocolatey.org/api/v2"
+Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -EnableShowProtectedOSFiles -EnableShowFileExtensions -EnableShowFullPathInTitleBar
 
 # Set Chocolatey options
 Write-Host "[+] Updating Chocolatey settings..."
@@ -840,6 +842,12 @@ $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
 Write-Host "[+] Logging basic system information to assist with any future troubleshooting..."
 Import-Module "${Env:VM_COMMON_DIR}\vm.common\vm.common.psm1" -Force -DisableNameChecking
 VM-Get-Host-Info
+
+# Download FLARE VM background
+$backgroundImage = "${Env:VM_COMMON_DIR}\background.png"
+if (-not (Test-Path $backgroundImage)) {
+    (New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/master/flarevm.png', $backgroundImage)
+}
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
