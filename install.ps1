@@ -52,7 +52,7 @@
         To prevent reboots, also add the "-noReboots" switch.
 
     .EXAMPLE
-        .\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml"
+        .\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml"
 
         Description
         ---------------------------------------
@@ -296,8 +296,7 @@ Write-Host "[+] Checking for configuration file..."
 $configPath = Join-Path $desktopPath "config.xml"
 if ([string]::IsNullOrEmpty($customConfig)) {
     # Download configuration file from GitHub
-    # TODO: Fix this path once PR pushed
-    $configPathUrl = 'https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml'
+    $configPathUrl = 'https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml'
     if (-Not (Test-Path $configPath)) {
         Write-Host "[+] Downloading configuration file..."
         (New-Object System.Net.WebClient).DownloadFile($configPathUrl, $configPath)
@@ -846,7 +845,7 @@ VM-Get-Host-Info
 # Download FLARE VM background
 $backgroundImage = "${Env:VM_COMMON_DIR}\background.png"
 if (-not (Test-Path $backgroundImage)) {
-    (New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/master/flarevm.png', $backgroundImage)
+    (New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/flarevm.png', $backgroundImage)
 }
 
 if (-not $noWait.IsPresent) {
