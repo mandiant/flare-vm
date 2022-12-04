@@ -75,8 +75,8 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
       * https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1
 * Take a VM snapshot so you can always revert to a state before FLARE VM installation
 * Open a `PowerShell` prompt as administrator
-* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1) to your desktop
-  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/master/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
+* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1) to your desktop
+  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
 * Unblock the installation script by running:
   * `Unblock-File .\install.ps1`
 * Enable script execution by running:
@@ -92,7 +92,7 @@ The installer now features a GUI to enable easy customizations! You may customiz
 * Package selection
 * Environment variable paths
 
-![Installer GUI](https://github.com/mandiant/flare-vm/blob/update_installer/installer_gui.png)
+![Installer GUI](https://github.com/mandiant/flare-vm/blob/main/installer_gui.png)
 
 ### Installer CLI
 
@@ -130,10 +130,10 @@ PARAMETERS
 
 ### Default FLARE VM Tools
 
-The installer will download [config.xml](https://github.com/mandiant/flare-vm/blob/update_installer/config.xml) from the FLARE VM repository. This file contains the default list of packages FLARE VM will install. You may use your own list of default packages by specifying the CLI-argument `-customConfig` and providing either a local file path or URL to your `config.xml` file. For example:
+The installer will download [config.xml](https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml) from the FLARE VM repository. This file contains the default list of packages FLARE VM will install. You may use your own list of default packages by specifying the CLI-argument `-customConfig` and providing either a local file path or URL to your `config.xml` file. For example:
 
 ```
-.\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/update_installer/config.xml"
+.\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml"
 ```
 
 ## Post Installation
