@@ -44,7 +44,7 @@ Welcome to FLARE VM - a collection of software installations scripts for Windows
 
 ## Updates
 
-Our latest updates make FLARE VM more open and maintainable to allow the community to easily add and update tools and make them quickly available to everyone. We've worked hard to open source the packages (see the [VM-packages](https://github.com/mandiant/VM-Packages) repo) which detail how to install and configure analysis tools. The FLARE VM project now uses automatic testing, updating, and releasing to make updated packages immediately installable. See this [blog](insert URL) for more information regarding recent changes!
+Our latest updates make FLARE VM more open and maintainable to allow the community to easily add and update tools and make them quickly available to everyone. We've worked hard to open source the packages (see the [VM-packages](https://github.com/mandiant/VM-Packages) repo) which detail how to install and configure analysis tools. The FLARE VM project now uses automatic testing, updating, and releasing to make updated packages immediately installable. See this [blog](https://www.mandiant.com/resources/blog/flarevm-open-to-public) for more information regarding recent changes!
 
 ### Good to Know Now
 
