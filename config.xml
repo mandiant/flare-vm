@@ -8,7 +8,7 @@
     </envs>
     <packages>
         <package name="010editor.vm"/>
-        <package name="7zip.vm"/>
+        <package name="7zip-15-05.vm"/>
         <package name="apimonitor.vm"/>
         <package name="apktool.vm"/>
         <package name="capa.vm"/>
