@@ -104,7 +104,7 @@ if (-not $noChecks.IsPresent) {
 
     # Check if Tamper Protection is disabled
     Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
-    if (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection") {
+    if (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection" -ea 0) {
         if ($(Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection").TamperProtection -eq 5) {
             Write-Host "`t[!] Please disable Tamper Protection, reboot, and rerun installer" -ForegroundColor Red
             Write-Host "`t[+] Hint: https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87" -ForegroundColor Yellow
@@ -124,21 +124,23 @@ if (-not $noChecks.IsPresent) {
 
     # Check if Defender is disabled
     Write-Host "[+] Checking if Windows Defender service is disabled..."
-    $defender = Get-Service -Name WinDefend
-    if ($defender.Status -eq "Running") {
-        Write-Host "`t[!] Please disable Windows Defender through Group Policy, reboot, and rerun installer" -ForegroundColor Red
-        Write-Host "`t[+] Hint: https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo" -ForegroundColor Yellow
-        Write-Host "`t[+] Hint: https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10" -ForegroundColor Yellow
-        Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
-        Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
-        Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
+    $defender = Get-Service -Name WinDefend -ea 0
+    if ($null -ne $defender) {
+        if ($defender.Status -eq "Running") {
+            Write-Host "`t[!] Please disable Windows Defender through Group Policy, reboot, and rerun installer" -ForegroundColor Red
+            Write-Host "`t[+] Hint: https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo" -ForegroundColor Yellow
+            Write-Host "`t[+] Hint: https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10" -ForegroundColor Yellow
+            Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
+            Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
+            Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+            $response = Read-Host
+            if ($response -notin @("y","Y")) {
+                exit 1
+            }
+        } else {
+            Write-Host "`t[+] Defender is disabled" -ForegroundColor Green
+            Start-Sleep -Milliseconds 500
         }
-    } else {
-        Write-Host "`t[+] Defender is disabled" -ForegroundColor Green
-        Start-Sleep -Milliseconds 500
     }
 
     # Check if Windows 7
