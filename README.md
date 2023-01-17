@@ -49,7 +49,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 ### Good to Know Now
 
 * Windows 7 is no longer supported
-* FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
+* FLARE VM has been tested on [Windows 10 1809 x64](https://archive.org/details/modern.ie-vm) and `20H2`
 * Please do a fresh install instead of trying to update an older FLARE VM
 * The installer has a GUI and can also run in CLI-only mode
 * Contributing is encouraged!!
@@ -59,7 +59,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 > **Note:** FLARE VM should ONLY be installed on a virtual machine!
 
 * Prepare a Windows 10+ virtual machine
-  * FLARE VM has been tested on [Windows 10 1809 x64](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and `20H2`
+  * FLARE VM has been tested on [Windows 10 1809 x64](https://archive.org/details/modern.ie-vm) and `20H2`
   * We recommend:
     * Avoiding usernames containing a space or other special characters
     * Using a disk capacity of at least 70-80 GB and memory of at least 2 GB
