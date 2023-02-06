@@ -188,8 +188,18 @@ if (-not $noChecks.IsPresent) {
     }
 
     # Check if system is a virtual machine
-    $virtualModels = @('VirtualBox', 'VMware Virtual Platform', 'Virtual Machine')
-    if ((Get-WmiObject win32_computersystem).model -notin $virtualModels) {
+    $virtualModels = @('VirtualBox', 'VMware', 'Virtual Machine', 'Hyper-V')
+    $computerSystemModel = (Get-WmiObject win32_computersystem).model
+    $isVirtualModel = $false
+    
+    foreach ($model in $virtualModels) {
+        if ($computerSystemModel.Contains($model)) {
+            $isVirtualModel = $true
+            break
+        }
+    }
+
+    if (!$isVirtualModel) {
         Write-Host "`t[!] You are not on a virual machine or have hardened your machine to not appear as a virtual machine" -ForegroundColor Red
         Write-Host "`t[!] Please do NOT install this on your host system as it can't be uninstalled completely" -ForegroundColor Red
         Write-Host "`t[!] ** Please only install on a virtual machine **" -ForegroundColor Red
