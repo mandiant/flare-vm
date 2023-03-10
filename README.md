@@ -83,6 +83,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
   * `Unblock-File .\install.ps1`
 * Enable script execution by running:
   * `Set-ExecutionPolicy Unrestricted`
+    * If you receive an error saying the execution policy is overridden by a policy defined at a more specific scope, you may need to pass a scope in via `Set-ExecutionPolicy Unrestricted -Scope CurrentUser` to view execution policies for all scopes, type `Get-ExecutionPolicy -List`
 * Finally, execute the installer script as follow:
   * `.\install.ps1`
     * You can also pass your password as an argument: `.\install.ps1 -password <password>`
