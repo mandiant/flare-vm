@@ -104,8 +104,9 @@ if (-not $noChecks.IsPresent) {
 
     # Check if Tamper Protection is disabled
     Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
-    if (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection" -ea 0) {
-        if ($(Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection").TamperProtection -eq 5) {
+    try {
+        $tpEnabled = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection" -ErrorAction Stop
+        if ($tpEnabled.TamperProtection -eq 5) {
             Write-Host "`t[!] Please disable Tamper Protection, reboot, and rerun installer" -ForegroundColor Red
             Write-Host "`t[+] Hint: https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87" -ForegroundColor Yellow
             Write-Host "`t[+] Hint: https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html" -ForegroundColor Yellow
@@ -120,6 +121,14 @@ if (-not $noChecks.IsPresent) {
             Write-Host "`t[+] Tamper Protection is disabled" -ForegroundColor Green
             Start-Sleep -Milliseconds 500
         }
+    } catch {
+        Write-Host "`t[+] Tamper Protection is either not enabled or not detected" -ForegroundColor Yellow
+        Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
+        Start-Sleep -Milliseconds 500
     }
 
     # Check if Defender is disabled
