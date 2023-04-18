@@ -50,7 +50,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 
 * Windows 7 is no longer supported
 * FLARE VM has been tested on `Windows 10 1809 x64` and `20H2`
-  * See https://github.com/mandiant/flare-vm/issues/434 for options on downloaing a Windows VM image
+  * See https://github.com/mandiant/flare-vm/issues/434 for options on downloading a Windows VM image
 * Please do a fresh install instead of trying to update an older FLARE VM
 * The installer has a GUI and can also run in CLI-only mode
 * Contributing is encouraged!!
@@ -61,7 +61,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 
 * Prepare a Windows 10+ virtual machine
   * FLARE VM has been tested on `Windows 10 1809 x64` and `20H2`
-    * See https://github.com/mandiant/flare-vm/issues/434 for options on downloaing a Windows VM image
+    * See https://github.com/mandiant/flare-vm/issues/434 for options on downloading a Windows VM image
   * We recommend:
     * Avoiding usernames containing a space or other special characters
     * Using a disk capacity of at least 70-80 GB and memory of at least 2 GB
