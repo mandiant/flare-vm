@@ -1,4 +1,4 @@
-<pre>
+```
                                                               .;,                  
                                                             .;oo'                  
                                                           .,ldo,                   
@@ -37,7 +37,7 @@
                                    flarevm@mandiant.com                            
                                   FLARE Team at Mandiant                           
            ________________________________________________________________        
-</pre>
+```
 
 # FLARE VM
 Welcome to FLARE VM - a collection of software installations scripts for Windows systems that allows you to easily setup and maintain a reverse engineering environment on a virtual machine (VM). FLARE VM was designed to solve the problem of reverse engineering tool curation and relies on two main technologies: [Chocolatey](https://chocolatey.org) and [Boxstarter](https://boxstarter.org). Chocolatey is a Windows-based Nuget package management system, where a "package" is essentially a ZIP file containing PowerShell installation scripts that download and configure a specific tool. Boxstarter leverages Chocolatey packages to automate the installation of software and create repeatable, scripted Windows environments.
@@ -49,8 +49,6 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 ### Good to Know Now
 
 * Windows 7 is no longer supported
-* FLARE VM has been tested on `Windows 10 1809 x64` and `20H2`
-  * See https://github.com/mandiant/flare-vm/issues/434 for options on downloading a Windows VM image
 * Please do a fresh install instead of trying to update an older FLARE VM
 * The installer has a GUI and can also run in CLI-only mode
 * Contributing is encouraged!!
@@ -60,11 +58,11 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 > **Note:** FLARE VM should ONLY be installed on a virtual machine!
 
 * Prepare a Windows 10+ virtual machine
-  * FLARE VM has been tested on `Windows 10 1809 x64` and `20H2`
-    * See https://github.com/mandiant/flare-vm/issues/434 for options on downloading a Windows VM image
+  * Install Windows in the virtual machine, for example using the raw Windows 10 ISO from https://www.microsoft.com/en-us/software-download/windows10ISO (
+    * See other options in https://github.com/mandiant/flare-vm/issues/434
   * We recommend:
     * Avoiding usernames containing a space or other special characters
-    * Using a disk capacity of at least 70-80 GB and memory of at least 2 GB
+    * Using a disk capacity of at least 80 GB and memory of at least 2 GB
   * Disable Windows Updates (at least until installation is finished)
     * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
   * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via Group Policy.
@@ -86,7 +84,9 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
     * If you receive an error saying the execution policy is overridden by a policy defined at a more specific scope, you may need to pass a scope in via `Set-ExecutionPolicy Unrestricted -Scope CurrentUser` to view execution policies for all scopes, type `Get-ExecutionPolicy -List`
 * Finally, execute the installer script as follow:
   * `.\install.ps1`
-    * You can also pass your password as an argument: `.\install.ps1 -password <password>`
+    * To pass your password as an argument: `.\install.ps1 -password <password>`
+    * To use the CLI-only mode with minimal user interaction: `.\install.ps1 -password <password> -noWait -noGui -noChecks`
+    * To use the CLI-only mode with minimal user interaction and a custom config file: `.\install.ps1 -customConfig <config.xml> -password <password> -noWait -noGui -noChecks`
 * After installation it is recommended to switch to "host-only" networking mode and take a VM snapshot
 
 ### Installer GUI
@@ -99,10 +99,10 @@ The installer now features a GUI to enable easy customizations! You may customiz
 
 ### Installer CLI
 
-To run the installer in **CLI-only mode**, use the following combination of parameters:
+To run the installer in **CLI-only mode** with minimal user interaction, use the following combination of parameters:
 
 ```
-.\install.ps1 -password Passw0rd! -noWait -noGui -noChecks
+.\install.ps1 -password <password> -noWait -noGui -noChecks
 ```
 
 Get full usage information by running `Get-Help .\install.ps1 -Detailed`. Below are the CLI parameter descriptions.

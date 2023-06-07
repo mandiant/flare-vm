@@ -165,7 +165,7 @@ if (-not $noChecks.IsPresent) {
 
     # Check if host has been tested
     $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
-    $testedVersions = @(17763, 19042)
+    $testedVersions = @(19045, 17763, 19042)
     if ($osVersion -notin $testedVersions) {
         Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
         Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
