@@ -246,9 +246,9 @@ $boxstarterVersionGood = $false
 $chocolateyVersionGood = $false
 if(${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.exe")) {
     $version = choco --version
-    $chocolateyVersionGood = [System.Version]$version -ge [System.Version]"0.10.13"
+    $chocolateyVersionGood = [System.Version]$version -ge [System.Version]"2.0.0"
     choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
-    $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.0"
+    $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.2"
 }
 
 # Install Chocolatey and Boxstarter if needed
@@ -372,7 +372,7 @@ if (-not $noGui.IsPresent) {
         $availablePackagesPath = "$desktopPath\available_packages.txt"
         if (-not (Test-Path $availablePackagesPath)) {
             Write-Host "[+] Downloading list of available packages, may take a bit. Please be patient..."
-            choco list -s "https://www.myget.org/F/vm-packages/api/v2" -r | Out-File $availablePackagesPath
+            choco search -s "https://www.myget.org/F/vm-packages/api/v2" -r | Out-File $availablePackagesPath
         }
         (Get-Content $availablePackagesPath) | ForEach-Object {
             $Name, $Version = $_ -split '\|'
@@ -384,7 +384,7 @@ if (-not $noGui.IsPresent) {
     }
 
     function Get-InstalledPackages {
-        choco list -l -r | ForEach-Object {
+        choco list -r | ForEach-Object {
             $Name, $Version = $_ -split '\|'
             New-Object -TypeName psobject -Property @{
                 'Name' = $Name
