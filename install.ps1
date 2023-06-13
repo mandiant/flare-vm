@@ -248,7 +248,7 @@ if(${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.
     $version = choco --version
     $chocolateyVersionGood = [System.Version]$version -ge [System.Version]"2.0.0"
     choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
-    $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.0"
+    $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.2"
 }
 
 # Install Chocolatey and Boxstarter if needed
