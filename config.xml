@@ -41,6 +41,7 @@
         <package name="pebear.vm"/>
         <package name="peid.vm"/>
         <package name="pesieve.vm"/>
+        <package name="pestudio.vm"/>
         <package name="processdump.vm"/>
         <package name="regshot.vm"/>
         <package name="rundotnetdll.vm"/>
