@@ -26,6 +26,7 @@
         <package name="fakenet-ng.vm"/>
         <package name="floss.vm"/>
         <package name="ghidra.vm"/>
+        <package name="goresym.vm"/>
         <package name="hashmyfiles.vm"/>
         <package name="hollowshunter.vm"/>
         <package name="hxd.vm"/>
@@ -34,13 +35,16 @@
         <package name="innoextract.vm"/>
         <package name="innounp.vm"/>
         <package name="libraries.python3.vm"/>
+        <package name="malware-jail.vm"/>
         <package name="map.vm"/>
         <package name="nasm.vm"/>
+        <package name="net-reactor-slayer.vm"/>
         <package name="notepadplusplus.vm"/>
         <package name="notepadpp.plugin.compare.vm"/>
         <package name="pebear.vm"/>
         <package name="peid.vm"/>
         <package name="pesieve.vm"/>
+        <package name="pestudio.vm"/>
         <package name="processdump.vm"/>
         <package name="regshot.vm"/>
         <package name="rundotnetdll.vm"/>
@@ -48,6 +52,7 @@
         <package name="shellcode_launcher.vm"/>
         <package name="sysinternals.vm"/>
         <package name="uniextract2.vm"/>
+        <package name="upx.vm"/>
         <package name="vcbuildtools.vm"/>
         <package name="windbg.vm"/>
         <package name="wireshark.vm"/>
