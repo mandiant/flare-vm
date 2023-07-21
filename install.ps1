@@ -276,6 +276,11 @@ if (-not ($chocolateyVersionGood -and $boxstarterVersionGood)) {
 }
 Import-Module "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\boxstarter.chocolatey.psd1" -Force
 
+# Update the chocolatey if running the old version
+if (-not ($chocolateyVersionGood)){
+    choco upgrade chocolatey
+}
+
 # Attempt to disable updates (i.e., windows updates and store updates)
 Write-Host "[+] Attempting to disable updates..."
 Disable-MicrosoftUpdate
