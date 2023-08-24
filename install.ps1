@@ -226,6 +226,19 @@ if (-not $noChecks.IsPresent) {
     if ($response -notin @("y","Y")) {
         exit 1
     }
+
+    # Check for spaces in the username, exit if identified
+    Write-Host "[+] Checking for spaces in the username..."
+    $currentUsername = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $extractedUsername = $currentUsername -replace '^.*\\'
+    if ($extractedUsername -match '\s') {
+        Write-Host "`t[!] Username '$extractedUsername' contains a space and will break installation." -ForegroundColor Red
+        Write-Host "`t[!] Exiting..." -ForegroundColor Red
+        Start-Sleep 3
+        exit 1
+    } else {
+        Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
+    }
 }
 
 if (-not $noPassword.IsPresent) {
