@@ -73,6 +73,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
       * https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo
       * https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10
       * https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1
+      * https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/
 * Take a VM snapshot so you can always revert to a state before FLARE VM installation
 * Open a `PowerShell` prompt as administrator
 * Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1) to your desktop
