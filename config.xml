@@ -19,9 +19,14 @@
         <package name="cygwin.vm"/>
         <package name="de4dot-cex.vm"/>
         <package name="dependencywalker.vm"/>
+        <package name="dex2jar.vm"/>
+        <package name="didier-stevens-suite.vm"/>
         <package name="die.vm"/>
         <package name="dll-to-exe.vm"/>
+        <package name="dnfile.vm"/>
+        <package name="dnlib.vm"/>
         <package name="dnspyex.vm"/>
+        <package name="dotdumper.vm"/>
         <package name="explorersuite.vm"/>
         <package name="fakenet-ng.vm"/>
         <package name="floss.vm"/>
@@ -30,10 +35,14 @@
         <package name="hashmyfiles.vm"/>
         <package name="hollowshunter.vm"/>
         <package name="hxd.vm"/>
+        <package name="ida.plugin.capa.vm"/>
         <package name="idafree.vm"/>
         <package name="idr.vm"/>
+        <package name="ifpstools.vm"/>
+        <package name="ilspy.vm"/>
         <package name="innoextract.vm"/>
         <package name="innounp.vm"/>
+        <package name="isd.vm"/>
         <package name="libraries.python3.vm"/>
         <package name="malware-jail.vm"/>
         <package name="map.vm"/>
@@ -45,6 +54,7 @@
         <package name="peid.vm"/>
         <package name="pesieve.vm"/>
         <package name="pestudio.vm"/>
+        <package name="pma-labs.vm"/>
         <package name="processdump.vm"/>
         <package name="regshot.vm"/>
         <package name="rundotnetdll.vm"/>
@@ -54,6 +64,7 @@
         <package name="uniextract2.vm"/>
         <package name="upx.vm"/>
         <package name="vcbuildtools.vm"/>
+        <package name="vcredist-all"/>
         <package name="windbg.vm"/>
         <package name="wireshark.vm"/>
         <package name="x64dbg.ollydumpex.vm"/>
