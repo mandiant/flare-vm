@@ -879,7 +879,7 @@ VM-Get-Host-Info
 # Download FLARE VM background
 $backgroundImage = "${Env:VM_COMMON_DIR}\background.png"
 if (-not (Test-Path $backgroundImage)) {
-    (New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/flarevm.png', $backgroundImage)
+    (New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/flarevm-background.png', $backgroundImage)
 }
 
 if (-not $noWait.IsPresent) {
