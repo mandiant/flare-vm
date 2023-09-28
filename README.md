@@ -58,7 +58,7 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
 > **Note:** FLARE VM should ONLY be installed on a virtual machine!
 
 * Prepare a Windows 10+ virtual machine
-  * Install Windows in the virtual machine, for example using the raw Windows 10 ISO from https://www.microsoft.com/en-us/software-download/windows10ISO (
+  * Install Windows in the virtual machine, for example using the raw Windows 10 ISO from https://www.microsoft.com/en-us/software-download/windows10ISO
     * See other options in https://github.com/mandiant/flare-vm/issues/434
   * We recommend:
     * Avoiding usernames containing a space or other special characters
@@ -76,11 +76,11 @@ Our latest updates make FLARE VM more open and maintainable to allow the communi
       * https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/
 * Take a VM snapshot so you can always revert to a state before FLARE VM installation
 * Open a `PowerShell` prompt as administrator
-* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1) to your desktop
-  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
-* Unblock the installation script by running:
+* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1):
+  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"install.ps1")`
+* Unblock the installation script:
   * `Unblock-File .\install.ps1`
-* Enable script execution by running:
+* Enable script execution:
   * `Set-ExecutionPolicy Unrestricted`
     * If you receive an error saying the execution policy is overridden by a policy defined at a more specific scope, you may need to pass a scope in via `Set-ExecutionPolicy Unrestricted -Scope CurrentUser` to view execution policies for all scopes, type `Get-ExecutionPolicy -List`
 * Finally, execute the installer script as follow:
