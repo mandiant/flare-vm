@@ -1,44 +1,4 @@
-```
-                                                              .;,                  
-                                                            .;oo'                  
-                                                          .,ldo,                   
-                                                         ,lddo;                    
-                                                       'cdddo;                     
-                                                     .codddd:.                     
-                                                   .:odddodc.                      
-                                                 .;oddddddl.                       
-                                               .,ldddddddl'                        
-                                             .,lddddddddo,                         
-                     .;cccccccc;.          .'cdoddddddddolccccccc:.                
-                      ,odddddodd:.       .coododddddddddddddddddo;                 
-                       ,odddddddd:.    .:odddddddddddddddddddddd:.                 
-                        ;odddddddo;  .;oddddddddddddddddddddddd:.                  
-                         ;odddddddo; .,::::::::::::codddddddddc.                   
-                         .:ddddddddo,              'lddddddddc.                    
-                         .cdddddddddo'            .lddddddddl.                     
-                        .ckxdddddddddl.          .cdddddddddl.                     
-                       .:xkkxdddddddodl.        .:dddddddddxkl.                    
-                       :xkkkkxdddddddddc.      .:dddddddddxxkkl.                   
-                      ;xkkkkkxxdddddddddc.     ;dddddddddxkkkkkc.                  
-                     ;xkkkkkkkxllddddddddc.   ;oddddddddxxkkkkxxc.                 
-                    ,dkkkkkkkxc..ldddddddd:..,odddddddoldkkkkkkkx:.                
-                   ,dkxkkkkkkl.  'ldddddddoolodddddddo,.;xkkkkkkkx:                
-                  'dkkkkxkkkl.    'ododdddddddddddddo;   :xkkkkkxkx;               
-                 'dkkkkkkkko.      ,odddddddddddoddo;     :xkkkkkkkx;              
-                .okkkkkkxkd'        ,oddddddddddodd:.     .ckkkkkkkkx,             
-               .okkkkkkkkd,          ;oddddddddddd:.       .lkkkxkkxkd,            
-              .lkkkxkkkkx;            ;oddddddddd:.         .lkkxkkkkkd'           
-             .lkkkkkkkkx;              ;odddddddc.           .okkkkkkkkd'          
-            .lkkkkkkkkx:               .:odddodc.             .okkkkkkxko.         
-           .ckkkkkkkkkc.                .:ddddc.               'dkxxxxxxko.        
-           .;c::cc:c:,.                  .:llc.                 'loooooooo;        
-           ________________________________________________________________        
-                                       Developed by                                
-                                   flarevm@mandiant.com                            
-                                  FLARE Team at Mandiant                           
-           ________________________________________________________________        
-```
-
+![FLARE-VM Logo](Images/flarevm-logo.png)
 # FLARE VM
 Welcome to FLARE VM - a collection of software installations scripts for Windows systems that allows you to easily setup and maintain a reverse engineering environment on a virtual machine (VM). FLARE VM was designed to solve the problem of reverse engineering tool curation and relies on two main technologies: [Chocolatey](https://chocolatey.org) and [Boxstarter](https://boxstarter.org). Chocolatey is a Windows-based Nuget package management system, where a "package" is essentially a ZIP file containing PowerShell installation scripts that download and configure a specific tool. Boxstarter leverages Chocolatey packages to automate the installation of software and create repeatable, scripted Windows environments.
 
