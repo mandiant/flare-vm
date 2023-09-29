@@ -2,8 +2,7 @@
 <config>
     <envs>
         <env name="VM_COMMON_DIR" value="%ProgramData%\_VM"/>
-        <env name="TOOL_LIST_DIR" value="%ProgramData%\Microsoft\Windows\Start Menu\Programs\Tools"/>
-        <env name="TOOL_LIST_SHORTCUT" value="%UserProfile%\Desktop\Tools.lnk"/>
+        <env name="TOOL_LIST_DIR" value="%UserProfile%\Desktop\Tools"/>
         <env name="RAW_TOOLS_DIR" value="%SystemDrive%\Tools"/>
     </envs>
     <packages>
