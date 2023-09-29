@@ -23,7 +23,6 @@
         <package name="didier-stevens-suite.vm"/>
         <package name="die.vm"/>
         <package name="dll-to-exe.vm"/>
-        <package name="dnfile.vm"/>
         <package name="dnlib.vm"/>
         <package name="dnspyex.vm"/>
         <package name="dotdumper.vm"/>
