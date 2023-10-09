@@ -71,4 +71,33 @@
         <package name="x64dbgpy.vm"/>
         <package name="yara.vm"/>
     </packages>
+    <registry-items>
+        <!--
+        INFO:
+        Makes custom edits to the registry
+        FORMAT:
+        <registry-item name="DESCRIPTIVE_NAME" path="REG_PATH" value="REG_VALUE" type="TYPE" data="NEW_DATA"/>
+        -->
+        <registry-item name="Show full directory path in Explorer title bar" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\CabinetState" value="FullPath" type="DWord" data="1"/>
+        <registry-item name="Show known file extensions" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="HideFileExt" type="DWord" data="0"/>
+        <registry-item name="Show hidden files" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="Hidden" type="DWord" data="1"/>
+        <registry-item name="Disable SmartScreen" path="HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" value="EnableSmartScreen" type="DWord" data="0" />
+        <registry-item name="Disable Microsoft Edge Phishing Filter" path="HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\PhishingFilter" value="EnabledV9" type="DWord" data="0" />
+        <registry-item name="Disable Windows Firewall (Standard Profile)" path="HKLM:\SOFTWARE\Policies\Microsoft\WindowsFirewall\StandardProfile" value="EnableFirewall" type="DWord" data="0" />
+        <!-- Set dark mode
+        <registry-item name="Set Dark Mode on System" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" value="SystemUsesLightTheme" type="DWord" data="0"/>
+        <registry-item name="Set Dark Mode on Apps" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" value="AppsUseLightTheme" type="DWord" data="0"/>
+        -->
+    </registry-items>
+    <custom-items>
+        <!--
+        INFO:
+        Performs custom commands
+        FORMAT:
+        <custom-item name="DESCRIPTIVE_NAME"> <cmd value="PS_COMMAND"/> ... </custom-item>
+        -->
+        <custom-item name="Disabling Windows Firewall">
+            <cmd value="Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False" />
+        </custom-item>
+    </custom-items>
 </config>
