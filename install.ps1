@@ -254,18 +254,15 @@ if (-not $noPassword.IsPresent) {
     }
 }
 
-# Check Chocolatey and Boxstarter versions
+# Check Boxstarter version
 $boxstarterVersionGood = $false
-$chocolateyVersionGood = $false
-if(${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.exe")) {
-    $version = choco --version
-    $chocolateyVersionGood = [System.Version]$version -ge [System.Version]"2.0.0"
+if (${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.exe")) {
     choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
     $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.2"
 }
 
-# Install Chocolatey and Boxstarter if needed
-if (-not ($chocolateyVersionGood -and $boxstarterVersionGood)) {
+# Install Boxstarter if needed
+if (-not $boxstarterVersionGood) {
     Write-Host "[+] Installing Boxstarter..." -ForegroundColor Cyan
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
@@ -274,6 +271,13 @@ if (-not ($chocolateyVersionGood -and $boxstarterVersionGood)) {
     Start-Sleep -Milliseconds 500
 }
 Import-Module "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\boxstarter.chocolatey.psd1" -Force
+
+# Check Chocolatey version
+$version = choco --version
+$chocolateyVersionGood = [System.Version]$version -ge [System.Version]"2.0.0"
+
+# Update Chocolatey if needed
+if (-not ($chocolateyVersionGood)) { choco upgrade chocolatey }
 
 # Attempt to disable updates (i.e., windows updates and store updates)
 Write-Host "[+] Attempting to disable updates..."
