@@ -271,20 +271,6 @@ if (-not ($chocolateyVersionGood -and $boxstarterVersionGood)) {
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
     Get-Boxstarter -Force
 
-    # Fix verbosity issues with Boxstarter v3
-    # See: https://github.com/chocolatey/boxstarter/issues/501
-    $fileToFix = "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\Chocolatey.ps1"
-    $offendingString = 'if ($val -is [string] -or $val -is [boolean]) {'
-    if ((Get-Content $fileToFix -raw) -contains $offendingString) {
-        $fixString = 'if ($val -is [string] -or $val -is [boolean] -or $val -is [system.management.automation.actionpreference]) {'
-        ((Get-Content $fileToFix -raw) -replace [regex]::escape($offendingString),$fixString) | Set-Content $fileToFix
-    }
-    $fileToFix = "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\invoke-chocolatey.ps1"
-    $offendingString = 'Verbose           = $VerbosePreference'
-    if ((Get-Content $fileToFix -raw) -contains $offendingString) {
-        $fixString = 'Verbose           = ($global:VerbosePreference -eq "Continue")'
-        ((Get-Content $fileToFix -raw) -replace [regex]::escape($offendingString),$fixString) | Set-Content $fileToFix
-    }
     Start-Sleep -Milliseconds 500
 }
 Import-Module "${Env:ProgramData}\boxstarter\boxstarter.chocolatey\boxstarter.chocolatey.psd1" -Force
