@@ -1,0 +1,17 @@
+name: 💡 Feature proposal
+description: Propose a new feature or improvement.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improving FLARE-VM. Before submitting your issue:
+        - **If you need help installing FLARE-VM or want to report a bug, use the [bug issue type](https://github.com/mandiant/flare-vm/issues/new?assignees=&labels=%3Abug%3A+bug&template=bug.yml) instead and provide all the information requested there.** Otherwise we won't be able to help you.
+        - We track only features related to the installer in this repository. If the issue is related to a concrete tool or package, please report it in [VM-Packages](https://github.com/mandiant/VM-Packages/issues/new).
+        - Check the [open issues](https://github.com/mandiant/flare-vm/issues) and ensure there is not already a similar issue. If there is already a similar issue, please add more details there instead of opening a new one.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Details
+      description: The more details, the better!
+    validations:
+      required: true

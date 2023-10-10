@@ -1,0 +1,62 @@
+name: 🐛 Bug
+description: You need help installing FLARE-VM or something doesn't work as expected
+labels: [":bug: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improving FLARE-VM. Before submitting your issue:
+        - We track only bugs related to the installer in this repository. If the issue is related to a concrete tool or package (for example a single package that fails to install), please report it in [VM-Packages](https://github.com/mandiant/VM-Packages/issues/new?assignees=&labels=%3Abug%3A+bug&template=bug.yml).
+        - Check the [open issues](https://github.com/mandiant/flare-vm/issues) and ensure there is not already a similar issue. If there is already a similar issue, please add more details there instead of opening a new one.
+        - Ensure you are running the [latest version of the FLARE-VM installer](https://github.com/mandiant/flare-vm/blob/main/install.ps1) and that you have internet connection in the VM.
+        - Fill all the requested information accurately in this issue to ensure we are able to help you.
+        - If you know how to solve this problem, please send also a pull request! :pray:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the problem?
+      description: Include the actual and expected behavior. The more details, the better!
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. First Step
+        2. Second Step
+        3. and so on…
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Include the following details about your environment:
+        - **Virtualization software**: VMWare, VirtualBox, etc.
+        - **VM OS version**: run `(Get-CimInstance Win32_OperatingSystem).version` in Powershell
+        - **VM PowerShell version**: run `$PSVersionTable.PSVersion.ToString()` in Powershell
+        - **VM Chocolatey version**: run `choco --version`
+        - **VM Boxstarter version**: run `choco info -l -r "boxstarter"`
+        - **Output of `VM-Get-Host-Info`** that will be available if the `vm.common` package has been install: run `VM-Get-Host-Info` in PowerShell with admin rights
+      placeholder: |
+        - Virtualization software: 
+        - VM OS version: 
+        - VM PowerShell version: 
+        - VM Chocolatey version: 
+        - VM Boxstarter version: 
+        - Output of `VM-Get-Host-Info`: 
+
+    validations:
+      required: true
+  - type: textarea
+    id: extra-info
+    attributes:
+      label: Additional Information
+      description: |
+        Any additional information, configuration or data that might be necessary to understand and reproduce the issue. For example:
+        - Console output
+        - The log files `C:\ProgramData\_VM\log.txt` and `C:\ProgramData\chocolatey\logs\chocolatey.log`
+
+        Text logs are preferred over screenshots.
