@@ -111,6 +111,7 @@ if (-not $noChecks.IsPresent) {
             Write-Host "`t[+] Hint: https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87" -ForegroundColor Yellow
             Write-Host "`t[+] Hint: https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html" -ForegroundColor Yellow
             Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
+            Write-Host "`t[+] Hint: https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/" -ForegroundColor Yellow
             Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
             Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
             $response = Read-Host
@@ -239,6 +240,21 @@ if (-not $noChecks.IsPresent) {
     } else {
         Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
     }
+}
+
+# Check Internet connectivity and return boolean value, exit if value is 'false'
+Write-Host "[+] Checking for Internet connectivity..."
+$connectionStatus =  Test-Connection 1.1.1.1 -Quiet
+if ($connectionStatus -eq $false)
+{
+    Write-Host "`t[!] Internet connectivity not detected" -ForegroundColor Red
+    Write-Host "`t[!] Exiting..." -ForegroundColor Red
+    Start-Sleep 3
+    exit 1 
+}
+else
+{
+    Write-Host "`t[+] Internet connectivity detected" -ForegroundColor Green
 }
 
 if (-not $noPassword.IsPresent) {
