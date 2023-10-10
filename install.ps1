@@ -178,6 +178,20 @@ if (-not $noChecks.IsPresent) {
         Write-Host "`t[+] Installing on Windows version $osVersion" -ForegroundColor Green
     }
 
+    # Check PowerShell version
+    Write-Host "[+] Checking if PowerShell version is compatible..."
+    $psVersion = $PSVersionTable.PSVersion
+    if ($psVersion -lt [System.Version]"5.0.0") {
+        Write-Host "`t[!] You are using PowerShell version $psVersion. This is an old version and you may experience errors" -ForegroundColor Red
+        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
+    } else {
+        Write-Host "`t[+] Installing with PowerShell version $psVersion" -ForegroundColor Green
+    }
+
     # Check if host has enough disk space
     Write-Host "[+] Checking if host has enough disk space..."
     $disk = Get-PSDrive (Get-Location).Drive.Name
