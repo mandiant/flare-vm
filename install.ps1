@@ -240,11 +240,10 @@ if (-not $noChecks.IsPresent) {
     } else {
         Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
     }
-}
 
 # Check Internet connectivity and return boolean value, exit if value is 'false'
 Write-Host "[+] Checking for Internet connectivity..."
-$connectionStatus =  Test-Connection 1.1.1.1 -Quiet
+$connectionStatus =  Test-Connection github.com -Quiet
 if ($connectionStatus -eq $false)
 {
     Write-Host "`t[!] Internet connectivity not detected" -ForegroundColor Red
@@ -255,6 +254,8 @@ if ($connectionStatus -eq $false)
 else
 {
     Write-Host "`t[+] Internet connectivity detected" -ForegroundColor Green
+}
+
 }
 
 if (-not $noPassword.IsPresent) {
