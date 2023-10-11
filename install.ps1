@@ -540,15 +540,6 @@ if (-not $noGui.IsPresent) {
     $unselectedPackagesBox.height        = 322
     $unselectedPackagesBox.location      = New-Object System.Drawing.Point(6,40)
 
-    # TODO: Add categories in the future
-    #$packageTypeCombo                  = New-Object system.Windows.Forms.ComboBox
-    #$packageTypeCombo.width            = 246
-    #$packageTypeCombo.height           = 20
-    #$packageTypeCombo.location         = New-Object System.Drawing.Point(6,40)
-    #$packageTypeCombo.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    #$packageTypeCombo.Items.Add('All') | Out-Null
-    #$packageTypeCombo.SelectedIndex    = 0
-
     $removePackageButton               = New-Object system.Windows.Forms.Button
     $removePackageButton.text          = "<"
     $removePackageButton.width         = 24
