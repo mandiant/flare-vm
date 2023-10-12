@@ -526,16 +526,16 @@ if (-not $noGui.IsPresent) {
     $form.StartPosition     = 'CenterScreen'
 
     $envVarGroup            = New-Object system.Windows.Forms.Groupbox
-    $envVarGroup.height     = 245
+    $envVarGroup.height     = 201
     $envVarGroup.width      = 690
     $envVarGroup.text       = "Environment Variable Customization"
     $envVarGroup.location   = New-Object System.Drawing.Point(15,59)
 
     $packageGroup           = New-Object system.Windows.Forms.Groupbox
-    $packageGroup.height    = 380
+    $packageGroup.height    = 385
     $packageGroup.width     = 540
     $packageGroup.text      = "Package Installation Customization"
-    $packageGroup.location  = New-Object System.Drawing.Point(81,313)
+    $packageGroup.location  = New-Object System.Drawing.Point(81,285)
 
     $welcomeLabel           = New-Object system.Windows.Forms.Label
     $welcomeLabel.text      = "Welcome to FLARE VM's custom installer. Please select your options below.`nDefault values will be used if you make no modifications."
@@ -560,15 +560,6 @@ if (-not $noGui.IsPresent) {
     $unselectedPackagesBox.width         = 246
     $unselectedPackagesBox.height        = 322
     $unselectedPackagesBox.location      = New-Object System.Drawing.Point(6,40)
-
-    # TODO: Add categories in the future
-    #$packageTypeCombo                  = New-Object system.Windows.Forms.ComboBox
-    #$packageTypeCombo.width            = 246
-    #$packageTypeCombo.height           = 20
-    #$packageTypeCombo.location         = New-Object System.Drawing.Point(6,40)
-    #$packageTypeCombo.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    #$packageTypeCombo.Items.Add('All') | Out-Null
-    #$packageTypeCombo.SelectedIndex    = 0
 
     $removePackageButton               = New-Object system.Windows.Forms.Button
     $removePackageButton.text          = "<"
@@ -708,44 +699,11 @@ if (-not $noGui.IsPresent) {
     $toolListDirNote.location        = New-Object System.Drawing.Point(190,94)
     $toolListDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-    $toolListShortCutText            = New-Object system.Windows.Forms.TextBox
-    $toolListShortCutText.multiline  = $false
-    $toolListShortCutText.width      = 385
-    $toolListShortCutText.height     = 20
-    $toolListShortCutText.location   = New-Object System.Drawing.Point(190,113)
-    $toolListShortCutText.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $toolListShortCutText.text       = $envs['TOOL_LIST_SHORTCUT']
-
-    $toolListShortcutSelect          = New-Object system.Windows.Forms.Button
-    $toolListShortcutSelect.text     = "Select Folder"
-    $toolListShortcutSelect.width    = 95
-    $toolListShortcutSelect.height   = 30
-    $toolListShortcutSelect.location = New-Object System.Drawing.Point(588,109)
-    $toolListShortcutSelect.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $selectFolderArgs3 = @{textBox=$toolListShortCutText; envVar="TOOL_LIST_SHORTCUT"}
-    $toolListShortcutSelect.Add_Click({Get-Folder @selectFolderArgs3})
-
-    $toolListShortcutLabel           = New-Object system.Windows.Forms.Label
-    $toolListShortcutLabel.text      = "%TOOL_LIST_SHORTCUT%"
-    $toolListShortcutLabel.AutoSize  = $true
-    $toolListShortcutLabel.width     = 25
-    $toolListShortcutLabel.height    = 10
-    $toolListShortcutLabel.location  = New-Object System.Drawing.Point(2,116)
-    $toolListShortcutLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
-
-    $toolListShortcutNote            = New-Object system.Windows.Forms.Label
-    $toolListShortcutNote.text       = "Shortcut to %TOOL_LIST_DIR%"
-    $toolListShortcutNote.AutoSize   = $true
-    $toolListShortcutNote.width      = 25
-    $toolListShortcutNote.height     = 10
-    $toolListShortcutNote.location   = New-Object System.Drawing.Point(190,137)
-    $toolListShortcutNote.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
     $rawToolsDirText                 = New-Object system.Windows.Forms.TextBox
     $rawToolsDirText.multiline       = $false
     $rawToolsDirText.width           = 385
     $rawToolsDirText.height          = 20
-    $rawToolsDirText.location        = New-Object System.Drawing.Point(190,157)
+    $rawToolsDirText.location        = New-Object System.Drawing.Point(190,113)
     $rawToolsDirText.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $rawToolsDirText.text            = $envs['RAW_TOOLS_DIR']
 
@@ -753,7 +711,7 @@ if (-not $noGui.IsPresent) {
     $rawToolsDirSelect.text          = "Select Folder"
     $rawToolsDirSelect.width         = 95
     $rawToolsDirSelect.height        = 30
-    $rawToolsDirSelect.location      = New-Object System.Drawing.Point(588,153)
+    $rawToolsDirSelect.location      = New-Object System.Drawing.Point(588,109)
     $rawToolsDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $selectFolderArgs4 = @{textBox=$rawToolsDirText; envVar="RAW_TOOLS_DIR"}
     $rawToolsDirSelect.Add_Click({Get-Folder @selectFolderArgs4})
@@ -763,7 +721,7 @@ if (-not $noGui.IsPresent) {
     $rawToolsDirLabel.AutoSize       = $true
     $rawToolsDirLabel.width          = 25
     $rawToolsDirLabel.height         = 10
-    $rawToolsDirLabel.location       = New-Object System.Drawing.Point(2,160)
+    $rawToolsDirLabel.location       = New-Object System.Drawing.Point(2,116)
     $rawToolsDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
 
     $rawToolsDirNote                 = New-Object system.Windows.Forms.Label
@@ -771,7 +729,7 @@ if (-not $noGui.IsPresent) {
     $rawToolsDirNote.AutoSize        = $true
     $rawToolsDirNote.width           = 25
     $rawToolsDirNote.height          = 10
-    $rawToolsDirNote.location        = New-Object System.Drawing.Point(190,181)
+    $rawToolsDirNote.location        = New-Object System.Drawing.Point(190,137)
     $rawToolsDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $metapackageNote1                = New-Object system.Windows.Forms.Label
@@ -779,7 +737,7 @@ if (-not $noGui.IsPresent) {
     $metapackageNote1.AutoSize       = $true
     $metapackageNote1.width          = 25
     $metapackageNote1.height         = 10
-    $metapackageNote1.location       = New-Object System.Drawing.Point(219,201)
+    $metapackageNote1.location       = New-Object System.Drawing.Point(220,157)
     $metapackageNote1.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $metapackageNote2                = New-Object system.Windows.Forms.Label
@@ -787,7 +745,7 @@ if (-not $noGui.IsPresent) {
     $metapackageNote2.AutoSize       = $true
     $metapackageNote2.width          = 25
     $metapackageNote2.height         = 10
-    $metapackageNote2.location       = New-Object System.Drawing.Point(219,220)
+    $metapackageNote2.location       = New-Object System.Drawing.Point(220,176)
     $metapackageNote2.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $metapackageNote3                = New-Object system.Windows.Forms.Label
@@ -795,7 +753,7 @@ if (-not $noGui.IsPresent) {
     $metapackageNote3.AutoSize       = $true
     $metapackageNote3.width          = 25
     $metapackageNote3.height         = 10
-    $metapackageNote3.location       = New-Object System.Drawing.Point(182,210)
+    $metapackageNote3.location       = New-Object System.Drawing.Point(182,157)
     $metapackageNote3.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]::Bold)
 
     $okButton                        = New-Object system.Windows.Forms.Button
@@ -848,9 +806,6 @@ if (-not $noGui.IsPresent) {
         $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
         $newXmlNode.SetAttribute("name", "TOOL_LIST_DIR")
         $newXmlNode.SetAttribute("value", $toolListDirText.text);
-        $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
-        $newXmlNode.SetAttribute("name", "TOOL_LIST_SHORTCUT")
-        $newXmlNode.SetAttribute("value", $toolListShortCutText.text);
         $newXmlNode = $envs.AppendChild($configXml.CreateElement("env"))
         $newXmlNode.SetAttribute("name", "RAW_TOOLS_DIR")
         $newXmlNode.SetAttribute("value", $rawToolsDirText.text)
