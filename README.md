@@ -109,7 +109,7 @@ Below are links for post-installation tweaks for Windows 10+.
 
 We do encourage you to download and set your background to the FLARE VM logo!
 <p align="center">
-  <img width="300" height="300" src="flarevm.png?raw=true" alt="FLARE VM"/>
+  <img width="300" height="300" src="Images/flarevm-background.png?raw=true" alt="FLARE VM"/>
 </p>
 
 ## Contributing
