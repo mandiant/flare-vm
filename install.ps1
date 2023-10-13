@@ -78,6 +78,17 @@ $desktopPath = [Environment]::GetFolderPath("Desktop")
 Set-Location -Path $desktopPath -PassThru | Out-Null
 
 if (-not $noChecks.IsPresent) {
+    # Check PowerShell version
+    Write-Host "[+] Checking if PowerShell version is compatible..."
+    $psVersion = $PSVersionTable.PSVersion
+    if ($psVersion -lt [System.Version]"5.0.0") {
+        Write-Host "`t[!] You are using PowerShell version $psVersion. This is an old version and it is not supported" -ForegroundColor Red
+        Read-Host "Press any key to exit..."
+        exit 1
+    } else {
+        Write-Host "`t[+] Installing with PowerShell version $psVersion" -ForegroundColor Green
+    }
+
     # Ensure script is ran as administrator
     Write-Host "[+] Checking if script is running as administrator..."
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -100,6 +111,102 @@ if (-not $noChecks.IsPresent) {
     } else {
         Write-Host "`t[+] Execution policy is unrestricted" -ForegroundColor Green
         Start-Sleep -Milliseconds 500
+    }
+
+    # Check if Windows 7
+    Write-Host "[+] Checking to make sure Operating System is compatible..."
+    if ((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601") {
+        Write-Host "`t[!] Windows 7 is no longer supported / tested" -ForegroundColor Yellow
+        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
+    }
+
+    # Check if host has been tested
+    $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
+    $testedVersions = @(19045, 17763, 19042)
+    if ($osVersion -notin $testedVersions) {
+        Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
+        Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
+        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
+    } else {
+        Write-Host "`t[+] Installing on Windows version $osVersion" -ForegroundColor Green
+    }
+
+    # Check if system is a virtual machine
+    $virtualModels = @('VirtualBox', 'VMware', 'Virtual Machine', 'Hyper-V')
+    $computerSystemModel = (Get-WmiObject win32_computersystem).model
+    $isVirtualModel = $false
+
+    foreach ($model in $virtualModels) {
+        if ($computerSystemModel.Contains($model)) {
+            $isVirtualModel = $true
+            break
+        }
+    }
+
+    if (!$isVirtualModel) {
+        Write-Host "`t[!] You are not on a virual machine or have hardened your machine to not appear as a virtual machine" -ForegroundColor Red
+        Write-Host "`t[!] Please do NOT install this on your host system as it can't be uninstalled completely" -ForegroundColor Red
+        Write-Host "`t[!] ** Please only install on a virtual machine **" -ForegroundColor Red
+        Write-Host "`t[!] ** Only continue if you know what you are doing! **" -ForegroundColor Red
+        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
+    }
+
+    # Check for spaces in the username, exit if identified
+    Write-Host "[+] Checking for spaces in the username..."
+    $currentUsername = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $extractedUsername = $currentUsername -replace '^.*\\'
+    if ($extractedUsername -match '\s') {
+        Write-Host "`t[!] Username '$extractedUsername' contains a space and will break installation." -ForegroundColor Red
+        Write-Host "`t[!] Exiting..." -ForegroundColor Red
+        Start-Sleep 3
+        exit 1
+    } else {
+        Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
+    }
+
+    # Check if host has enough disk space
+    Write-Host "[+] Checking if host has enough disk space..."
+    $disk = Get-PSDrive (Get-Location).Drive.Name
+    Start-Sleep -Seconds 1
+    if (-Not (($disk.used + $disk.free)/1GB -gt 58.8)) {
+        Write-Host "`t[!] A minimum of 60 GB hard drive space is preferred. Please increase hard drive space of the VM, reboot, and retry install" -ForegroundColor Red
+        Write-Host "`t[+] If you have multiple drives, you may change the tool installation location via the envrionment variable %RAW_TOOLS_DIR% in config.xml or GUI" -ForegroundColor Yellow
+        Write-Host "`t[+] However, packages provided from the Chocolatey community repository will install to their default location" -ForegroundColor Yellow
+        Write-Host "`t[+] See: https://stackoverflow.com/questions/19752533/how-do-i-set-chocolatey-to-install-applications-onto-another-drive" -ForegroundColor Yellow
+        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+        $response = Read-Host
+        if ($response -notin @("y","Y")) {
+            exit 1
+        }
+    } else {
+        Write-Host "`t[+] Disk is larger than 60 GB" -ForegroundColor Green
+    }
+
+    # Check if there is internet connectivity
+    Write-Host "[+] Checking for Internet connectivity..."
+    $connectionStatus =  Test-Connection github.com -Quiet
+    if ($connectionStatus -eq $false)
+    {
+        Write-Host "`t[!] Internet connectivity not detected" -ForegroundColor Red
+        Write-Host "`t[!] Exiting..." -ForegroundColor Red
+        Start-Sleep 3
+        exit 1
+    }
+    else
+    {
+        Write-Host "`t[+] Internet connectivity detected" -ForegroundColor Green
     }
 
     # Check if Tamper Protection is disabled
@@ -153,123 +260,12 @@ if (-not $noChecks.IsPresent) {
         }
     }
 
-    # Check if Windows 7
-    Write-Host "[+] Checking to make sure Operating System is compatible..."
-    if ((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601") {
-        Write-Host "`t[!] Windows 7 is no longer supported / tested" -ForegroundColor Yellow
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    }
-
-    # Check if host has been tested
-    $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
-    $testedVersions = @(19045, 17763, 19042)
-    if ($osVersion -notin $testedVersions) {
-        Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
-        Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    } else {
-        Write-Host "`t[+] Installing on Windows version $osVersion" -ForegroundColor Green
-    }
-
-    # Check PowerShell version
-    Write-Host "[+] Checking if PowerShell version is compatible..."
-    $psVersion = $PSVersionTable.PSVersion
-    if ($psVersion -lt [System.Version]"5.0.0") {
-        Write-Host "`t[!] You are using PowerShell version $psVersion. This is an old version and you may experience errors" -ForegroundColor Red
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    } else {
-        Write-Host "`t[+] Installing with PowerShell version $psVersion" -ForegroundColor Green
-    }
-
-    # Check if host has enough disk space
-    Write-Host "[+] Checking if host has enough disk space..."
-    $disk = Get-PSDrive (Get-Location).Drive.Name
-    Start-Sleep -Seconds 1
-    if (-Not (($disk.used + $disk.free)/1GB -gt 58.8)) {
-        Write-Host "`t[!] A minimum of 60 GB hard drive space is preferred. Please increase hard drive space of the VM, reboot, and retry install" -ForegroundColor Red
-        Write-Host "`t[+] If you have multiple drives, you may change the tool installation location via the envrionment variable %RAW_TOOLS_DIR% in config.xml or GUI" -ForegroundColor Yellow
-        Write-Host "`t[+] However, packages provided from the Chocolatey community repository will install to their default location" -ForegroundColor Yellow
-        Write-Host "`t[+] See: https://stackoverflow.com/questions/19752533/how-do-i-set-chocolatey-to-install-applications-onto-another-drive" -ForegroundColor Yellow
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    } else {
-        Write-Host "`t[+] Disk is larger than 60 GB" -ForegroundColor Green
-    }
-
-    # Check if system is a virtual machine
-    $virtualModels = @('VirtualBox', 'VMware', 'Virtual Machine', 'Hyper-V')
-    $computerSystemModel = (Get-WmiObject win32_computersystem).model
-    $isVirtualModel = $false
-    
-    foreach ($model in $virtualModels) {
-        if ($computerSystemModel.Contains($model)) {
-            $isVirtualModel = $true
-            break
-        }
-    }
-
-    if (!$isVirtualModel) {
-        Write-Host "`t[!] You are not on a virual machine or have hardened your machine to not appear as a virtual machine" -ForegroundColor Red
-        Write-Host "`t[!] Please do NOT install this on your host system as it can't be uninstalled completely" -ForegroundColor Red
-        Write-Host "`t[!] ** Please only install on a virtual machine **" -ForegroundColor Red
-        Write-Host "`t[!] ** Only continue if you know what you are doing! **" -ForegroundColor Red
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    }
-
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
     $response = Read-Host
     if ($response -notin @("y","Y")) {
         exit 1
     }
-
-    # Check for spaces in the username, exit if identified
-    Write-Host "[+] Checking for spaces in the username..."
-    $currentUsername = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-    $extractedUsername = $currentUsername -replace '^.*\\'
-    if ($extractedUsername -match '\s') {
-        Write-Host "`t[!] Username '$extractedUsername' contains a space and will break installation." -ForegroundColor Red
-        Write-Host "`t[!] Exiting..." -ForegroundColor Red
-        Start-Sleep 3
-        exit 1
-    } else {
-        Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
-    }
-
-# Check Internet connectivity and return boolean value, exit if value is 'false'
-Write-Host "[+] Checking for Internet connectivity..."
-$connectionStatus =  Test-Connection github.com -Quiet
-if ($connectionStatus -eq $false)
-{
-    Write-Host "`t[!] Internet connectivity not detected" -ForegroundColor Red
-    Write-Host "`t[!] Exiting..." -ForegroundColor Red
-    Start-Sleep 3
-    exit 1 
-}
-else
-{
-    Write-Host "`t[+] Internet connectivity detected" -ForegroundColor Green
-}
-
 }
 
 if (-not $noPassword.IsPresent) {
