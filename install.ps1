@@ -126,7 +126,10 @@ if (-not $noChecks.IsPresent) {
 
     # Check if host has been tested
     $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
-    $testedVersions = @(19045, 17763, 19042)
+    # 17763: the version used by windows-2019 in GH actions
+    # 19045: https://www.microsoft.com/en-us/software-download/windows10ISO downloaded on April 25 2023.
+    # 20348: the version used by windows-2022 in GH actions
+    $testedVersions = @(17763, 19045, 20348)
     if ($osVersion -notin $testedVersions) {
         Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
         Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
