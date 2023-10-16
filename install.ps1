@@ -837,6 +837,7 @@ foreach ($env in $configXml.config.envs.env) {
     $path = [Environment]::ExpandEnvironmentVariables($($env.value))
     Write-Host "`t[+] Setting %$($env.name)% to: $path" -ForegroundColor Green
     [Environment]::SetEnvironmentVariable("$($env.name)", $path, "Machine")
+    [Environment]::SetEnvironmentVariable('VMname', 'FLARE-VM', [EnvironmentVariableTarget]::Machine)
 }
 refreshenv
 
@@ -845,18 +846,25 @@ refreshenv
 Write-Host "[+] Installing shared module..."
 choco install common.vm -y --force
 refreshenv
+
+# Use single config
 $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
+$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "packages.xml"))
 
 # Log basic system information to assist with troubleshooting
 Write-Host "[+] Logging basic system information to assist with any future troubleshooting..."
 Import-Module "${Env:VM_COMMON_DIR}\vm.common\vm.common.psm1" -Force -DisableNameChecking
 VM-Get-Host-Info
 
-# Download FLARE VM background
+Write-Host "[+] Installing the debloat.vm debloater and performance package"
+choco install debloat.vm -y --force
+
+# Download FLARE VM background image
 $backgroundImage = "${Env:VM_COMMON_DIR}\background.png"
-if (-not (Test-Path $backgroundImage)) {
-    (New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/flarevm-background.png', $backgroundImage)
-}
+(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/flarevm-background.png', $backgroundImage)
+# Use background image for lock screen as well
+$lockScreenImage = "${Env:VM_COMMON_DIR}\lockscreen.png"
+Copy-Item $backgroundImage $lockScreenImage
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
@@ -895,11 +903,11 @@ following command:
     Wait-ForInstall -seconds 30
 }
 
-# Invoke installer package
+# Begin the package install
 Write-Host "[+] Beginning install of configured packages..." -ForegroundColor Green
+$PackageName = "installer.vm"
 if ($noPassword.IsPresent) {
-    Install-BoxstarterPackage -packageName "flarevm.installer.vm"
+    Install-BoxstarterPackage -packageName $PackageName
 } else {
-    Install-BoxstarterPackage -packageName "flarevm.installer.vm" -credential $credentials
+    Install-BoxstarterPackage -packageName $PackageName -credential $credentials
 }
-
