@@ -31,7 +31,7 @@
         Switch parameter to skip customization GUI.
 
     .PARAMETER noReboots
-        Switch parameter to prevent reboots.
+        Switch parameter to prevent reboots (not recommended).
 
     .PARAMETER noChecks
         Switch parameter to skip validation checks (not recommended).
