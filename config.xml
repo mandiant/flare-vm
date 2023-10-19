@@ -71,6 +71,44 @@
         <package name="x64dbgpy.vm"/>
         <package name="yara.vm"/>
     </packages>
+    <apps>
+        <!--
+        INFO:
+        Removes installed AppX packages. Try:
+        $packages = Get-AppxPackage
+        $packages.Name
+        FORMAT:
+        <app name="APP_NAME"/>
+        -->
+    </apps>
+    <services>
+        <!--
+        INFO:
+        Sets Services to "Manual" startup type. Try:
+        $services = Get-WmiObject -Query "SELECT * FROM Win32_Service WHERE StartMode='Auto'" | Get-Service
+        $services.Name
+        FORMAT:
+        <service name="SERVICE_NAME"/>
+        -->
+    </services>
+    <tasks>
+        <!--
+        INFO:
+        Disables Scheduled Tasks. Try:
+        $tasks = Get-ScheduledTask
+        $tasks.TaskName
+        FORMAT:
+        <task name="DESCRIPTIVE_NAME" value="TASK_NAME"/>
+        -->
+    </tasks>
+    <path-items>
+        <!--
+        INFO:
+        Removes files and folders from the system
+        FORMAT:
+        <path-item name="DESCRIPTIVE_NAME" type="dir/file" path="DIR_PATH/FILE_PATH"/>
+        -->
+    </path-items>
     <registry-items>
         <!--
         INFO:
