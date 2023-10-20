@@ -38,6 +38,7 @@
         <package name="idr.vm"/>
         <package name="ifpstools.vm"/>
         <package name="ilspy.vm"/>
+        <package name="imhex.vm"/>
         <package name="innoextract.vm"/>
         <package name="innounp.vm"/>
         <package name="isd.vm"/>
@@ -52,11 +53,14 @@
         <package name="peid.vm"/>
         <package name="pesieve.vm"/>
         <package name="pestudio.vm"/>
+        <package name="pkg-unpacker.vm"/>
         <package name="pma-labs.vm"/>
         <package name="processdump.vm"/>
+        <package name="reg_export.vm"/>
         <package name="regshot.vm"/>
         <package name="rundotnetdll.vm"/>
         <package name="scdbg.vm"/>
+        <package name="sfextract.vm"/>
         <package name="shellcode_launcher.vm"/>
         <package name="sysinternals.vm"/>
         <package name="uniextract2.vm"/>
