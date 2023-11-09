@@ -25,6 +25,7 @@
         <package name="dnlib.vm"/>
         <package name="dnspyex.vm"/>
         <package name="dotdumper.vm"/>
+        <package name="dotnet3.5"/> <!-- To run old .NET binaries -->
         <package name="explorersuite.vm"/>
         <package name="fakenet-ng.vm"/>
         <package name="floss.vm"/>
