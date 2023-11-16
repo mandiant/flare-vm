@@ -22,10 +22,14 @@ The VM should satisfy the following requirements:
 * Prepare a Windows 10+ virtual machine
   * Install Windows in the virtual machine, for example using the raw Windows 10 ISO from https://www.microsoft.com/en-us/software-download/windows10ISO
   * Ensure the [requirements above](#requirements) are satisfied, including:
-    * Disable Windows Updates (at least until installation is finished)
-      * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
+    * Disable Windows Updates (at least until installation is finished). Windows is constantly trying to make it harder to do this. In Windows 10 and 11, there are a couple ways to achieve this:
+      * Booting into safe mode and taking ownership of the defender executable and locking all user out (as described [here](https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/)).
+      * Booting into safe mode and disabling the defender-related services (as described [here](https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/)).
+      * [This](https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1) powershell script from AveYo.
     * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via Group Policy.
+      * The methods above for defender will also take care of Tamper Protection.
       * [https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo](https://superuser.com/a/1757341)
+      
 * Take a VM snapshot so you can always revert to a state before the FLARE-VM installation
 
 ### FLARE-VM installation
