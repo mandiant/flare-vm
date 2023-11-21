@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LayoutModificationTemplate
+    xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification"
+    xmlns:defaultlayout="http://schemas.microsoft.com/Start/2014/FullDefaultLayout"
+    xmlns:start="http://schemas.microsoft.com/Start/2014/StartLayout"
+    xmlns:taskbar="http://schemas.microsoft.com/Start/2014/TaskbarLayout"
+    Version="1">
+  <LayoutOptions StartTileGroupCellWidth="6" StartTileGroupsColumnCount="1" />
+  <DefaultLayoutOverride>
+    <StartLayoutCollection>
+      <defaultlayout:StartLayout GroupCellWidth="6">
+      </defaultlayout:StartLayout>
+    </StartLayoutCollection>
+  </DefaultLayoutOverride>
+    <CustomTaskbarLayoutCollection PinListPlacement="Replace">
+      <defaultlayout:TaskbarLayout>
+        <taskbar:TaskbarPinList>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%AppData%\Microsoft\Windows\Start Menu\Programs\System Tools\File Explorer.lnk"/>
+          <!--An Admin Command Prompt shortcut is created inside installer.vm-->
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%RAW_TOOLS_DIR%\Admin Command Prompt.lnk"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramFiles%\Google\Chrome\Application\chrome.exe"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramData%\chocolatey\bin\idafree.exe"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Networking\FakeNet-NG.lnk"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramData%\chocolatey\bin\CFFExplorer.exe"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\procexp.lnk"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\procmon.lnk"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramData%\chocolatey\bin\notepad++.exe"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\VisualStudio.lnk"/>
+        </taskbar:TaskbarPinList>
+      </defaultlayout:TaskbarLayout>
+    </CustomTaskbarLayoutCollection>
+</LayoutModificationTemplate>

@@ -62,16 +62,41 @@
         https://github.com/mandiant/flare-vm
         https://github.com/mandiant/VM-Packages
 #>
+
 param (
   [string]$password = $null,
   [switch]$noPassword,
   [string]$customConfig = $null,
+  [string]$customLayout = $null,
   [switch]$noWait,
   [switch]$noGui,
   [switch]$noReboots,
   [switch]$noChecks
 )
 $ErrorActionPreference = "Stop"
+
+# Function used for getting configuration files (such as config.xml and CustomStartLayout.xml)
+function Get-ConfigFile {
+    param (
+        [string]$fileDestination,
+        [string]$fileSource
+    )
+    # Check if the source is an existing file path.
+    if (-not (Test-Path $fileSource)) {
+        # If the source doesn't exist, assume it's a URL and download the file.
+        Write-Host "[+] Downloading config file from '$fileSource'"
+        try {
+            (New-Object System.Net.WebClient).DownloadFile($fileSource, $fileDestination)
+        } catch {
+            Write-Host "`t[!] Failed to download '$fileSource'"
+            Write-Host "`t[!] $_"
+        }
+    } else {
+        # If the source exists as a file, copy it to the destination.
+        Write-Host "[+] Using existing file as configuration file."
+        Copy-Item -Path $fileSource -Destination $fileDestination -Force
+    }
+}
 
 # Set path to user's desktop
 $desktopPath = [Environment]::GetFolderPath("Desktop")
@@ -349,21 +374,16 @@ powercfg -change -hibernate-timeout-dc 0 | Out-Null
 Write-Host "[+] Checking for configuration file..."
 $configPath = Join-Path $desktopPath "config.xml"
 if ([string]::IsNullOrEmpty($customConfig)) {
-    # Download configuration file from GitHub
-    $configPathUrl = 'https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml'
-    if (-Not (Test-Path $configPath)) {
-        Write-Host "[+] Downloading configuration file..."
-        (New-Object System.Net.WebClient).DownloadFile($configPathUrl, $configPath)
-    }
+    Write-Host "[+] Using github configuration file..."
+    $configSource = 'https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml'
 } else {
-    if ($customConfig.StartsWith("http")) {
-        # Download configuration file from user-provided URL
-        Write-Host "[+] Downloading configuration file..."
-        (New-Object System.Net.WebClient).DownloadFile($customConfig, $configPath)
-    } else {
-        $configPath = $customConfig
-    }
+    Write-Host "[+] Using custom configuration file..."
+    $configSource = $customConfig
 }
+
+Get-ConfigFile $configPath $configSource
+
+Write-Host "Configuration file path: $configPath"
 
 # Check the configuration file exists
 if (-Not (Test-Path $configPath)) {
@@ -839,6 +859,17 @@ foreach ($env in $configXml.config.envs.env) {
     [Environment]::SetEnvironmentVariable('VMname', 'FLARE-VM', [EnvironmentVariableTarget]::Machine)
 }
 refreshenv
+
+# Custom Start Layout setup
+Write-Host "[+] Checking for custom Start Layout file..."
+$layoutPath = Join-Path ${Env:VM_COMMON_DIR} "CustomStartLayout.xml"
+if ([string]::IsNullOrEmpty($customLayout)) {
+    $layoutSource = 'https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml'
+} else {
+    $layoutSource = $customLayout
+}
+
+Get-ConfigFile $layoutPath $layoutSource
 
 # Install the common module
 # This creates all necessary folders based on custom environment variables
