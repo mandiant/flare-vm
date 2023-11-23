@@ -16,7 +16,6 @@
       <defaultlayout:TaskbarLayout>
         <taskbar:TaskbarPinList>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%AppData%\Microsoft\Windows\Start Menu\Programs\System Tools\File Explorer.lnk"/>
-          <!--An Admin Command Prompt shortcut is created inside installer.vm-->
           <taskbar:DesktopApp DesktopApplicationLinkPath="%RAW_TOOLS_DIR%\Admin Command Prompt.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramFiles%\Google\Chrome\Application\chrome.exe"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramData%\chocolatey\bin\idafree.exe"/>
