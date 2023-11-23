@@ -48,6 +48,7 @@
         <package name="map.vm"/>
         <package name="nasm.vm"/>
         <package name="net-reactor-slayer.vm"/>
+        <package name="netcat.vm"/>
         <package name="notepadplusplus.vm"/>
         <package name="notepadpp.plugin.compare.vm"/>
         <package name="pebear.vm"/>
