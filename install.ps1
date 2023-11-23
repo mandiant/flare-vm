@@ -860,6 +860,16 @@ foreach ($env in $configXml.config.envs.env) {
 }
 refreshenv
 
+# Install the common module
+# This creates all necessary folders based on custom environment variables
+Write-Host "[+] Installing shared module..."
+choco install common.vm -y --force
+refreshenv
+
+# Use single config
+$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
+$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "packages.xml"))
+
 # Custom Start Layout setup
 Write-Host "[+] Checking for custom Start Layout file..."
 $layoutPath = Join-Path ${Env:VM_COMMON_DIR} "CustomStartLayout.xml"
@@ -870,16 +880,6 @@ if ([string]::IsNullOrEmpty($customLayout)) {
 }
 
 Get-ConfigFile $layoutPath $layoutSource
-
-# Install the common module
-# This creates all necessary folders based on custom environment variables
-Write-Host "[+] Installing shared module..."
-choco install common.vm -y --force
-refreshenv
-
-# Use single config
-$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "config.xml"))
-$configXml.save((Join-Path ${Env:VM_COMMON_DIR} "packages.xml"))
 
 # Log basic system information to assist with troubleshooting
 Write-Host "[+] Logging basic system information to assist with any future troubleshooting..."
