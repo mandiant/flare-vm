@@ -92,9 +92,9 @@ function Get-ConfigFile {
             Write-Host "`t[!] $_"
         }
     } else {
-        # If the source exists as a file, copy it to the destination.
+        # If the source exists as a file, move it to the destination.
         Write-Host "[+] Using existing file as configuration file."
-        Copy-Item -Path $fileSource -Destination $fileDestination -Force
+        Move-Item -Path $fileSource -Destination $fileDestination -Force
     }
 }
 
