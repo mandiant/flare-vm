@@ -75,6 +75,39 @@ param (
 )
 $ErrorActionPreference = "Stop"
 
+# Function to test the network stack. Ping/GET requests to the resource to ensure that network stack looks good for installation
+function Test-WebConnection {
+    param (
+        [string]$url
+    )
+
+    Write-Host "[+] Checking for Internet connectivity ($url)..."
+
+    if (-not (Test-Connection $url -Quiet)) {
+        Write-Host "`t[!] It looks like you cannot ping $url. Check your network settings." -ForegroundColor Red
+        Start-Sleep 3
+        exit 1
+    }
+
+    $response = $null
+    try {
+        $response = Invoke-WebRequest -Uri "https://$url" -UseBasicParsing
+    }
+    catch {
+        Write-Host "`t[!] Error accessing $url. Exception: $($_.Exception.Message)`n`t[!] Check your network settings." -ForegroundColor Red
+        Start-Sleep 3
+        exit 1
+    }
+
+    if ($response -and $response.StatusCode -ne 200) {
+        Write-Host "`t[!] Unable to access $url. Status code: $($response.StatusCode)`n`t[!] Check your network settings." -ForegroundColor Red
+        Start-Sleep 3
+        exit 1
+    }
+
+    Write-Host "`t[+] Internet connectivity check for $url passed" -ForegroundColor Green
+}
+
 # Function used for getting configuration files (such as config.xml and CustomStartLayout.xml)
 function Get-ConfigFile {
     param (
@@ -222,20 +255,12 @@ if (-not $noChecks.IsPresent) {
         Write-Host "`t[+] Disk is larger than 60 GB" -ForegroundColor Green
     }
 
-    # Check if there is internet connectivity
-    Write-Host "[+] Checking for Internet connectivity..."
-    $connectionStatus =  Test-Connection github.com -Quiet
-    if ($connectionStatus -eq $false)
-    {
-        Write-Host "`t[!] Internet connectivity not detected" -ForegroundColor Red
-        Write-Host "`t[!] Exiting..." -ForegroundColor Red
-        Start-Sleep 3
-        exit 1
-    }
-    else
-    {
-        Write-Host "`t[+] Internet connectivity detected" -ForegroundColor Green
-    }
+    # Internet connectivity checks
+    Test-WebConnection "google.com"
+    Test-WebConnection "github.com"
+    Test-WebConnection "raw.githubusercontent.com"
+
+    Write-Host "`t[+] Network connectivity looks good" -ForegroundColor Green
 
     # Check if Tamper Protection is disabled
     Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
