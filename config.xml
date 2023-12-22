@@ -19,6 +19,7 @@
         <package name="de4dot-cex.vm"/>
         <package name="dependencywalker.vm"/>
         <package name="dex2jar.vm"/>
+        <package name="didier-stevens-beta.vm"/>
         <package name="didier-stevens-suite.vm"/>
         <package name="die.vm"/>
         <package name="dll-to-exe.vm"/>
@@ -51,6 +52,11 @@
         <package name="netcat.vm"/>
         <package name="notepadplusplus.vm"/>
         <package name="notepadpp.plugin.compare.vm"/>
+        <package name="notepadpp.plugin.jstool.vm"/>
+        <package name="notepadpp.plugin.xmltools.vm"/>
+        <package name="offvis.vm"/>
+        <package name="onenoteanalyzer.vm"/>
+        <package name="pdfstreamdumper.vm"/>
         <package name="pebear.vm"/>
         <package name="peid.vm"/>
         <package name="pesieve.vm"/>
