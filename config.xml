@@ -10,6 +10,8 @@
         <package name="7zip-15-05.vm"/>
         <package name="apimonitor.vm"/>
         <package name="apktool.vm"/>
+        <package name="blobrunner.vm"/>
+        <package name="blobrunner64.vm"/>
         <package name="bytecodeviewer.vm"/>
         <package name="capa.vm"/>
         <package name="cmder.vm"/>
