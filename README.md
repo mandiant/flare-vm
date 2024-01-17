@@ -58,6 +58,9 @@ PARAMETERS
     -customConfig <String>
         Path to a configuration XML file. May be a file path or URL.
 
+    -customLayout <String>
+        Path to a taskbar layout XML file. May be a file path or URL.
+
     -noWait [<SwitchParameter>]
         Switch parameter to skip installation message before installation begins.
 
@@ -89,6 +92,20 @@ The installer will download [config.xml](https://raw.githubusercontent.com/mandi
 ```
 .\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml"
 ```
+
+#### Taskbar Layout
+The installer will use [CustomStartLayout.xml](https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml) from the FLARE-VM repository. This file contains the default taskbar layout. You may use your own configuration by specifying the CLI-argument `-customLayout` and providing a local file path or URL to your `CustomStartLayout.xml` file. For example:
+
+```
+.\install.ps1 -customLayout "https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml"
+```
+
+##### Things to Consider:
+- Items in the .xml that are not installed will not display in the taskbar (no broken links will be pinned)
+- Only applications (.exe files) or shortcuts to applications can be pinned.
+- If you would like to pin something that isn't an application, consider creating a shortcut that points to `cmd.exe` or `powershell` with arguments supplied that will perform that actions you would like.
+- If you would like to make something run with admin rights, consider making a shortcut using `VM-Install-Shortcut` with the flag `-runAsAdmin` and pinning the shortcut.
+
 
 #### Post installation steps
 You can include any post installation step you like in the configuration inside the tags `apps`, `services`, `path-items`, `registry-items`, and `custom-items`.
