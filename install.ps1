@@ -24,6 +24,9 @@
     .PARAMETER customConfig
         Path to a configuration XML file. May be a file path or URL.
 
+    .PARAMETER customLayout
+        Path to a taskbar layout XML file. May be a file path or URL.
+
     .PARAMETER noWait
         Switch parameter to skip installation message before installation begins.
 
