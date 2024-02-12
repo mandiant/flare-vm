@@ -49,6 +49,7 @@
         <package name="libraries.python3.vm"/>
         <package name="malware-jail.vm"/>
         <package name="map.vm"/>
+        <package name="microsoft-windows-terminal.vm"/>
         <package name="nasm.vm"/>
         <package name="net-reactor-slayer.vm"/>
         <package name="netcat.vm"/>
@@ -70,6 +71,8 @@
         <package name="regshot.vm"/>
         <package name="rundotnetdll.vm"/>
         <package name="scdbg.vm"/>
+        <package name="sclauncher.vm"/>
+        <package name="sclauncher64.vm"/>
         <package name="sfextract.vm"/>
         <package name="shellcode_launcher.vm"/>
         <package name="sysinternals.vm"/>
