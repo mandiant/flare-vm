@@ -30,8 +30,8 @@ The VM should satisfy the following requirements:
 
 ### FLARE-VM installation
 * Open a `PowerShell` prompt as administrator
-* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1):
-  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"install.ps1")`
+* Download the installation script [`installer.ps1`](https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1) to your Desktop:
+  * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
 * Unblock the installation script:
   * `Unblock-File .\install.ps1`
 * Enable script execution:
