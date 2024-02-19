@@ -31,6 +31,7 @@
         <package name="dotnet3.5"/> <!-- To run old .NET binaries -->
         <package name="explorersuite.vm"/>
         <package name="fakenet-ng.vm"/>
+        <package name="file.vm"/>
         <package name="floss.vm"/>
         <package name="ghidra.vm"/>
         <package name="goresym.vm"/>
