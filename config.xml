@@ -44,7 +44,6 @@
         <package name="idr.vm"/>
         <package name="ifpstools.vm"/>
         <package name="ilspy.vm"/>
-        <package name="imhex.vm"/>
         <package name="innoextract.vm"/>
         <package name="innounp.vm"/>
         <package name="isd.vm"/>
