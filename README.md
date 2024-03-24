@@ -25,9 +25,12 @@ This section documents the steps to install FLARE-VM. You may also find usuful t
   * Install Windows in the virtual machine, for example using the raw Windows 10 ISO from https://www.microsoft.com/en-us/software-download/windows10ISO
   * Ensure the [requirements above](#requirements) are satisfied, including:
     * Disable Windows Updates (at least until installation is finished)
-      * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
-    * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via Group Policy.
+      - [https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10](https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10)
+    * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via Group Policy (though this may not work in fully updated Windows 10 / 11, so other methods are provided here as well):
       * [https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo](https://superuser.com/a/1757341)
+      * Booting into safe mode and taking ownership of the defender executable and locking all user out (as described [here](https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/)).
+      * Booting into safe mode and disabling the defender-related services (as described [here](https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/)).
+      * [This](https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1) powershell script from AveYo.
 * Take a VM snapshot so you can always revert to a state before the FLARE-VM installation
 
 ### FLARE-VM installation
