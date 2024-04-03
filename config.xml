@@ -50,7 +50,6 @@
         <package name="libraries.python3.vm"/>
         <package name="malware-jail.vm"/>
         <package name="map.vm"/>
-        <package name="windows-terminal.vm"/>
         <package name="nasm.vm"/>
         <package name="net-reactor-slayer.vm"/>
         <package name="netcat.vm"/>
@@ -83,6 +82,7 @@
         <package name="vcbuildtools.vm"/>
         <package name="vcredist-all"/>
         <package name="windbg.vm"/>
+        <package name="windows-terminal.vm"/>
         <package name="wireshark.vm"/>
         <package name="x64dbg.ollydumpex.vm"/>
         <package name="x64dbg.scyllahide.vm"/>

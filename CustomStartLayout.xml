@@ -16,7 +16,7 @@
       <defaultlayout:TaskbarLayout>
         <taskbar:TaskbarPinList>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%AppData%\Microsoft\Windows\Start Menu\Programs\System Tools\File Explorer.lnk"/>
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%RAW_TOOLS_DIR%\Admin Command Prompt.lnk"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Productivity Tools\Windows Terminal.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\CyberChef.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Disassemblers\ida.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Networking\FakeNet-NG.lnk"/>
