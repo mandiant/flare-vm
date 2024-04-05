@@ -20,10 +20,10 @@
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\CyberChef.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Disassemblers\ida.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Networking\FakeNet-NG.lnk"/>
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramData%\chocolatey\bin\CFFExplorer.exe"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\PE\CFF Explorer.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\procexp.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\procmon.lnk"/>
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%ProgramData%\chocolatey\bin\notepad++.exe"/>
+          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Productivity Tools\notepad++.lnk"/>
           <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Utilities\VisualStudio.lnk"/>
         </taskbar:TaskbarPinList>
       </defaultlayout:TaskbarLayout>
