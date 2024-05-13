@@ -43,6 +43,10 @@
         <package name="hxd.vm"/>
         <package name="ida.diaphora.vm"/>
         <package name="ida.plugin.capa.vm"/>
+        <package name="ida.plugin.comida.vm"/>
+        <package name="ida.plugin.dereferencing.vm"/>
+        <package name="ida.plugin.flare.vm"/>
+        <package name="ida.plugin.ifl.vm"/>
         <package name="idafree.vm"/>
         <package name="idr.vm"/>
         <package name="ifpstools.vm"/>
@@ -75,6 +79,7 @@
         <package name="processdump.vm"/>
         <package name="reg_export.vm"/>
         <package name="regshot.vm"/>
+        <package name="resourcehacker.vm"/>
         <package name="rundotnetdll.vm"/>
         <package name="scdbg.vm"/>
         <package name="sclauncher.vm"/>
