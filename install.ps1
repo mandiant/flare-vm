@@ -314,6 +314,9 @@ if (-not $noChecks.IsPresent) {
         }
     }
 
+    Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
+    Set-LocalUser -Name  "${Env:UserName}" -PasswordNeverExpires $true
+
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
     $response = Read-Host
