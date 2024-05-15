@@ -229,10 +229,8 @@ if (-not $noChecks.IsPresent) {
 
     # Check for spaces in the username, exit if identified
     Write-Host "[+] Checking for spaces in the username..."
-    $currentUsername = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-    $extractedUsername = $currentUsername -replace '^.*\\'
-    if ($extractedUsername -match '\s') {
-        Write-Host "`t[!] Username '$extractedUsername' contains a space and will break installation." -ForegroundColor Red
+    if (${Env:userName} -match '\s') {
+        Write-Host "`t[!] Username '${Env:UserName}' contains a space and will break installation." -ForegroundColor Red
         Write-Host "`t[!] Exiting..." -ForegroundColor Red
         Start-Sleep 3
         exit 1
@@ -315,6 +313,9 @@ if (-not $noChecks.IsPresent) {
             Start-Sleep -Milliseconds 500
         }
     }
+
+    Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
+    Set-LocalUser -Name  "${Env:UserName}" -PasswordNeverExpires $true
 
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
