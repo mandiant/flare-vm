@@ -54,6 +54,7 @@
         <package name="innoextract.vm"/>
         <package name="innounp.vm"/>
         <package name="isd.vm"/>
+        <package name="js-deobfuscator.vm"/>
         <package name="libraries.python3.vm"/>
         <package name="magika.vm"/>
         <package name="malware-jail.vm"/>
@@ -65,6 +66,7 @@
         <package name="notepadpp.plugin.compare.vm"/>
         <package name="notepadpp.plugin.jstool.vm"/>
         <package name="notepadpp.plugin.xmltools.vm"/>
+        <package name="obfuscator-io-deobfuscator.vm"/>
         <package name="offvis.vm"/>
         <package name="onenoteanalyzer.vm"/>
         <package name="pdbresym.vm"/>
@@ -96,10 +98,11 @@
         <package name="windbg.vm"/>
         <package name="windows-terminal.vm"/>
         <package name="wireshark.vm"/>
-        <package name="x64dbg.ollydumpex.vm"/>
-        <package name="x64dbg.scyllahide.vm"/>
+        <package name="x64dbg.plugin.dbgchild.vm"/>
+        <package name="x64dbg.plugin.ollydumpex.vm"/>
+        <package name="x64dbg.plugin.scyllahide.vm"/>
+        <package name="x64dbg.plugin.x64dbgpy.vm"/>
         <package name="x64dbg.vm"/>
-        <package name="x64dbgpy.vm"/>
         <package name="yara.vm"/>
     </packages>
     <apps>
