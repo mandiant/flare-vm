@@ -80,6 +80,7 @@
         <package name="procdot.vm"/>
         <package name="processdump.vm"/>
         <package name="reg_export.vm"/>
+        <package name="regcool.vm"/>
         <package name="regshot.vm"/>
         <package name="resourcehacker.vm"/>
         <package name="rundotnetdll.vm"/>
