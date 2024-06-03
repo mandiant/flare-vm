@@ -41,7 +41,7 @@
         <package name="hashmyfiles.vm"/>
         <package name="hollowshunter.vm"/>
         <package name="hxd.vm"/>
-        <package name="ida.diaphora.vm"/>
+        <package name="ida.plugin.diaphora.vm"/>
         <package name="ida.plugin.capa.vm"/>
         <package name="ida.plugin.comida.vm"/>
         <package name="ida.plugin.dereferencing.vm"/>
