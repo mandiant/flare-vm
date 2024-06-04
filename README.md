@@ -27,7 +27,10 @@ This section documents the steps to install FLARE-VM. You may also find usuful t
     * Disable Windows Updates (at least until installation is finished)
       * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
     * Disable Tamper Protection and any Anti-Malware solution (e.g., Windows Defender), preferably via Group Policy.
-      * [https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo](https://superuser.com/a/1757341)
+      * GPO: [https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo](https://superuser.com/a/1757341)
+      * Non-GPO - Manual: [https://www.maketecheasier.com/permanently-disable-windows-defender-windows-10/](https://www.maketecheasier.com/permanently-disable-windows-defender-windows-10/)
+      * Non-GPO - Automated: [https://github.com/ionuttbara/windows-defender-remover](https://github.com/ionuttbara/windows-defender-remover)
+      * Non-GPO - Semi-Automated (User needs to toggle off Tamper Protection): [https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1] (https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1)
 * Take a VM snapshot so you can always revert to a state before the FLARE-VM installation
 
 ### FLARE-VM installation
