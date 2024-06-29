@@ -18,7 +18,7 @@ The VM should satisfy the following requirements:
 * Windows Updates Disabled
 
 ## Installation instruction
-This section documents the steps to install FLARE-VM. You may also find usuful the [_Building a VM for Reverse Engineering and Malware Analysis! Installing the FLARE-VM_ video](https://www.youtube.com/watch?v=i8dCyy8WMKY).
+This section documents the steps to install FLARE-VM. You may also find useful the [_Building a VM for Reverse Engineering and Malware Analysis! Installing the FLARE-VM_ video](https://www.youtube.com/watch?v=i8dCyy8WMKY).
 
 ### Pre-installation
 * Prepare a Windows 10+ virtual machine
