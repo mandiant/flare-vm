@@ -10,6 +10,7 @@
         <package name="7zip.vm"/>
         <package name="apimonitor.vm"/>
         <package name="apktool.vm"/>
+        <package name="autoit-ripper.vm"/>
         <package name="bindiff.vm"/>
         <package name="blobrunner.vm"/>
         <package name="blobrunner64.vm"/>
@@ -17,6 +18,7 @@
         <package name="capa.vm"/>
         <package name="cmder.vm"/>
         <package name="codetrack.vm"/>
+        <package name="cryptotester.vm"/>
         <package name="cyberchef.vm"/>
         <package name="cygwin.vm"/>
         <package name="de4dot-cex.vm"/>
@@ -36,15 +38,16 @@
         <package name="fakenet-ng.vm"/>
         <package name="file.vm"/>
         <package name="floss.vm"/>
+        <package name="garbageman.vm"/>
         <package name="ghidra.vm"/>
         <package name="goresym.vm"/>
         <package name="hashmyfiles.vm"/>
         <package name="hollowshunter.vm"/>
         <package name="hxd.vm"/>
-        <package name="ida.plugin.diaphora.vm"/>
         <package name="ida.plugin.capa.vm"/>
         <package name="ida.plugin.comida.vm"/>
         <package name="ida.plugin.dereferencing.vm"/>
+        <package name="ida.plugin.diaphora.vm"/>
         <package name="ida.plugin.flare.vm"/>
         <package name="ida.plugin.ifl.vm"/>
         <package name="idafree.vm"/>
@@ -71,6 +74,7 @@
         <package name="onenoteanalyzer.vm"/>
         <package name="pdbresym.vm"/>
         <package name="pdfstreamdumper.vm"/>
+        <package name="pe_unmapper.vm"/>
         <package name="pebear.vm"/>
         <package name="peid.vm"/>
         <package name="pesieve.vm"/>
@@ -91,10 +95,13 @@
         <package name="shellcode_launcher.vm"/>
         <package name="sysinternals.vm"/>
         <package name="systeminformer.vm"/>
+        <package name="ttd.vm"/>
         <package name="uniextract2.vm"/>
         <package name="upx.vm"/>
         <package name="vcbuildtools.vm"/>
         <package name="vcredist-all"/>
+        <package name="vscode.extension.jupyter.vm"/>
+        <package name="vscode.extension.python.vm"/>
         <package name="vscode.vm"/>
         <package name="windbg.vm"/>
         <package name="windows-terminal.vm"/>
