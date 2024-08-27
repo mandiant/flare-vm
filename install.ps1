@@ -268,7 +268,7 @@ if (-not $noChecks.IsPresent) {
     # Internet connectivity checks
     Test-WebConnection 'microsoft.com'
     Test-WebConnection 'github.com'
-    Test-WebConnection 'raw.githubusercontent.com'
+    Test-WebConnection 'google.com'
 
     Write-Host "`t[+] Network connectivity looks good" -ForegroundColor Green
 
