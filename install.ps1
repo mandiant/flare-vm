@@ -920,10 +920,18 @@ choco install debloat.vm -y --force
 
 # Download FLARE VM background image
 $backgroundImage = "${Env:VM_COMMON_DIR}\background.png"
-(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/flarevm-background.png', $backgroundImage)
+(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/VM/flarevm-background.png', $backgroundImage)
 # Use background image for lock screen as well
 $lockScreenImage = "${Env:VM_COMMON_DIR}\lockscreen.png"
 Copy-Item $backgroundImage $lockScreenImage
+# Download FLARE VM (internet enabled) background image
+$backgroundInternetImage = "${Env:VM_COMMON_DIR}\background-internet.png"
+(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/VM/flarevm-background-internet.png', $backgroundInternetImage)
+# Download internet detection tool indicator icons
+$indicatorImageOn = "${Env:VM_COMMON_DIR}\indicator_on.ico"
+(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/VM/indicator_on.ico', $indicatorImageOn)
+$indicatorImageOff = "${Env:VM_COMMON_DIR}\indicator_off.ico"
+(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/Images/VM/indicator_off.ico', $indicatorImageOff)
 
 if (-not $noWait.IsPresent) {
     # Show install notes and wait for timeout
