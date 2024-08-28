@@ -55,7 +55,7 @@ It is not possible to select and delete several snapshots in VirtualBox, making 
 ### Example
 
 ```
-$ python3 vbox-remove-snapshots.py FLARE-VM.20240604
+$ ./vbox-remove-snapshots.py FLARE-VM.20240604
 
 Cleaning FLARE-VM.20240604 🫧 Snapshots to delete:
   Snapshot 1
@@ -95,8 +95,8 @@ See you next time you need to clean up your VMs! ✨
 ##### Before
 
 
-![Before](../Images/vbox-remove_snapshots_before.png)
+![Before](../Images/vbox-clean-snapshots_before.png)
 
 ##### After
 
-![After](../Images/vbox-remove_snapshots_after.png)
+![After](../Images/vbox-clean-snapshots_after.png)
