@@ -12,8 +12,10 @@ from virtualbox.library import VirtualSystemDescriptionType as DescType
 from virtualbox.library import NetworkAttachmentType as NetType
 from datetime import datetime
 
+# Base name of the exported VMs
+EXPORTED_VM_NAME = "FLARE-VM"
 # Name of the VM to export the snapshots from
-VM_NAME = "FLARE-VM.testing"
+VM_NAME = f"{EXPORTED_VM_NAME}.testing"
 
 # Name of the directory in HOME to export the VMs
 # The directory is created if it does not exist
@@ -63,7 +65,7 @@ if __name__ == "__main__":
             print(f"Restored '{snapshot_name}' and changed its adapter(s) to host-only")
 
             # Export .ova
-            exported_vm_name = f"FLARE-VM.{date}{extension}"
+            exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
             export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
             os.makedirs(export_directory, exist_ok=True)
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
