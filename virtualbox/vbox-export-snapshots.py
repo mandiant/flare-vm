@@ -71,6 +71,7 @@ if __name__ == "__main__":
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
             appliance = vbox.create_appliance()
             sys_description = vm.export_to(appliance, exported_vm_name)
+            sys_description.set_final_value(DescType.name, exported_vm_name)
             sys_description.set_final_value(DescType.description, description)
             progress = appliance.write("ovf-1.0", [], filename)
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
