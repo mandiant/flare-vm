@@ -10,6 +10,7 @@ import hashlib
 import virtualbox
 from virtualbox.library import VirtualSystemDescriptionType as DescType
 from virtualbox.library import NetworkAttachmentType as NetType
+from virtualbox.library import ExportOptions as ExportOps
 from datetime import datetime
 
 # Base name of the exported VMs
@@ -73,7 +74,7 @@ if __name__ == "__main__":
             sys_description = vm.export_to(appliance, exported_vm_name)
             sys_description.set_final_value(DescType.name, exported_vm_name)
             sys_description.set_final_value(DescType.description, description)
-            progress = appliance.write("ovf-1.0", [], filename)
+            progress = appliance.write("ovf-1.0", [ExportOps.create_manifest], filename)
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
             progress.wait_for_completion(-1)
 
