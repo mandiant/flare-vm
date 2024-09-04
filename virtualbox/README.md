@@ -10,6 +10,42 @@ This script is useful to export several versions of FLARE-VM after its installat
 For example, you may want to export a VM with the default FLARE-VM configuration and another installing in addition the packages `visualstudio.vm` and `pdbs.pdbresym.vm`.
 These packages are useful for malware analysis but are not included in the default configuration because of the consequent increase in size.
 
+
+## Check internet adapter status
+
+[`vbox-adapter-check.py`](vbox-adapter-check.py) prints the status of all internet adapters of all VMs in VirtualBox.
+The script also notifies if any dynamic analysis VM (with `.dynamic` in the name) has an adapter whose type is not allowed (internet access is undesirable for dynamic malware analysis).
+Unless the argument `--do_not_modify` is provided, the script changes the type of the adapters with non-allowed type to Host-Only.
+Unless the argument `--skip_disabled` is provided, the script also explores the disabled adapters, printing their status and possibly changing their type.
+The script has been tested in Debian 12 with GNOME 44.9.
+
+### Example
+
+```
+$ ./vbox-adapter-check.py
+windows10 1: Enabled  HostOnly
+windows10 2: Disabled Null
+windows10 3: Disabled Null
+windows10 4: Disabled Null
+windows10 5: Disabled Null
+windows10 6: Disabled Null
+windows10 7: Disabled Null
+windows10 8: Disabled Null
+FLARE-VM.20240808.dynamic 1: Enabled  NAT
+FLARE-VM.20240808.dynamic 2: Disabled NAT
+FLARE-VM.20240808.dynamic 3: Disabled Bridged
+FLARE-VM.20240808.dynamic 4: Enabled  Internal
+FLARE-VM.20240808.dynamic 5: Disabled Null
+FLARE-VM.20240808.dynamic 6: Disabled Null
+FLARE-VM.20240808.dynamic 7: Disabled Null
+FLARE-VM.20240808.dynamic 8: Disabled Null
+```
+
+#### Notification
+
+![Notification](../Images/vbox-adapter-check_notification.png)
+
+
 ## Clean up snapshots
 
 It is not possible to select and delete several snapshots in VirtualBox, making cleaning up your VM manually after having creating a lot snapshots time consuming and tedious (possible errors when deleting several snapshots simultaneously).
@@ -19,7 +55,7 @@ It is not possible to select and delete several snapshots in VirtualBox, making 
 ### Example
 
 ```
-$ python3 vbox-remove-snapshots.py FLARE-VM.20240604
+$ ./vbox-remove-snapshots.py FLARE-VM.20240604
 
 Cleaning FLARE-VM.20240604 🫧 Snapshots to delete:
   Snapshot 1
@@ -59,8 +95,8 @@ See you next time you need to clean up your VMs! ✨
 ##### Before
 
 
-![Before](../Images/vbox-remove_snapshots_before.png)
+![Before](../Images/vbox-clean-snapshots_before.png)
 
 ##### After
 
-![After](../Images/vbox-remove_snapshots_after.png)
+![After](../Images/vbox-clean-snapshots_after.png)
