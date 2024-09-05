@@ -15,7 +15,7 @@ def get_snapshots_to_delete(snapshot, protected_snapshots):
         get_snapshots_to_delete(child, protected_snapshots)
     snapshot_name = snapshot.name.lower()
     for protected_str in protected_snapshots:
-        if protected_str in snapshot_name:
+        if protected_str.lower() in snapshot_name:
             return
     TO_DELETE.append((snapshot.name, snapshot.id_p))
 
