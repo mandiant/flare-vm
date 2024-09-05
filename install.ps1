@@ -76,7 +76,16 @@ param (
   [switch]$noReboots,
   [switch]$noChecks
 )
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+ 
+# https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.localaccounts/set-localuser
+if ( -not ([Environment]::Is64BitProcess)) {
+    Write-Host "`t[!] It seems like you are using 32 bit powershell. Exiting because some commands do not work correctly in this mode." -ForegroundColor Red
+    Write-Host "`t[-] Hint: Don't run powershell x86" -ForegroundColor Yellow
+    Start-Sleep 3
+    exit 1
+}
 
 # Function to test the network stack. Ping/GET requests to the resource to ensure that network stack looks good for installation
 function Test-WebConnection {
@@ -94,7 +103,7 @@ function Test-WebConnection {
 
     $response = $null
     try {
-        $response = Invoke-WebRequest -Uri "https://$url" -UseBasicParsing
+        $response = Invoke-WebRequest -Uri "https://$url" -UseBasicParsing -DisableKeepAlive
     }
     catch {
         Write-Host "`t[!] Error accessing $url. Exception: $($_.Exception.Message)`n`t[!] Check your network settings." -ForegroundColor Red
@@ -257,9 +266,9 @@ if (-not $noChecks.IsPresent) {
     }
 
     # Internet connectivity checks
-    Test-WebConnection "google.com"
-    Test-WebConnection "github.com"
-    Test-WebConnection "raw.githubusercontent.com"
+    Test-WebConnection 'google.com'
+    Test-WebConnection 'github.com'
+    Test-WebConnection 'raw.githubusercontent.com'
 
     Write-Host "`t[+] Network connectivity looks good" -ForegroundColor Green
 
