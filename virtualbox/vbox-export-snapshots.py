@@ -10,6 +10,7 @@ import hashlib
 import virtualbox
 from virtualbox.library import VirtualSystemDescriptionType as DescType
 from virtualbox.library import NetworkAttachmentType as NetType
+from virtualbox.library import ExportOptions as ExportOps
 from datetime import datetime
 
 # Base name of the exported VMs
@@ -41,6 +42,7 @@ def change_network_adapters(vm, max_adapters):
     for i in range(max_adapters):
         adapter = vm.get_network_adapter(i)
         adapter.attachment_type = NetType.host_only
+    vm.save_settings()
 
 
 if __name__ == "__main__":
@@ -48,20 +50,17 @@ if __name__ == "__main__":
 
     vbox = virtualbox.VirtualBox()
     vm = vbox.find_machine(VM_NAME)
-    session = vm.create_session()
-    vm = session.machine
-
     max_adapters = vbox.system_properties.get_max_network_adapters(vm.chipset_type)
 
     for snapshot_name, extension, description in SNAPSHOTS:
         try:
             # Restore snapshot
-            snapshot = vm.find_snapshot(snapshot_name)
-            progress = vm.restore_snapshot(snapshot)
+            session = vm.create_session()
+            snapshot = session.machine.find_snapshot(snapshot_name)
+            progress = session.machine.restore_snapshot(snapshot)
             progress.wait_for_completion(-1)
-
-            change_network_adapters(vm, max_adapters)
-
+            change_network_adapters(session.machine, max_adapters)
+            session.unlock_machine()
             print(f"Restored '{snapshot_name}' and changed its adapter(s) to host-only")
 
             # Export .ova
@@ -71,8 +70,9 @@ if __name__ == "__main__":
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
             appliance = vbox.create_appliance()
             sys_description = vm.export_to(appliance, exported_vm_name)
+            sys_description.set_final_value(DescType.name, exported_vm_name)
             sys_description.set_final_value(DescType.description, description)
-            progress = appliance.write("ovf-1.0", [], filename)
+            progress = appliance.write("ovf-1.0", [ExportOps.create_manifest], filename)
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
             progress.wait_for_completion(-1)
 
@@ -84,6 +84,4 @@ if __name__ == "__main__":
 
         except Exception as e:
             print(f"ERROR exporting {snapshot_name}: {e}")
-            next
 
-    session.unlock_machine()
