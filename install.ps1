@@ -120,7 +120,7 @@ function Test-WebConnection {
     Write-Host "`t[+] Internet connectivity check for $url passed" -ForegroundColor Green
 }
 
-# Function used for getting configuration files (such as config.xml and CustomStartLayout.xml)
+# Function used for getting configuration files (such as config.xml and LayoutModification.xml)
 function Get-ConfigFile {
     param (
         [string]$fileDestination,
@@ -910,9 +910,9 @@ $configXml.save((Join-Path ${Env:VM_COMMON_DIR} "packages.xml"))
 
 # Custom Start Layout setup
 Write-Host "[+] Checking for custom Start Layout file..."
-$layoutPath = Join-Path ${Env:VM_COMMON_DIR} "CustomStartLayout.xml"
+$layoutPath = Join-Path "C:\Users\Default\AppData\Local\Microsoft\Windows\Shell" "LayoutModification.xml"
 if ([string]::IsNullOrEmpty($customLayout)) {
-    $layoutSource = 'https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml'
+    $layoutSource = 'https://raw.githubusercontent.com/mandiant/flare-vm/main/LayoutModification.xml'
 } else {
     $layoutSource = $customLayout
 }
