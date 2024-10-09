@@ -45,7 +45,7 @@ def run_vboxmanage(cmd):
     except subprocess.CalledProcessError as e:
         # exit code is an error
         print(f"Error running VBoxManage command: {e} ({e.stderr})")
-    raise Exception(f"Error running VBoxManage command: {e}")
+    raise Exception(f"Error running VBoxManage command")
 
 def get_vm_uuid(vm_name):
     """Gets the machine UUID for a given VM name using 'VBoxManage list vms'."""
@@ -132,10 +132,25 @@ def ensure_vm_shutdown(machine_guid):
 def get_first_hostonlyif_name():
     """Returns the name of the first host-only interface."""
     try:
+        # Find existing hostonlyif
         hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])
         for line in hostonlyifs_output.splitlines():
             if line.startswith("Name:"):
-                return line.split(":")[1].strip()
+                hostonlyif_name = line.split(":")[1].strip()
+                print(f"Found existing hostonlyif {hostonlyif_name}")
+                return hostonlyif_name
+        
+        # No host-only interface found, create one
+        print("No host-only interface found. Creating one...")
+        run_vboxmanage(["hostonlyif", "create"])  # Create a host-only interface
+        hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])  # Get the updated list
+        for line in hostonlyifs_output.splitlines():
+            if line.startswith("Name:"):
+                hostonlyif_name = line.split(":")[1].strip()
+                print(f"Created hostonlyif {hostonlyif_name}")
+                return hostonlyif_name
+        print("Failed to create new hostonlyif. Exiting...")
+        raise Exception("Failed to create new hostonlyif.")
     except Exception as e:
         print(f"Error getting host-only interface name: {e}")
     raise Exception("Failed to get host-only interface name")
@@ -144,7 +159,8 @@ def change_network_adapters_to_hostonly(machine_guid):
     """Changes all active network adapters to Host-Only."""
     hostonlyif_name = get_first_hostonlyif_name()
     try:
-        # Use showvminfo to get NIC information
+        foundOne = False
+        # change any existing enabled nic to hostonly
         vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
         for line in vminfo.splitlines():
             # Match lines exactly in the format 'nicN="value"'
@@ -153,11 +169,28 @@ def change_network_adapters_to_hostonly(machine_guid):
                 nic_number = match.group(1)
                 nic_value = match.group(2)
                 if nic_value != "none":  # Ignore NICs with value "none"
-                    run_vboxmanage(["controlvm", machine_guid, f"nic{nic_number}", "hostonly", hostonlyif_name])
+                    run_vboxmanage(["modifyvm", machine_guid, f"--nic{nic_number}", "hostonly"])
                     print(f"Changed nic{nic_number} to hostonly")
-        return
+                    foundOne = True
+        
+        # If no nic was enabled / configured, set the first to hostonly
+        if not foundOne:
+            run_vboxmanage(["modifyvm", machine_guid, f"--nic1", "hostonly"])
+
+        # ensure changes applied
+        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        for line in vminfo.splitlines():
+            # Match lines exactly in the format 'nicN="value"'
+            match = re.match(r"nic(\d+)=\"(.*?)\"", line)  
+            if match:
+                nic_number = match.group(1)
+                nic_value = match.group(2)
+                if nic_value == "hostonly":
+                    print("Verified hostonly nic configuration correct")
+                    return
     except Exception as e:
         print(f"Error changing network adapters: {e}")
+    print("Failed to change VM network adapters to hostonly")
     raise Exception("Failed to change VM network adapters to hostonly")
 
 if __name__ == "__main__":
@@ -174,14 +207,15 @@ if __name__ == "__main__":
             run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
             print(f"Restored '{snapshot_name}'")
     
-            # start VM
-            ensure_vm_running(vm_uuid)
-    
-            # change all adapters to hostonly (must be running)
+            # change all adapters to hostonly (must be shutdown)
             change_network_adapters_to_hostonly(vm_uuid)
 
-            # exports are faster if shutdown
+            # do a power cycle to ensure everything is good
+            print("Power cycling before export...")
+            ensure_vm_running(vm_uuid)
+            time.sleep(10)
             ensure_vm_shutdown(vm_uuid)
+            print("Power cycling done.")
     
             # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
@@ -190,21 +224,21 @@ if __name__ == "__main__":
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
     
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
-            run_vboxmanage(
-                [
-                    "export",
-                    vm_uuid,
-                    "--ovf10", # Maybe change to ovf20
-                    f"--output={filename}",
-                    "--vsys=0", # we have normal vms with only 1 vsys
-                    f"--vmname={exported_vm_name}",
-                    f"--description={description}",
-                ]
-            )
-    
-            # Generate file with SHA256
-            with open(f"{filename}.sha256", "w") as f:
-                f.write(sha256_file(filename))
+            #run_vboxmanage(
+            #    [
+            #        "export",
+            #        vm_uuid,
+            #        "--ovf10", # Maybe change to ovf20
+            #        f"--output={filename}",
+            #        "--vsys=0", # we have normal vms with only 1 vsys
+            #        f"--vmname={exported_vm_name}",
+            #        f"--description={description}",
+            #    ]
+            #)
+    #
+            ## Generate file with SHA256
+            #with open(f"{filename}.sha256", "w") as f:
+            #    f.write(sha256_file(filename))
     
             print(f"Exported {filename}! 🎉")
         except Exception as e:
