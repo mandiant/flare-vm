@@ -32,7 +32,6 @@ SNAPSHOTS = [
     ("FLARE-VM.EDU", ".EDU", "Windows 10 VM with FLARE-VM default configuration installed + FLARE-EDU teaching materials"),
 ]
 
-
 def sha256_file(filename):
     with open(filename, "rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
