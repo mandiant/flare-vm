@@ -7,14 +7,14 @@ The exported VM names start with "FLARE-VM.{date}".
 
 import os
 import hashlib
-import virtualbox
-from virtualbox.library import VirtualSystemDescriptionType as DescType
-from virtualbox.library import NetworkAttachmentType as NetType
-from virtualbox.library import ExportOptions as ExportOps
+import re
+import subprocess
 from datetime import datetime
+import time
 
 # Base name of the exported VMs
 EXPORTED_VM_NAME = "FLARE-VM"
+
 # Name of the VM to export the snapshots from
 VM_NAME = f"{EXPORTED_VM_NAME}.testing"
 
@@ -32,56 +32,217 @@ SNAPSHOTS = [
     ("FLARE-VM.EDU", ".EDU", "Windows 10 VM with FLARE-VM default configuration installed + FLARE-EDU teaching materials"),
 ]
 
-
 def sha256_file(filename):
     with open(filename, "rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
 
+# cmd is an array of string arguments to pass
+def run_vboxmanage(cmd):
+    """Runs a VBoxManage command and returns the output."""
+    try:
+        result = subprocess.run(["VBoxManage"] + cmd, capture_output=True, text=True, check=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        # exit code is an error
+        print(f"Error running VBoxManage command: {e} ({e.stderr})")
+    raise Exception(f"Error running VBoxManage command")
 
-def change_network_adapters(vm, max_adapters):
-    for i in range(max_adapters):
-        adapter = vm.get_network_adapter(i)
-        adapter.attachment_type = NetType.host_only
-    vm.save_settings()
+def get_vm_uuid(vm_name):
+    """Gets the machine UUID for a given VM name using 'VBoxManage list vms'."""
+    try:
+        vms_output = run_vboxmanage(["list", "vms"])
+        # regex VM name and extract the GUID
+        match = re.search(rf'"{vm_name}" \{{(.*?)\}}', vms_output)
+        if match:
+            uuid = "{" + match.group(1) + "}"
+            return uuid
+        else:
+            raise Exception(f"Could not find VM '{vm_name}'")
+    except Exception as e:
+        print(f"Error getting machine UUID: {e}")
+    raise Exception(f"Could not find VM '{vm_name}'")
 
+def get_vm_state(machine_guid):
+    """Gets the VM state using 'VBoxManage showvminfo'."""
+    vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+    for line in vminfo.splitlines():
+        if line.startswith("VMState"):
+            return line.split("=")[1].strip('"')
+    raise Exception(f"Could not start VM '{machine_guid}'")
+
+def ensure_vm_running(machine_guid):
+    """Checks if the VM is running and starts it if it's not.
+    Waits up to 1 minute for the VM to transition to the 'running' state.
+    """
+    try:
+        vm_state = get_vm_state(machine_guid)
+        if vm_state != "running":
+            print(f"VM {machine_guid} is not running (state: {vm_state}). Starting VM...")
+            run_vboxmanage(["startvm", machine_guid, "--type", "gui"])
+
+            # Wait for VM to start (up to 1 minute)
+            timeout = 60  # seconds
+            check_interval = 5  # seconds
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                vm_state = get_vm_state(machine_guid)
+                if vm_state == "running":
+                    print(f"VM {machine_guid} started.")
+                    time.sleep(5) # wait a bit to be careful and avoid any weird races
+                    return
+                print(f"Waiting for VM (state: {vm_state})")
+                time.sleep(check_interval)
+            print("Timeout waiting for VM to start. Exiting...")
+            raise TimeoutError(f"VM did not start within the timeout period {timeout}s.")
+        else:
+            print("VM is already running.")
+            return
+    except Exception as e:
+        print(f"Error checking VM state: {e}")
+    raise Exception(f"Could not ensure '{machine_guid}' running")
+
+def ensure_vm_shutdown(machine_guid):
+    """Checks if the VM is running and shuts it down if it is."""
+    try:
+        vm_state = get_vm_state(machine_guid)
+        if vm_state != "poweroff":
+            print(f"VM {machine_guid} is not powered off. Shutting down VM...")
+            run_vboxmanage(["controlvm", machine_guid, "poweroff"]) 
+
+            # Wait for VM to shut down (up to 1 minute)
+            timeout = 60  # seconds
+            check_interval = 5  # seconds
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                vm_state = get_vm_state(machine_guid)
+                if vm_state == "poweroff":
+                    print(f"VM {machine_guid} is shut down (status: {vm_state}).")
+                    time.sleep(5) # wait a bit to be careful and avoid any weird races
+                    return
+                time.sleep(check_interval)
+            print("Timeout waiting for VM to shut down. Exiting...")
+            raise TimeoutError("VM did not shut down within the timeout period.")
+        else:
+            print(f"VM {machine_guid} is already shut down (state: {vm_state}).")
+            return
+    except Exception as e:
+        print(f"Error checking VM state: {e}")
+    raise Exception(f"Could not ensure '{machine_guid}' shutdown")
+
+def ensure_hostonlyif_exists():
+    """Gets the name of, or creates a new hostonlyif"""
+    try:
+        # Find existing hostonlyif
+        hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])
+        for line in hostonlyifs_output.splitlines():
+            if line.startswith("Name:"):
+                hostonlyif_name = line.split(":")[1].strip()
+                print(f"Found existing hostonlyif {hostonlyif_name}")
+                return
+        
+        # No host-only interface found, create one
+        print("No host-only interface found. Creating one...")
+        run_vboxmanage(["hostonlyif", "create"])  # Create a host-only interface
+        hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])  # Get the updated list
+        for line in hostonlyifs_output.splitlines():
+            if line.startswith("Name:"):
+                hostonlyif_name = line.split(":")[1].strip()
+                print(f"Created hostonlyif {hostonlyif_name}")
+                return
+        print("Failed to create new hostonlyif. Exiting...")
+        raise Exception("Failed to create new hostonlyif.")
+    except Exception as e:
+        print(f"Error getting host-only interface name: {e}")
+    raise Exception("Failed to verify host-only interface exists")
+
+def change_network_adapters_to_hostonly(machine_guid):
+    """Changes all active network adapters to Host-Only. Must be poweredoff"""
+    ensure_hostonlyif_exists()
+    try:
+        foundOne = False
+        # change any existing enabled nic to hostonly
+        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        for line in vminfo.splitlines():
+            # Match lines exactly in the format 'nicN="value"'
+            match = re.match(r"nic(\d+)=\"(.*?)\"", line)  
+            if match:
+                nic_number = match.group(1)
+                nic_value = match.group(2)
+                if nic_value != "none":  # Ignore NICs with value "none"
+                    run_vboxmanage(["modifyvm", machine_guid, f"--nic{nic_number}", "hostonly"])
+                    print(f"Changed nic{nic_number} to hostonly")
+                    foundOne = True
+        
+        # If no nic was enabled / configured, set the first to hostonly
+        if not foundOne:
+            run_vboxmanage(["modifyvm", machine_guid, f"--nic1", "hostonly"])
+
+        # ensure changes applied
+        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        for line in vminfo.splitlines():
+            # Match lines exactly in the format 'nicN="value"'
+            match = re.match(r"nic(\d+)=\"(.*?)\"", line)  
+            if match:
+                nic_number = match.group(1)
+                nic_value = match.group(2)
+                if nic_value == "hostonly":
+                    print("Verified hostonly nic configuration correct")
+                    return
+    except Exception as e:
+        print(f"Error changing network adapters: {e}")
+    print("Failed to change VM network adapters to hostonly")
+    raise Exception("Failed to change VM network adapters to hostonly")
 
 if __name__ == "__main__":
     date = datetime.today().strftime("%Y%m%d")
 
-    vbox = virtualbox.VirtualBox()
-    vm = vbox.find_machine(VM_NAME)
-    max_adapters = vbox.system_properties.get_max_network_adapters(vm.chipset_type)
-
     for snapshot_name, extension, description in SNAPSHOTS:
+        print(f"Starting operations on {snapshot_name}")
         try:
-            # Restore snapshot
-            session = vm.create_session()
-            snapshot = session.machine.find_snapshot(snapshot_name)
-            progress = session.machine.restore_snapshot(snapshot)
-            progress.wait_for_completion(-1)
-            change_network_adapters(session.machine, max_adapters)
-            session.unlock_machine()
-            print(f"Restored '{snapshot_name}' and changed its adapter(s) to host-only")
+            vm_uuid = get_vm_uuid(VM_NAME)
+            # Shutdown machine 
+            ensure_vm_shutdown(vm_uuid)
 
+            # Restore snapshot (must be shutdown)
+            run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
+            print(f"Restored '{snapshot_name}'")
+    
+            # change all adapters to hostonly (must be shutdown)
+            change_network_adapters_to_hostonly(vm_uuid)
+
+            # do a power cycle to ensure everything is good
+            print("Power cycling before export...")
+            ensure_vm_running(vm_uuid)
+            time.sleep(10)
+            ensure_vm_shutdown(vm_uuid)
+            print("Power cycling done.")
+    
             # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
             export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
             os.makedirs(export_directory, exist_ok=True)
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
-            appliance = vbox.create_appliance()
-            sys_description = vm.export_to(appliance, exported_vm_name)
-            sys_description.set_final_value(DescType.name, exported_vm_name)
-            sys_description.set_final_value(DescType.description, description)
-            progress = appliance.write("ovf-1.0", [ExportOps.create_manifest], filename)
+    
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
-            progress.wait_for_completion(-1)
-
+            run_vboxmanage(
+                [
+                    "export",
+                    vm_uuid,
+                    "--ovf10", # Maybe change to ovf20
+                    f"--output={filename}",
+                    "--vsys=0", # we have normal vms with only 1 vsys
+                    f"--vmname={exported_vm_name}",
+                    f"--description={description}",
+                ]
+            )
+    
             # Generate file with SHA256
             with open(f"{filename}.sha256", "w") as f:
                 f.write(sha256_file(filename))
-
+    
             print(f"Exported {filename}! 🎉")
-
         except Exception as e:
-            print(f"ERROR exporting {snapshot_name}: {e}")
-
+            print(f"Unexpectedly failed doing operations on {snapshot_name}. Exiting...")
+            break
+        print(f"All operations on {snapshot_name} successful ✅")
+    print("Done. Exiting...")
