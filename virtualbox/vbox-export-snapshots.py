@@ -129,8 +129,8 @@ def ensure_vm_shutdown(machine_guid):
         print(f"Error checking VM state: {e}")
     raise Exception(f"Could not ensure '{machine_guid}' shutdown")
 
-def get_first_hostonlyif_name():
-    """Returns the name of the first host-only interface."""
+def ensure_hostonlyif_exists():
+    """Gets the name of, or creates a new hostonlyif"""
     try:
         # Find existing hostonlyif
         hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])
@@ -138,7 +138,7 @@ def get_first_hostonlyif_name():
             if line.startswith("Name:"):
                 hostonlyif_name = line.split(":")[1].strip()
                 print(f"Found existing hostonlyif {hostonlyif_name}")
-                return hostonlyif_name
+                return
         
         # No host-only interface found, create one
         print("No host-only interface found. Creating one...")
@@ -148,16 +148,16 @@ def get_first_hostonlyif_name():
             if line.startswith("Name:"):
                 hostonlyif_name = line.split(":")[1].strip()
                 print(f"Created hostonlyif {hostonlyif_name}")
-                return hostonlyif_name
+                return
         print("Failed to create new hostonlyif. Exiting...")
         raise Exception("Failed to create new hostonlyif.")
     except Exception as e:
         print(f"Error getting host-only interface name: {e}")
-    raise Exception("Failed to get host-only interface name")
+    raise Exception("Failed to verify host-only interface exists")
 
 def change_network_adapters_to_hostonly(machine_guid):
-    """Changes all active network adapters to Host-Only."""
-    hostonlyif_name = get_first_hostonlyif_name()
+    """Changes all active network adapters to Host-Only. Must be poweredoff"""
+    ensure_hostonlyif_exists()
     try:
         foundOne = False
         # change any existing enabled nic to hostonly
@@ -224,21 +224,21 @@ if __name__ == "__main__":
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
     
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
-            #run_vboxmanage(
-            #    [
-            #        "export",
-            #        vm_uuid,
-            #        "--ovf10", # Maybe change to ovf20
-            #        f"--output={filename}",
-            #        "--vsys=0", # we have normal vms with only 1 vsys
-            #        f"--vmname={exported_vm_name}",
-            #        f"--description={description}",
-            #    ]
-            #)
-    #
-            ## Generate file with SHA256
-            #with open(f"{filename}.sha256", "w") as f:
-            #    f.write(sha256_file(filename))
+            run_vboxmanage(
+                [
+                    "export",
+                    vm_uuid,
+                    "--ovf10", # Maybe change to ovf20
+                    f"--output={filename}",
+                    "--vsys=0", # we have normal vms with only 1 vsys
+                    f"--vmname={exported_vm_name}",
+                    f"--description={description}",
+                ]
+            )
+    
+            # Generate file with SHA256
+            with open(f"{filename}.sha256", "w") as f:
+                f.write(sha256_file(filename))
     
             print(f"Exported {filename}! 🎉")
         except Exception as e:
