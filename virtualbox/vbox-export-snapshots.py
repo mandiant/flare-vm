@@ -159,39 +159,36 @@ def change_network_adapters_to_hostonly(machine_guid):
     """Changes all active network adapters to Host-Only. Must be poweredoff"""
     ensure_hostonlyif_exists()
     try:
-        foundOne = False
-        # change any existing enabled nic to hostonly
+        # disable all the nics to get to a clean state
         vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
-        for line in vminfo.splitlines():
-            # Match lines exactly in the format 'nicN="value"'
-            match = re.match(r"nic(\d+)=\"(.*?)\"", line)  
-            if match:
-                nic_number = match.group(1)
-                nic_value = match.group(2)
-                if nic_value != "none":  # Ignore NICs with value "none"
-                    run_vboxmanage(["modifyvm", machine_guid, f"--nic{nic_number}", "hostonly"])
-                    print(f"Changed nic{nic_number} to hostonly")
-                    foundOne = True
+        for nic_number, nic_value in re.findall("^nic(\d+)=\"(\S+)\"", vminfo, flags=re.M):
+            if nic_value != "none":  # Ignore NICs with value "none"
+                run_vboxmanage(["modifyvm", machine_guid, f"--nic{nic_number}", "none"])
+                print(f"Changed nic{nic_number}")
         
-        # If no nic was enabled / configured, set the first to hostonly
-        if not foundOne:
-            run_vboxmanage(["modifyvm", machine_guid, f"--nic1", "hostonly"])
-
+        # set first nic to hostonly
+        run_vboxmanage(["modifyvm", machine_guid, f"--nic1", "hostonly"])
+        
         # ensure changes applied
         vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
-        for line in vminfo.splitlines():
-            # Match lines exactly in the format 'nicN="value"'
-            match = re.match(r"nic(\d+)=\"(.*?)\"", line)  
-            if match:
-                nic_number = match.group(1)
-                nic_value = match.group(2)
-                if nic_value == "hostonly":
-                    print("Verified hostonly nic configuration correct")
-                    return
+        for nic_number, nic_value in re.findall("^nic(\d+)=\"(\S+)\"", vminfo, flags=re.M):
+            if nic_number == "1" and nic_value != "hostonly":
+                print("Invalid nic configuration detected, nic1 not hostonly")
+                raise Exception("Invalid nic configuration detected, first nic not hostonly")
+            elif nic_number != "1" and nic_value != "none":
+                print(f"Invalid nic configuration detected, nic{nic_number} not disabled")
+                raise Exception(f"Invalid nic configuration detected, nic{nic_number} not disabled")
+        print("Nic configuration verified correct")
+        return
     except Exception as e:
         print(f"Error changing network adapters: {e}")
     print("Failed to change VM network adapters to hostonly")
     raise Exception("Failed to change VM network adapters to hostonly")
+
+def restore_snapshot(machine_guid, snapshot_name):
+    status =  run_vboxmanage(["snapshot", machine_guid, "restore", snapshot_name])
+    print(f"Restored '{snapshot_name}'")
+    return status
 
 if __name__ == "__main__":
     date = datetime.today().strftime("%Y%m%d")
@@ -204,16 +201,17 @@ if __name__ == "__main__":
             ensure_vm_shutdown(vm_uuid)
 
             # Restore snapshot (must be shutdown)
-            run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
-            print(f"Restored '{snapshot_name}'")
+            restore_snapshot(vm_uuid, snapshot_name)
     
+            # Shutdown machine (incase the snapshot was taken while running)
+            ensure_vm_shutdown(vm_uuid)
+
             # change all adapters to hostonly (must be shutdown)
             change_network_adapters_to_hostonly(vm_uuid)
 
             # do a power cycle to ensure everything is good
             print("Power cycling before export...")
             ensure_vm_running(vm_uuid)
-            time.sleep(10)
             ensure_vm_shutdown(vm_uuid)
             print("Power cycling done.")
     
@@ -228,7 +226,6 @@ if __name__ == "__main__":
                 [
                     "export",
                     vm_uuid,
-                    "--ovf10", # Maybe change to ovf20
                     f"--output={filename}",
                     "--vsys=0", # we have normal vms with only 1 vsys
                     f"--vmname={exported_vm_name}",
