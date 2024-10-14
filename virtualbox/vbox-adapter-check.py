@@ -42,7 +42,7 @@ def ensure_hostonlyif_exists():
             if line.startswith("Name:"):
                 hostonlyif_name = line.split(":")[1].strip()
                 print(f"Found existing hostonlyif {hostonlyif_name}")
-                return
+                return hostonlyif_name
         
         # No host-only interface found, create one
         print("No host-only interface found. Creating one...")
@@ -52,7 +52,7 @@ def ensure_hostonlyif_exists():
             if line.startswith("Name:"):
                 hostonlyif_name = line.split(":")[1].strip()
                 print(f"Created hostonlyif {hostonlyif_name}")
-                return
+                return hostonlyif_name
         print("Failed to create new hostonlyif. Exiting...")
         raise Exception("Failed to create new hostonlyif.")
     except Exception as e:
@@ -105,7 +105,7 @@ def get_dynamic_vm_uuids():
         raise Exception(f"Error finding dynamic machines UUIDs: {e}")
     return dynamic_machine_guids
 
-def change_network_adapters_to_hostonly(machine_guid, vm_name, do_not_modify):
+def change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, do_not_modify):
     """Verify all adapters are in an allowed configuration. Must be poweredoff"""
     try:
         # gather adapters in incorrect configurations
@@ -122,8 +122,14 @@ def change_network_adapters_to_hostonly(machine_guid, vm_name, do_not_modify):
                     message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. Please double check your VMs settings."
                 else:
                     message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
-                    run_vboxmanage(["modifyvm", machine_guid, f"--{nic}", DISABLED_ADAPTER_TYPE])
-    
+                    # different commands are necessary if the machine is running.
+                    if get_vm_state(machine_guid) == "poweroff":
+                        run_vboxmanage(["modifyvm", machine_guid, f"--{nic}", DISABLED_ADAPTER_TYPE])
+                        print(f"Set VM {nic} to hostonly")
+                    else:
+                        run_vboxmanage(["controlvm", machine_guid, nic, "hostonly", hostonly_ifname])
+                        print(f"Set VM {nic} to hostonly")
+
                 # Show notification using PyGObject
                 Notify.init("VirtualBox adapter check")
                 notification = Notify.Notification.new(f"INTERNET IN VM: {vm_name}", message, "dialog-error")
@@ -163,11 +169,11 @@ def main(argv=None):
     args = parser.parse_args(args=argv)
 
     try:
-        ensure_hostonlyif_exists()
+        hostonly_ifname = ensure_hostonlyif_exists()
         dynamic_machine_guids = get_dynamic_vm_uuids()
         if len(dynamic_machine_guids) > 0:
             for vm_name, machine_guid in dynamic_machine_guids:
-                change_network_adapters_to_hostonly(machine_guid, vm_name, args.do_not_modify)
+                change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, args.do_not_modify)
         else:
             print(f"[Warning ⚠️] No Dynamic VMs found")
     except Exception as e:
