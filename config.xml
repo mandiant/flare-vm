@@ -58,7 +58,9 @@
         <package name="innounp.vm"/>
         <package name="internet_detector.vm"/>
         <package name="isd.vm"/>
+        <package name="js-beautify.vm"/>
         <package name="js-deobfuscator.vm"/>
+        <package name="libraries-extra.python3.vm"/>
         <package name="libraries.python3.vm"/>
         <package name="magika.vm"/>
         <package name="malware-jail.vm"/>
