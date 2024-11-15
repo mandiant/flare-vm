@@ -16,6 +16,7 @@
         <package name="blobrunner64.vm"/>
         <package name="bytecodeviewer.vm"/>
         <package name="capa.vm"/>
+        <package name="chrome.extensions.vm"/>
         <package name="cmder.vm"/>
         <package name="codetrack.vm"/>
         <package name="cryptotester.vm"/>
