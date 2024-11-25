@@ -105,6 +105,12 @@ def ensure_vm_shutdown(machine_guid):
     """Checks if the VM is running and shuts it down if it is."""
     try:
         vm_state = get_vm_state(machine_guid)
+        if vm_state == "saved":
+            print(f"VM {machine_guid} is in a saved state. Powering on for a while then shutting down...")
+            ensure_vm_running(machine_guid)
+            time.sleep(120) # 2 minutes to boot up
+
+        vm_state = get_vm_state(machine_guid)
         if vm_state != "poweroff":
             print(f"VM {machine_guid} is not powered off. Shutting down VM...")
             run_vboxmanage(["controlvm", machine_guid, "poweroff"]) 

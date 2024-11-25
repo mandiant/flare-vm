@@ -21,8 +21,6 @@ def run_vboxmanage(cmd):
         result = subprocess.run(["VBoxManage"] + cmd, capture_output=True, text=True, check=True)
         return result.stdout
     except subprocess.CalledProcessError as e:
-        # exit code is an error
-        print(f"Error running VBoxManage command: {e} ({e.stderr})")
         raise Exception(f"Error running VBoxManage command: {e}")
 
 def get_vm_state(machine_guid):
@@ -59,9 +57,46 @@ def ensure_hostonlyif_exists():
         print(f"Error getting host-only interface name: {e}")
     raise Exception("Failed to verify host-only interface exists")
 
+def ensure_vm_running(machine_guid):
+    """Checks if the VM is running and starts it if it's not.
+    Waits up to 1 minute for the VM to transition to the 'running' state.
+    """
+    try:
+        vm_state = get_vm_state(machine_guid)
+        if vm_state != "running":
+            print(f"VM {machine_guid} is not running (state: {vm_state}). Starting VM...")
+            run_vboxmanage(["startvm", machine_guid, "--type", "gui"])
+
+            # Wait for VM to start (up to 1 minute)
+            timeout = 60  # seconds
+            check_interval = 5  # seconds
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                vm_state = get_vm_state(machine_guid)
+                if vm_state == "running":
+                    print(f"VM {machine_guid} started.")
+                    time.sleep(5) # wait a bit to be careful and avoid any weird races
+                    return
+                print(f"Waiting for VM (state: {vm_state})")
+                time.sleep(check_interval)
+            print("Timeout waiting for VM to start. Exiting...")
+            raise TimeoutError(f"VM did not start within the timeout period {timeout}s.")
+        else:
+            print("VM is already running.")
+            return
+    except Exception as e:
+        print(f"Error checking VM state: {e}")
+    raise Exception(f"Could not ensure '{machine_guid}' running")
+
 def ensure_vm_shutdown(machine_guid):
     """Checks if the VM is running and shuts it down if it is."""
     try:
+        vm_state = get_vm_state(machine_guid)
+        if vm_state == "saved":
+            print(f"VM {machine_guid} is in a saved state. Powering on for a while then shutting down...")
+            ensure_vm_running(machine_guid)
+            time.sleep(120) # 2 minutes to boot up
+
         vm_state = get_vm_state(machine_guid)
         if vm_state != "poweroff":
             print(f"VM {machine_guid} is not powered off. Shutting down VM...")
@@ -87,9 +122,9 @@ def ensure_vm_shutdown(machine_guid):
         print(f"Error checking VM state: {e}")
     raise Exception(f"Could not ensure '{machine_guid}' shutdown")
 
-def get_dynamic_vm_uuids():
+def get_vm_uuids(dynamic_only):
     """Gets the machine UUID(s) for a given VM name using 'VBoxManage list vms'."""
-    dynamic_machine_guids = []
+    machine_guids = []
     try:
         vms_output = run_vboxmanage(["list", "vms"])
         pattern = r'"(.*?)" \{(.*?)\}'
@@ -98,12 +133,13 @@ def get_dynamic_vm_uuids():
             for match in matches:
                 vm_name = match[0]
                 machine_guid = match[1]
-                if DYNAMIC_VM_NAME in vm_name:
-                    dynamic_machine_guids.append((vm_name, machine_guid))
+                if dynamic_only and DYNAMIC_VM_NAME in vm_name:
+                    machine_guids.append((vm_name, machine_guid))
+                else:
+                    machine_guids.append((vm_name, machine_guid))
     except Exception as e:
-        print(f"Error finding dynamic machines UUIDs: {e}")
-        raise Exception(f"Error finding dynamic machines UUIDs: {e}")
-    return dynamic_machine_guids
+        raise Exception(f"Error finding machines UUIDs: {e}")
+    return machine_guids
 
 def change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, do_not_modify):
     """Verify all adapters are in an allowed configuration. Must be poweredoff"""
@@ -166,16 +202,17 @@ def main(argv=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--do_not_modify", action="store_true", help="Only print the status of the internet adapters without modifying them.")
+    parser.add_argument("--dynamic_only", action="store_true", help="Only scan VMs with .dynamic in the name")
     args = parser.parse_args(args=argv)
 
     try:
         hostonly_ifname = ensure_hostonlyif_exists()
-        dynamic_machine_guids = get_dynamic_vm_uuids()
-        if len(dynamic_machine_guids) > 0:
-            for vm_name, machine_guid in dynamic_machine_guids:
+        machine_guids = get_vm_uuids(args.dynamic_only)
+        if len(machine_guids) > 0:
+            for vm_name, machine_guid in machine_guids:
                 change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, args.do_not_modify)
         else:
-            print(f"[Warning ⚠️] No Dynamic VMs found")
+            print(f"[Warning ⚠️] No VMs found")
     except Exception as e:
         print(f"Error verifying dynamic VM hostonly configuration: {e}")
 
