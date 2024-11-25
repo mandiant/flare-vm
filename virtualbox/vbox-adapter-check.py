@@ -163,10 +163,9 @@ def change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, 
                     # different commands are necessary if the machine is running.
                     if get_vm_state(machine_guid) == "poweroff":
                         run_vboxmanage(["modifyvm", machine_guid, f"--{nic}", DISABLED_ADAPTER_TYPE])
-                        print(f"Set VM {nic} to hostonly")
                     else:
                         run_vboxmanage(["controlvm", machine_guid, nic, "hostonly", hostonly_ifname])
-                        print(f"Set VM {nic} to hostonly")
+                     print(f"Set VM {vm_name} adaper {nic} to hostonly")
 
             if do_not_modify:
                 message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. Please double check your VMs settings."
