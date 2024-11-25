@@ -146,10 +146,12 @@ def change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, 
     try:
         # gather adapters in incorrect configurations
         nics_with_internet = []
+        invalid_nics_msg = ''
         vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
         for nic_number, nic_value in re.findall("^nic(\d+)=\"(\S+)\"", vminfo, flags=re.M):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
                 nics_with_internet.append(f"nic{nic_number}")
+                invalid_nics_msg += f'{nic_number} '
 
         # modify the invalid adapters if allowed
         if nics_with_internet:
@@ -166,14 +168,19 @@ def change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, 
                         run_vboxmanage(["controlvm", machine_guid, nic, "hostonly", hostonly_ifname])
                         print(f"Set VM {nic} to hostonly")
 
-                # Show notification using PyGObject
-                Notify.init("VirtualBox adapter check")
-                notification = Notify.Notification.new(f"INTERNET IN VM: {vm_name}", message, "dialog-error")
-                # Set highest priority
-                notification.set_urgency(2)
-                notification.show()
-                print(f"{vm_name} network configuration not ok, sent notifaction")
-                return
+            if do_not_modify:
+                message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. Please double check your VMs settings."
+            else:
+                message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
+            
+            # Show notification using PyGObject
+            Notify.init("VirtualBox adapter check")
+            notification = Notify.Notification.new(f"INTERNET IN VM: {vm_name}", message, "dialog-error")
+            # Set highest priority
+            notification.set_urgency(2)
+            notification.show()
+            print(f"{vm_name} network configuration not ok, sent notifaction")
+            return
         else:
             print(f"{vm_name} network configuration is ok")
             return
