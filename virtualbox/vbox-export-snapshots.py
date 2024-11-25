@@ -143,7 +143,6 @@ def ensure_hostonlyif_exists():
         for line in hostonlyifs_output.splitlines():
             if line.startswith("Name:"):
                 hostonlyif_name = line.split(":")[1].strip()
-                print(f"Found existing hostonlyif {hostonlyif_name}")
                 return
         
         # No host-only interface found, create one
