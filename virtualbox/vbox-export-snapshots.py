@@ -233,7 +233,7 @@ if __name__ == "__main__":
                     "export",
                     vm_uuid,
                     f"--output={filename}",
-                    "--vsys=0", # we have normal vms with only 1 vsys
+                    "--vsys=0", # We need to specify the index of the VM, 0 as we only export 1 VM
                     f"--vmname={exported_vm_name}",
                     f"--description={description}",
                 ]
