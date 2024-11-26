@@ -29,7 +29,7 @@ def ensure_hostonlyif_exists():
         
         # No host-only interface found, create one
         print("No host-only interface found. Creating one...")
-        run_vboxmanage(["hostonlyif", "create"])  # Create a host-only interface
+        run_vboxmanage(["hostonlyif", "create"])
         hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])  # Get the updated list
         for line in hostonlyifs_output.splitlines():
             if line.startswith("Name:"):
