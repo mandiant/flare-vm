@@ -5,24 +5,7 @@ import argparse
 import textwrap
 import subprocess
 import re
-
-def run_vboxmanage(cmd):
-    """Runs a VBoxManage command and returns the output."""
-    try:
-        result = subprocess.run(["VBoxManage"] + cmd, capture_output=True, text=True, check=True)
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        # exit code is an error
-        print(f"Error running VBoxManage command: {e} ({e.stderr})")
-        raise Exception(f"Error running VBoxManage command")
-
-def get_vm_state(vm_name):
-    """Gets the VM state using 'VBoxManage showvminfo'."""
-    vminfo = run_vboxmanage(["showvminfo", vm_name, "--machinereadable"])
-    for line in vminfo.splitlines():
-        if line.startswith("VMState"):
-            return line.split("=")[1].strip('"')
-    raise Exception(f"Could not get VM state for '{vm_name}'")
+from vboxcommon import *
 
 def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
     """Gets the children of a snapshot using 'VBoxManage showvminfo'.
