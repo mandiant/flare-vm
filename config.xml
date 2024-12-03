@@ -88,6 +88,7 @@
         <package name="pma-labs.vm"/>
         <package name="procdot.vm"/>
         <package name="processdump.vm"/>
+        <package name="recaf.vm"/>
         <package name="reg_export.vm"/>
         <package name="regcool.vm"/>
         <package name="regshot.vm"/>
@@ -103,6 +104,7 @@
         <package name="ttd.vm"/>
         <package name="uniextract2.vm"/>
         <package name="upx.vm"/>
+        <package name="vbdec.vm"/>
         <package name="vcbuildtools.vm"/>
         <package name="vcredist-all"/>
         <package name="vscode.extension.jupyter.vm"/>
