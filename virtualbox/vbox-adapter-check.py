@@ -3,56 +3,83 @@
 import sys
 import textwrap
 import argparse
-import virtualbox
-from virtualbox.library import NetworkAttachmentType as NetType
+import subprocess
+import re
+import time
+import gi
+gi.require_version('Notify', '0.7')
 from gi.repository import Notify
+from vboxcommon import *
 
 DYNAMIC_VM_NAME = '.dynamic'
-DISABLED_ADAPTER_TYPE = NetType.host_only
-ALLOWED_ADAPTER_TYPES = (NetType.host_only, NetType.internal, NetType.null)
+DISABLED_ADAPTER_TYPE = "hostonly"
+ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
 
-ENABLED_STRS = ('Disabled','Enabled ')
+def get_vm_uuids(dynamic_only):
+    """Gets the machine UUID(s) for a given VM name using 'VBoxManage list vms'."""
+    machine_guids = []
+    try:
+        vms_output = run_vboxmanage(["list", "vms"])
+        pattern = r'"(.*?)" \{(.*?)\}'
+        matches = re.findall(pattern, vms_output)
+        if matches:
+            for match in matches:
+                vm_name = match[0]
+                machine_guid = match[1]
+                if dynamic_only and DYNAMIC_VM_NAME in vm_name:
+                    machine_guids.append((vm_name, machine_guid))
+                else:
+                    machine_guids.append((vm_name, machine_guid))
+    except Exception as e:
+        raise Exception(f"Error finding machines UUIDs: {e}")
+    return machine_guids
 
-def check_and_disable_internet_access(session, machine_name, max_adapters, skip_disabled, do_not_modify):
-    """
-    Checks if a VM's network adapter is set to an internet-accessible mode
-    and disables it if necessary, showing a warning popup.
+def change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, do_not_modify):
+    """Verify all adapters are in an allowed configuration. Must be poweredoff"""
+    try:
+        # gather adapters in incorrect configurations
+        nics_with_internet = []
+        invalid_nics_msg = ''
+        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        for nic_number, nic_value in re.findall("^nic(\d+)=\"(\S+)\"", vminfo, flags=re.M):
+            if nic_value not in ALLOWED_ADAPTER_TYPES:
+                nics_with_internet.append(f"nic{nic_number}")
+                invalid_nics_msg += f'{nic_number} '
 
-    Args:
-        session: The session of the virtual machine to check.
-    """
-    adapters_with_internet = []
-    for i in range(max_adapters):
-        adapter = session.machine.get_network_adapter(i)
+        # modify the invalid adapters if allowed
+        if nics_with_internet:
+            for nic in nics_with_internet:
+                if do_not_modify:
+                    message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. Please double check your VMs settings."
+                else:
+                    message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
+                    # different commands are necessary if the machine is running.
+                    if get_vm_state(machine_guid) == "poweroff":
+                        run_vboxmanage(["modifyvm", machine_guid, f"--{nic}", DISABLED_ADAPTER_TYPE])
+                    else:
+                        run_vboxmanage(["controlvm", machine_guid, nic, "hostonly", hostonly_ifname])
+                    print(f"Set VM {vm_name} adaper {nic} to hostonly")
 
-        if skip_disabled and not adapter.enabled:
-            continue
-
-        print(f"{machine_name} {i+1}: {ENABLED_STRS[adapter.enabled]} {adapter.attachment_type}")
-
-        if DYNAMIC_VM_NAME in machine_name and adapter.attachment_type not in ALLOWED_ADAPTER_TYPES:
-            adapters_with_internet.append(i)
-            if not do_not_modify:
-                # Disable the adapter
-                adapter.attachment_type = DISABLED_ADAPTER_TYPE
-
-    if adapters_with_internet:
-        adapters_str = ", ".join(str(i+1) for i in adapters_with_internet)
-        if do_not_modify:
-            message = f"{machine_name} may be connected to the internet on adapter(s): {adapters_str}. Please double check your VMs settings."
+            if do_not_modify:
+                message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. Please double check your VMs settings."
+            else:
+                message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
+            
+            # Show notification using PyGObject
+            Notify.init("VirtualBox adapter check")
+            notification = Notify.Notification.new(f"INTERNET IN VM: {vm_name}", message, "dialog-error")
+            # Set highest priority
+            notification.set_urgency(2)
+            notification.show()
+            print(f"{vm_name} network configuration not ok, sent notifaction")
+            return
         else:
-            message = f"{machine_name} may be connected to the internet on adapter(s): {adapters_str}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
+            print(f"{vm_name} network configuration is ok")
+            return
 
-        # Show notification using PyGObject
-        Notify.init("VirtualBox adapter check")
-        notification = Notify.Notification.new(f"INTERNET IN VM: {machine_name}", message, "dialog-error")
-        # Set highest priority
-        notification.set_urgency(2)
-        notification.show()
-
-    session.machine.save_settings()
-    session.unlock_machine()
-
+    except Exception as e:
+        print(f"Error changing network adapters: {e}")
+    raise Exception("Failed to verify VM adapter configuration")
 
 def main(argv=None):
     if argv is None:
@@ -66,12 +93,6 @@ def main(argv=None):
 
           # Print status of all internet adapters without modifying any of them
           vbox-adapter-check.vm --do_not_modify
-
-          # Print status of enabled internet adapters and disabled the enabled adapters with internet access in VMs with {DYNAMIC_VM_NAME} in the name
-          vbox-adapter-check.vm --skip_disabled
-
-          # # Print status of enabled internet adapters without modifying any of them
-          vbox-adapter-check.vm --skip_disabled --do_not_modify
         """
     )
     parser = argparse.ArgumentParser(
@@ -80,15 +101,19 @@ def main(argv=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--do_not_modify", action="store_true", help="Only print the status of the internet adapters without modifying them.")
-    parser.add_argument("--skip_disabled", action="store_true", help="Skip the disabled adapters.")
+    parser.add_argument("--dynamic_only", action="store_true", help="Only scan VMs with .dynamic in the name")
     args = parser.parse_args(args=argv)
 
-    vbox = virtualbox.VirtualBox()
-    for machine in vbox.machines:
-        session = machine.create_session()
-        max_adapters = vbox.system_properties.get_max_network_adapters(machine.chipset_type)
-        check_and_disable_internet_access(session, machine.name, max_adapters, args.skip_disabled, args.do_not_modify)
-
+    try:
+        hostonly_ifname = ensure_hostonlyif_exists()
+        machine_guids = get_vm_uuids(args.dynamic_only)
+        if len(machine_guids) > 0:
+            for vm_name, machine_guid in machine_guids:
+                change_network_adapters_to_hostonly(machine_guid, vm_name, hostonly_ifname, args.do_not_modify)
+        else:
+            print(f"[Warning ⚠️] No VMs found")
+    except Exception as e:
+        print(f"Error verifying dynamic VM hostonly configuration: {e}")
 
 if __name__ == "__main__":
     main()
