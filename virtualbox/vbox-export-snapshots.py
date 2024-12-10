@@ -7,14 +7,15 @@ The exported VM names start with "FLARE-VM.{date}".
 
 import os
 import hashlib
-import virtualbox
-from virtualbox.library import VirtualSystemDescriptionType as DescType
-from virtualbox.library import NetworkAttachmentType as NetType
-from virtualbox.library import ExportOptions as ExportOps
+import re
+import subprocess
 from datetime import datetime
+import time
+from vboxcommon import *
 
 # Base name of the exported VMs
 EXPORTED_VM_NAME = "FLARE-VM"
+
 # Name of the VM to export the snapshots from
 VM_NAME = f"{EXPORTED_VM_NAME}.testing"
 
@@ -32,56 +33,110 @@ SNAPSHOTS = [
     ("FLARE-VM.EDU", ".EDU", "Windows 10 VM with FLARE-VM default configuration installed + FLARE-EDU teaching materials"),
 ]
 
-
 def sha256_file(filename):
     with open(filename, "rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
 
+def get_vm_uuid(vm_name):
+    """Gets the machine UUID for a given VM name using 'VBoxManage list vms'."""
+    try:
+        vms_output = run_vboxmanage(["list", "vms"])
+        # regex VM name and extract the GUID
+        match = re.search(rf'"{vm_name}" \{{(.*?)\}}', vms_output)
+        if match:
+            uuid = "{" + match.group(1) + "}"
+            return uuid
+        else:
+            raise Exception(f"Could not find VM '{vm_name}'")
+    except Exception as e:
+        print(f"Error getting machine UUID: {e}")
+    raise Exception(f"Could not find VM '{vm_name}'")
 
-def change_network_adapters(vm, max_adapters):
-    for i in range(max_adapters):
-        adapter = vm.get_network_adapter(i)
-        adapter.attachment_type = NetType.host_only
-    vm.save_settings()
+def change_network_adapters_to_hostonly(machine_guid):
+    """Changes all active network adapters to Host-Only. Must be poweredoff"""
+    ensure_hostonlyif_exists()
+    try:
+        # disable all the nics to get to a clean state
+        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        for nic_number, nic_value in re.findall("^nic(\d+)=\"(\S+)\"", vminfo, flags=re.M):
+            if nic_value != "none":  # Ignore NICs with value "none"
+                run_vboxmanage(["modifyvm", machine_guid, f"--nic{nic_number}", "none"])
+                print(f"Changed nic{nic_number}")
+        
+        # set first nic to hostonly
+        run_vboxmanage(["modifyvm", machine_guid, f"--nic1", "hostonly"])
+        
+        # ensure changes applied
+        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        for nic_number, nic_value in re.findall("^nic(\d+)=\"(\S+)\"", vminfo, flags=re.M):
+            if nic_number == "1" and nic_value != "hostonly":
+                print("Invalid nic configuration detected, nic1 not hostonly")
+                raise Exception("Invalid nic configuration detected, first nic not hostonly")
+            elif nic_number != "1" and nic_value != "none":
+                print(f"Invalid nic configuration detected, nic{nic_number} not disabled")
+                raise Exception(f"Invalid nic configuration detected, nic{nic_number} not disabled")
+        print("Nic configuration verified correct")
+        return
+    except Exception as e:
+        print(f"Error changing network adapters: {e}")
+    print("Failed to change VM network adapters to hostonly")
+    raise Exception("Failed to change VM network adapters to hostonly")
 
+def restore_snapshot(machine_guid, snapshot_name):
+    status =  run_vboxmanage(["snapshot", machine_guid, "restore", snapshot_name])
+    print(f"Restored '{snapshot_name}'")
+    return status
 
 if __name__ == "__main__":
     date = datetime.today().strftime("%Y%m%d")
 
-    vbox = virtualbox.VirtualBox()
-    vm = vbox.find_machine(VM_NAME)
-    max_adapters = vbox.system_properties.get_max_network_adapters(vm.chipset_type)
-
     for snapshot_name, extension, description in SNAPSHOTS:
+        print(f"Starting operations on {snapshot_name}")
         try:
-            # Restore snapshot
-            session = vm.create_session()
-            snapshot = session.machine.find_snapshot(snapshot_name)
-            progress = session.machine.restore_snapshot(snapshot)
-            progress.wait_for_completion(-1)
-            change_network_adapters(session.machine, max_adapters)
-            session.unlock_machine()
-            print(f"Restored '{snapshot_name}' and changed its adapter(s) to host-only")
+            vm_uuid = get_vm_uuid(VM_NAME)
+            # Shutdown machine 
+            ensure_vm_shutdown(vm_uuid)
 
+            # Restore snapshot (must be shutdown)
+            restore_snapshot(vm_uuid, snapshot_name)
+    
+            # Shutdown machine (incase the snapshot was taken while running)
+            ensure_vm_shutdown(vm_uuid)
+
+            # change all adapters to hostonly (must be shutdown)
+            change_network_adapters_to_hostonly(vm_uuid)
+
+            # do a power cycle to ensure everything is good
+            print("Power cycling before export...")
+            ensure_vm_running(vm_uuid)
+            ensure_vm_shutdown(vm_uuid)
+            print("Power cycling done.")
+    
             # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
             export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
             os.makedirs(export_directory, exist_ok=True)
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
-            appliance = vbox.create_appliance()
-            sys_description = vm.export_to(appliance, exported_vm_name)
-            sys_description.set_final_value(DescType.name, exported_vm_name)
-            sys_description.set_final_value(DescType.description, description)
-            progress = appliance.write("ovf-1.0", [ExportOps.create_manifest], filename)
+    
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
-            progress.wait_for_completion(-1)
-
+            run_vboxmanage(
+                [
+                    "export",
+                    vm_uuid,
+                    f"--output={filename}",
+                    "--vsys=0", # We need to specify the index of the VM, 0 as we only export 1 VM
+                    f"--vmname={exported_vm_name}",
+                    f"--description={description}",
+                ]
+            )
+    
             # Generate file with SHA256
             with open(f"{filename}.sha256", "w") as f:
                 f.write(sha256_file(filename))
-
+    
             print(f"Exported {filename}! 🎉")
-
         except Exception as e:
-            print(f"ERROR exporting {snapshot_name}: {e}")
-
+            print(f"Unexpectedly failed doing operations on {snapshot_name}. Exiting...")
+            break
+        print(f"All operations on {snapshot_name} successful ✅")
+    print("Done. Exiting...")
