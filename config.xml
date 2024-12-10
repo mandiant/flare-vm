@@ -15,6 +15,7 @@
         <package name="blobrunner.vm"/>
         <package name="blobrunner64.vm"/>
         <package name="bytecodeviewer.vm"/>
+        <package name="capa-explorer-web.vm"/>
         <package name="capa.vm"/>
         <package name="chrome.extensions.vm"/>
         <package name="cmder.vm"/>
@@ -103,7 +104,9 @@
         <package name="systeminformer.vm"/>
         <package name="ttd.vm"/>
         <package name="uniextract2.vm"/>
+        <package name="unpyc3.vm"/>
         <package name="upx.vm"/>
+        <package name="vb-decompiler-lite.vm"/>
         <package name="vbdec.vm"/>
         <package name="vcbuildtools.vm"/>
         <package name="vcredist-all"/>
