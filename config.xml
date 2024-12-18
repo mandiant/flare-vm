@@ -59,6 +59,7 @@
         <package name="innoextract.vm"/>
         <package name="innounp.vm"/>
         <package name="internet_detector.vm"/>
+        <package name="ipython.vm"/>
         <package name="isd.vm"/>
         <package name="js-beautify.vm"/>
         <package name="js-deobfuscator.vm"/>
