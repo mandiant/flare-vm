@@ -4,6 +4,7 @@
 *.class
 *.o
 *.so
+__pycache__/
 
 # Packages #
 ############
@@ -35,3 +36,7 @@ Thumbs.db
 # Pycharm artifacts
 ###################
 .idea
+
+# vscode
+# #################
+.vscode/

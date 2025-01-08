@@ -73,7 +73,7 @@ Cleaning FLARE-VM.20240604 🫧 Snapshots to delete:
 VM state: Paused
 ⚠️  Snapshot deleting is slower in a running VM and may fail in a changing state
 
-Confirm deletion ('y'):y
+Confirm deletion (press 'y'):y
 
 Deleting... (this may take some time, go for an 🍦!)
   🫧 DELETED 'Snapshot 1'

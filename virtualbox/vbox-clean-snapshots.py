@@ -1,51 +1,105 @@
 #!/usr/bin/python3
 
-import sys
 import argparse
+import re
+import sys
 import textwrap
-import virtualbox
-from virtualbox.library import MachineState
+
+from vboxcommon import *
 
 
-TO_DELETE = []
+def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
+    """Recursively gets the children of a snapshot using 'VBoxManage showvminfo'.
 
+    Args:
+      vm_name: The name of the VM.
+      root_snapshot_name: The name of the root snapshot we want the children of.
+      protected_snapshots: snapshots we ignore and do not include in the returned list
 
-def get_snapshots_to_delete(snapshot, protected_snapshots):
-    for child in snapshot.children:
-        get_snapshots_to_delete(child, protected_snapshots)
-    snapshot_name = snapshot.name.lower()
-    for protected_str in protected_snapshots:
-        if protected_str.lower() in snapshot_name:
-            return
-    TO_DELETE.append((snapshot.name, snapshot.id_p))
+    Returns:
+      A list of snapshot names that are children of the given snapshot. The list is ordered by dependent relationships.
+    """
+    try:
+        # SnapshotName="Fresh"
+        # SnapshotUUID="8da3571a-1c66-4c3e-8a22-a87973253ae8"
+        # SnapshotName-1="FLARE-VM"
+        # SnapshotUUID-1="23d7b5f3-2e9a-41ef-a908-89b9ac873033"
+        # SnapshotName-1-1="Child2Snapshot"
+        # SnapshotUUID-1-1="adf91b7d-403f-478b-9bb4-89c477081dd6"
+        # SnapshotName-2="Child1SnapshotTesting"
+        # SnapshotUUID-2="db50b1e9-f51c-4308-b577-da5a41e01068"
+        # Fresh
+        #   ├─ FLARE-VM
+        #   │   └─ Child2Snapshot
+        #   └─ Child1SnapshotTesting
+        # Current State
+
+        vminfo = run_vboxmanage(["showvminfo", vm_name, "--machinereadable"])
+        # Find all snapshot names
+        snapshot_regex = rf"(SnapshotName(?:-\d+)*)=\"(.*?)\""
+        snapshots = re.findall(snapshot_regex, vminfo, flags=re.M)
+
+        children = []
+
+        # find the root SnapshotName by matching the name
+        root_snapshotid = None
+        for snapshotid, snapshot_name in snapshots:
+            if snapshot_name.lower() == root_snapshot_name.lower() and (
+                not any(p.lower() in snapshot_name.lower() for p in protected_snapshots)
+            ):
+                root_snapshotid = snapshotid
+
+        if not root_snapshotid:
+            print("Failed to find root snapshot")
+            raise Exception(f"Failed to find root snapshot {snapshot_name}")
+
+        # children of that snapshot share the same prefix id
+        dependant_child = False
+        for snapshotid, snapshot_name in snapshots:
+            if snapshotid.startswith(root_snapshotid):
+                if not any(
+                    p.lower() in snapshot_name.lower() for p in protected_snapshots
+                ):
+                    children.append((snapshotid, snapshot_name))
+                else:
+                    dependant_child = True
+
+        # remove the root snapshot if any children are protected OR it's the current snapshot
+        if dependant_child:
+            print("Root snapshot cannot be deleted as a child snapshot is protected")
+            children = [
+                snapshot for snapshot in children if snapshot[0] != root_snapshotid
+            ]
+        return children
+    except Exception as e:
+        raise Exception(f"Could not get snapshot children for '{vm_name}'") from e
 
 
 def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
-    vbox = virtualbox.VirtualBox()
-    vm = vbox.find_machine(vm_name)
-    snapshot = vm.find_snapshot(snapshot_name)
-    get_snapshots_to_delete(snapshot, protected_snapshots)
+    snaps_to_delete = get_snapshot_children(vm_name, snapshot_name, protected_snapshots)
 
-    if TO_DELETE:
+    if snaps_to_delete:
         print(f"\nCleaning {vm_name} 🫧 Snapshots to delete:")
-        for name, _ in TO_DELETE:
-            print(f"  {name}")
+        for snapshotid, snapshot_name in snaps_to_delete:
+            print(f"  {snapshot_name}")
 
-        if vm.state not in (MachineState.powered_off, MachineState.saved):
-            print(f"\nVM state: {vm.state}\n⚠️  Snapshot deleting is slower in a running VM and may fail in a changing state")
+        vm_state = get_vm_state(vm_name)
+        if vm_state not in ("poweroff", "saved"):
+            print(
+                f"\nVM state: {vm_state}\n⚠️  Snapshot deleting is slower in a running VM and may fail in a changing state"
+            )
 
-        answer = input("\nConfirm deletion ('y'):")
+        answer = input("\nConfirm deletion (press 'y'):")
         if answer.lower() == "y":
             print("\nDeleting... (this may take some time, go for an 🍦!)")
-            session = vm.create_session()
-            for name, uuid in TO_DELETE:
+            for snapshotid, snapshot_name in reversed(
+                snaps_to_delete
+            ):  # delete in reverse order to avoid issues with child snapshots
                 try:
-                    progress = session.machine.delete_snapshot(uuid)
-                    progress.wait_for_completion(-1)
-                    print(f"  🫧 DELETED '{name}'")
+                    run_vboxmanage(["snapshot", vm_name, "delete", snapshot_name])
+                    print(f"  🫧 DELETED '{snapshot_name}'")
                 except Exception as e:
-                    print(f"  ❌ ERROR '{name}': {e}")
-            session.unlock_machine()
+                    print(f"  ❌ ERROR '{snapshot_name}'\n{e}")
     else:
         print(f"\n{vm_name} is clean 🫧")
 
@@ -67,10 +121,10 @@ def main(argv=None):
 
           # Delete the 'CLEAN with IDA 8.4' children snapshots recursively skipping the ones that include 'clean' or 'done' in the name (case insensitive) in the 'FLARE-VM.20240604' VM
           # NOTE: the 'CLEAN with IDA 8.4' root snapshot is skipped in this case
-          vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot 'CLEAN with IDA 8.4'
+          vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot CLEAN with IDA 8.4
 
           # Delete the 'Snapshot 3' snapshot and its children recursively skipping the ones that include 'clean' or 'done' in the name (case insensitive) in the 'FLARE-VM.20240604' VM
-          vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot 'Snapshot 3'
+          vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot Snapshot 3
 
           # Delete all snapshots in the 'FLARE-VM.20240604' VM
           vbox-clean-snapshots.py FLARE-VM.20240604 --protected_snapshots ""
@@ -82,7 +136,11 @@ def main(argv=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("vm_name", help="Name of the VM to clean up")
-    parser.add_argument("--root_snapshot", default="", help="Snapshot to delete (and its children recursively). Leave empty to clean all snapshots in the VM.")
+    parser.add_argument(
+        "--root_snapshot",
+        default="",
+        help="Snapshot to delete (and its children recursively). Leave empty to clean all snapshots in the VM.",
+    )
     parser.add_argument(
         "--protected_snapshots",
         default="clean,done",
@@ -91,7 +149,9 @@ def main(argv=None):
     )
     args = parser.parse_args(args=argv)
 
-    delete_snapshot_and_children(args.vm_name, args.root_snapshot, args.protected_snapshots)
+    delete_snapshot_and_children(
+        args.vm_name, args.root_snapshot, args.protected_snapshots
+    )
 
 
 if __name__ == "__main__":
