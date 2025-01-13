@@ -52,6 +52,7 @@
         <package name="ida.plugin.diaphora.vm"/>
         <package name="ida.plugin.flare.vm"/>
         <package name="ida.plugin.ifl.vm"/>
+        <package name="ida.plugin.xray.vm"/>
         <package name="idafree.vm"/>
         <package name="idr.vm"/>
         <package name="ifpstools.vm"/>
@@ -89,6 +90,8 @@
         <package name="pma-labs.vm"/>
         <package name="procdot.vm"/>
         <package name="processdump.vm"/>
+        <package name="pycdas.vm"/>
+        <package name="pycdc.vm"/>
         <package name="recaf.vm"/>
         <package name="reg_export.vm"/>
         <package name="regcool.vm"/>
