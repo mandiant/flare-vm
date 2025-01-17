@@ -107,7 +107,7 @@ The installer will use [CustomStartLayout.xml](https://raw.githubusercontent.com
 
 ##### Things to Consider:
 - Items in the .xml that are not installed will not display in the taskbar (no broken links will be pinned)
-- Only applications (.exe files) or shortcuts to applications can be pinned.
+- Only applications (`.exe` files) or shortcuts to applications can be pinned.
 - If you would like to pin something that isn't an application, consider creating a shortcut that points to `cmd.exe` or `powershell` with arguments supplied that will perform that actions you would like.
 - If you would like to make something run with admin rights, consider making a shortcut using `VM-Install-Shortcut` with the flag `-runAsAdmin` and pinning the shortcut.
 
@@ -125,18 +125,10 @@ For example:
 
 For more examples, check the default configuration file: [config.xml](https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml).
 
+
 ## Contributing
 
-Want to get started contributing? See the links below to learn how. We are looking forward working with you to improve FLARE-VM! :sparkling_heart:
-
-### FLARE-VM (this repository)
-* FLARE-VM installation script, and configuration: https://github.com/mandiant/flare-vm
-  * [Submit improvement proposals and report issues related to the installer](https://github.com/mandiant/flare-vm/issues/new/choose)
-
-### VM-Packages
-* Repository of all tool packages: https://github.com/mandiant/VM-Packages
-  * [Documentation and contribution guides for tool packages](https://github.com/mandiant/VM-Packages/wiki)
-  * [Submit new tool packages or report package related issues](https://github.com/mandiant/VM-Packages/issues/new/choose)
+- Check our [CONTRIBUTING guide](/CONTRIBUTING.md) to learn how to contribute to the project.
 
 ## Troubleshooting
 If your installation fails, please attempt to identify the reason for the installation error by reading through the log files listed below on your system:
