@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
  Copyright 2017 Google LLC
 
@@ -14,7 +15,6 @@
  limitations under the License.
 -->
 
-﻿<?xml version="1.0" encoding="utf-8"?>
 <config>
     <envs>
         <env name="VM_COMMON_DIR" value="%ProgramData%\_VM"/>
