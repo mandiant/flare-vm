@@ -64,7 +64,6 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
                 root_snapshotid = snapshotid
 
         if not root_snapshotid:
-            print("Failed to find root snapshot")
             raise Exception(f"Failed to find root snapshot {snapshot_name}")
 
         # children of that snapshot share the same prefix id
