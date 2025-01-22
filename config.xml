@@ -69,6 +69,7 @@
         <package name="ida.plugin.flare.vm"/>
         <package name="ida.plugin.ifl.vm"/>
         <package name="ida.plugin.xray.vm"/>
+        <package name="ida.plugin.xrefer.vm"/>
         <package name="idafree.vm"/>
         <package name="idr.vm"/>
         <package name="ifpstools.vm"/>
@@ -108,6 +109,7 @@
         <package name="processdump.vm"/>
         <package name="pycdas.vm"/>
         <package name="pycdc.vm"/>
+        <package name="rat-king-parser.vm"/>
         <package name="recaf.vm"/>
         <package name="reg_export.vm"/>
         <package name="regcool.vm"/>
@@ -122,6 +124,7 @@
         <package name="sysinternals.vm"/>
         <package name="systeminformer.vm"/>
         <package name="ttd.vm"/>
+        <package name="uncompyle6.vm"/>
         <package name="uniextract2.vm"/>
         <package name="unpyc3.vm"/>
         <package name="upx.vm"/>
