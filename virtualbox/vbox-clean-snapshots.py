@@ -58,9 +58,7 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
         # find the root SnapshotName by matching the name
         root_snapshotid = None
         for snapshotid, snapshot_name in snapshots:
-            if snapshot_name.lower() == root_snapshot_name.lower() and (
-                not any(p.lower() in snapshot_name.lower() for p in protected_snapshots)
-            ):
+            if snapshot_name.lower() == root_snapshot_name.lower():
                 root_snapshotid = snapshotid
 
         if not root_snapshotid:
