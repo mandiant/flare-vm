@@ -23,7 +23,7 @@ from vboxcommon import *
 
 
 def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
-    """Recursively gets the children of a snapshot using 'VBoxManage showvminfo'.
+    """Get the children of a snapshot (including the snapshot) using 'VBoxManage snapshot' with the 'list' option.
 
     Args:
       vm_name: The name of the VM.
@@ -48,10 +48,10 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
         #   └─ Child1SnapshotTesting
         # Current State
 
-        vminfo = run_vboxmanage(["showvminfo", vm_name, "--machinereadable"])
+        snapshots_info = run_vboxmanage(["snapshot", vm_name, "list", "--machinereadable"])
         # Find all snapshot names
         snapshot_regex = rf"(SnapshotName(?:-\d+)*)=\"(.*?)\""
-        snapshots = re.findall(snapshot_regex, vminfo, flags=re.M)
+        snapshots = re.findall(snapshot_regex, snapshots_info, flags=re.M)
 
         children = []
 
