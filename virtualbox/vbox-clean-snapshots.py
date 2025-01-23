@@ -22,13 +22,17 @@ import textwrap
 from vboxcommon import *
 
 
+def is_protected(protected_snapshots, snapshot_name):
+    """Check if snapshot_name contains any of the strings in the protected_snapshots list (case insensitive)"""
+    return any(p.lower() in snapshot_name.lower() for p in protected_snapshots)
+
 def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
     """Get the children of a snapshot (including the snapshot) using 'VBoxManage snapshot' with the 'list' option.
 
     Args:
       vm_name: The name of the VM.
-      root_snapshot_name: The name of the root snapshot we want the children of.
-      protected_snapshots: snapshots we ignore and do not include in the returned list
+      root_snapshot_name: The name of the root snapshot we want the children of. If no provided or not found, return all snapshots.
+      protected_snapshots: Snapshots we ignore and do not include in the returned list.
 
     Returns:
       A list of snapshot names that are children of the given snapshot. The list is ordered by dependent relationships.
@@ -51,32 +55,26 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
         #   ├─ Snapshot 1
         #   │   └─ Snapshot 2
         #   └─ Snapshot 3
-
         snapshots_info = run_vboxmanage(["snapshot", vm_name, "list", "--machinereadable"])
-        # Find all snapshot names, indexes, and IDs
-        snapshot_regex = '^SnapshotName(?P<index>(?:-\d+)*)="(?P<name>.*?)"\nSnapshotUUID(?:-\d+)*="(?P<id>.*?)"'
-        snapshots = [m.groupdict() for m in re.finditer(snapshot_regex, snapshots_info, flags=re.M)]
 
-        children = []
+        root_snapshot_index = ""
+        if root_snapshot_name:
+            # Find root snapshot: first snapshot with name root_snapshot_name (case sensitive)
+            root_snapshot_regex = f'^SnapshotName(?P<index>(?:-\d+)*)="{root_snapshot_name}"\n'
+            root_snapshot = re.search(root_snapshot_regex, snapshots_info, flags=re.M)
+            if root_snapshot:
+                root_snapshot_index = root_snapshot["index"]
+            else:
+                print(f"\n⚠️  Root snapshot not found: {root_snapshot_name} 🫧 Cleaning all snapshots in the VM")
 
-        # find the root SnapshotName by matching the name
-        root_snapshot_index = None
-        for snapshot in snapshots:
-            if snapshot["name"].lower() == root_snapshot_name.lower():
-                root_snapshot_index = snapshot["index"]
-
-        if not root_snapshot_index:
-            raise Exception(f"Failed to find root snapshot {root_snapshot_name}")
-
+        # Find all root and child snapshots as (snapshot_name, snapshot_id)
         # Children of a snapshot share the same prefix index
-        for snapshot in snapshots:
-            if snapshot["index"].startswith(root_snapshot_index):
-                if not any(
-                    p.lower() in snapshot["name"].lower() for p in protected_snapshots
-                ):
-                    children.append((snapshot["id"], snapshot["name"]))
+        index_regex = f"{root_snapshot_index}(?:-\d+)*"
+        snapshot_regex = f'^SnapshotName{index_regex}="(.*?)"\nSnapshotUUID{index_regex}="(.*?)"'
+        snapshots = re.findall(snapshot_regex, snapshots_info, flags=re.M)
 
-        return children
+        # Return non protected snapshots as list of (snapshot_name, snapshot_id)
+        return [snapshot for snapshot in snapshots if not is_protected(protected_snapshots, snapshot[0])]
     except Exception as e:
         raise Exception(f"Could not get snapshot children for '{vm_name}'") from e
 
@@ -86,7 +84,7 @@ def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
 
     if snaps_to_delete:
         print(f"\nCleaning {vm_name} 🫧 Snapshots to delete:")
-        for _, snapshot_name in snaps_to_delete:
+        for snapshot_name, _ in snaps_to_delete:
             print(f"  {snapshot_name}")
 
         vm_state = get_vm_state(vm_name)
@@ -100,7 +98,7 @@ def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
             print("\nDELETING SNAPSHOTS... (this may take some time, go for an 🍦!)")
             # Delete snapshots in reverse order to avoid issues with child snapshots,
             # as a snapshot with more than 1 child can not be deleted
-            for snapshot_id, snapshot_name in reversed(snaps_to_delete):
+            for snapshot_name, snapshot_id in reversed(snaps_to_delete):
                 try:
                     run_vboxmanage(["snapshot", vm_name, "delete", snapshot_id])
                     print(f"🫧 DELETED '{snapshot_name}'")
@@ -144,8 +142,7 @@ def main(argv=None):
     parser.add_argument("vm_name", help="Name of the VM to clean up")
     parser.add_argument(
         "--root_snapshot",
-        default="",
-        help="Snapshot to delete (and its children recursively). Leave empty to clean all snapshots in the VM.",
+        help="Snapshot name (case sensitive) to delete (and its children recursively). Leave empty to clean all snapshots in the VM.",
     )
     parser.add_argument(
         "--protected_snapshots",
