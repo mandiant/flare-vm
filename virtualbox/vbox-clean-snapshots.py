@@ -69,22 +69,13 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
             raise Exception(f"Failed to find root snapshot {snapshot_name}")
 
         # children of that snapshot share the same prefix id
-        dependant_child = False
         for snapshotid, snapshot_name in snapshots:
             if snapshotid.startswith(root_snapshotid):
                 if not any(
                     p.lower() in snapshot_name.lower() for p in protected_snapshots
                 ):
                     children.append((snapshotid, snapshot_name))
-                else:
-                    dependant_child = True
 
-        # remove the root snapshot if any children are protected OR it's the current snapshot
-        if dependant_child:
-            print("Root snapshot cannot be deleted as a child snapshot is protected")
-            children = [
-                snapshot for snapshot in children if snapshot[0] != root_snapshotid
-            ]
         return children
     except Exception as e:
         raise Exception(f"Could not get snapshot children for '{vm_name}'") from e
@@ -104,17 +95,17 @@ def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
                 f"\nVM state: {vm_state}\n⚠️  Snapshot deleting is slower in a running VM and may fail in a changing state"
             )
 
-        answer = input("\nConfirm deletion (press 'y'):")
+        answer = input("\nConfirm deletion (press 'y'): ")
         if answer.lower() == "y":
-            print("\nDeleting... (this may take some time, go for an 🍦!)")
+            print("\nDELETING SNAPSHOTS... (this may take some time, go for an 🍦!)")
             for snapshotid, snapshot_name in reversed(
                 snaps_to_delete
             ):  # delete in reverse order to avoid issues with child snapshots
                 try:
                     run_vboxmanage(["snapshot", vm_name, "delete", snapshot_name])
-                    print(f"  🫧 DELETED '{snapshot_name}'")
+                    print(f"🫧 DELETED '{snapshot_name}'")
                 except Exception as e:
-                    print(f"  ❌ ERROR '{snapshot_name}'\n{e}")
+                    print(f"❌ ERROR '{snapshot_name}'\n{e}")
     else:
         print(f"\n{vm_name} is clean 🫧")
 
