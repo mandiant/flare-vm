@@ -34,23 +34,27 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
       A list of snapshot names that are children of the given snapshot. The list is ordered by dependent relationships.
     """
     try:
-        # SnapshotName="Fresh"
-        # SnapshotUUID="8da3571a-1c66-4c3e-8a22-a87973253ae8"
-        # SnapshotName-1="FLARE-VM"
-        # SnapshotUUID-1="23d7b5f3-2e9a-41ef-a908-89b9ac873033"
-        # SnapshotName-1-1="Child2Snapshot"
-        # SnapshotUUID-1-1="adf91b7d-403f-478b-9bb4-89c477081dd6"
-        # SnapshotName-2="Child1SnapshotTesting"
-        # SnapshotUUID-2="db50b1e9-f51c-4308-b577-da5a41e01068"
-        # Fresh
-        #   ├─ FLARE-VM
-        #   │   └─ Child2Snapshot
-        #   └─ Child1SnapshotTesting
-        # Current State
+        # Example of `VBoxManage snapshot VM_NAME list --machinereadable` output:
+        # SnapshotName="ROOT"
+        # SnapshotUUID="86b38fc9-9d68-4e4b-a033-4075002ab570"
+        # SnapshotName-1="Snapshot 1"
+        # SnapshotUUID-1="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
+        # CurrentSnapshotName="Snapshot 1"
+        # CurrentSnapshotUUID="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
+        # CurrentSnapshotNode="SnapshotName-1"
+        # SnapshotName-1-1="Snapshot 2"
+        # SnapshotUUID-1-1="8cc12787-99df-466e-8a51-80e373d3447a"
+        # SnapshotName-2="Snapshot 3"
+        # SnapshotUUID-2="f42533a8-7c14-4855-aa66-7169fe8187fe"
+        #
+        # ROOT
+        #   ├─ Snapshot 1
+        #   │   └─ Snapshot 2
+        #   └─ Snapshot 3
 
         snapshots_info = run_vboxmanage(["snapshot", vm_name, "list", "--machinereadable"])
         # Find all snapshot names
-        snapshot_regex = rf"(SnapshotName(?:-\d+)*)=\"(.*?)\""
+        snapshot_regex = rf"(^SnapshotName(?:-\d+)*)=\"(.*?)\""
         snapshots = re.findall(snapshot_regex, snapshots_info, flags=re.M)
 
         children = []
