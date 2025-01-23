@@ -37,46 +37,43 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
     Returns:
       A list of snapshot names that are children of the given snapshot. The list is ordered by dependent relationships.
     """
-    try:
-        # Example of `VBoxManage snapshot VM_NAME list --machinereadable` output:
-        # SnapshotName="ROOT"
-        # SnapshotUUID="86b38fc9-9d68-4e4b-a033-4075002ab570"
-        # SnapshotName-1="Snapshot 1"
-        # SnapshotUUID-1="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
-        # CurrentSnapshotName="Snapshot 1"
-        # CurrentSnapshotUUID="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
-        # CurrentSnapshotNode="SnapshotName-1"
-        # SnapshotName-1-1="Snapshot 2"
-        # SnapshotUUID-1-1="8cc12787-99df-466e-8a51-80e373d3447a"
-        # SnapshotName-2="Snapshot 3"
-        # SnapshotUUID-2="f42533a8-7c14-4855-aa66-7169fe8187fe"
-        #
-        # ROOT
-        #   ├─ Snapshot 1
-        #   │   └─ Snapshot 2
-        #   └─ Snapshot 3
-        snapshots_info = run_vboxmanage(["snapshot", vm_name, "list", "--machinereadable"])
+    # Example of `VBoxManage snapshot VM_NAME list --machinereadable` output:
+    # SnapshotName="ROOT"
+    # SnapshotUUID="86b38fc9-9d68-4e4b-a033-4075002ab570"
+    # SnapshotName-1="Snapshot 1"
+    # SnapshotUUID-1="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
+    # CurrentSnapshotName="Snapshot 1"
+    # CurrentSnapshotUUID="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
+    # CurrentSnapshotNode="SnapshotName-1"
+    # SnapshotName-1-1="Snapshot 2"
+    # SnapshotUUID-1-1="8cc12787-99df-466e-8a51-80e373d3447a"
+    # SnapshotName-2="Snapshot 3"
+    # SnapshotUUID-2="f42533a8-7c14-4855-aa66-7169fe8187fe"
+    #
+    # ROOT
+    #   ├─ Snapshot 1
+    #   │   └─ Snapshot 2
+    #   └─ Snapshot 3
+    snapshots_info = run_vboxmanage(["snapshot", vm_name, "list", "--machinereadable"])
 
-        root_snapshot_index = ""
-        if root_snapshot_name:
-            # Find root snapshot: first snapshot with name root_snapshot_name (case sensitive)
-            root_snapshot_regex = f'^SnapshotName(?P<index>(?:-\d+)*)="{root_snapshot_name}"\n'
-            root_snapshot = re.search(root_snapshot_regex, snapshots_info, flags=re.M)
-            if root_snapshot:
-                root_snapshot_index = root_snapshot["index"]
-            else:
-                print(f"\n⚠️  Root snapshot not found: {root_snapshot_name} 🫧 Cleaning all snapshots in the VM")
+    root_snapshot_index = ""
+    if root_snapshot_name:
+        # Find root snapshot: first snapshot with name root_snapshot_name (case sensitive)
+        root_snapshot_regex = f'^SnapshotName(?P<index>(?:-\d+)*)="{root_snapshot_name}"\n'
+        root_snapshot = re.search(root_snapshot_regex, snapshots_info, flags=re.M)
+        if root_snapshot:
+            root_snapshot_index = root_snapshot["index"]
+        else:
+            print(f"\n⚠️  Root snapshot not found: {root_snapshot_name} 🫧 Cleaning all snapshots in the VM")
 
-        # Find all root and child snapshots as (snapshot_name, snapshot_id)
-        # Children of a snapshot share the same prefix index
-        index_regex = f"{root_snapshot_index}(?:-\d+)*"
-        snapshot_regex = f'^SnapshotName{index_regex}="(.*?)"\nSnapshotUUID{index_regex}="(.*?)"'
-        snapshots = re.findall(snapshot_regex, snapshots_info, flags=re.M)
+    # Find all root and child snapshots as (snapshot_name, snapshot_id)
+    # Children of a snapshot share the same prefix index
+    index_regex = f"{root_snapshot_index}(?:-\d+)*"
+    snapshot_regex = f'^SnapshotName{index_regex}="(.*?)"\nSnapshotUUID{index_regex}="(.*?)"'
+    snapshots = re.findall(snapshot_regex, snapshots_info, flags=re.M)
 
-        # Return non protected snapshots as list of (snapshot_name, snapshot_id)
-        return [snapshot for snapshot in snapshots if not is_protected(protected_snapshots, snapshot[0])]
-    except Exception as e:
-        raise Exception(f"Could not get snapshot children for '{vm_name}'") from e
+    # Return non protected snapshots as list of (snapshot_name, snapshot_id)
+    return [snapshot for snapshot in snapshots if not is_protected(protected_snapshots, snapshot[0])]
 
 
 def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
