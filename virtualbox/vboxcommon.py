@@ -76,15 +76,16 @@ def ensure_hostonlyif_exists():
 
 
 def get_vm_state(vm_uuid):
-    """Gets the VM state using 'VBoxManage showvminfo'."""
+    """Get the VM state using 'VBoxManage showvminfo'."""
+    # Example of `VBoxManage showvminfo <VM_UUID> --machinereadable` relevant output:
     # VMState="poweroff"
-    # VMStateChangeTime="2025-01-02T16:31:51.000000000"
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
 
-    vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-    for line in vminfo.splitlines():
-        if line.startswith("VMState"):
-            return line.split("=")[1].strip('"')
-    raise Exception(f"Could not start VM '{vm_uuid}'")
+    match = re.search(f'^VMState="(?P<state>\S+)"', vm_info, flags=re.M)
+    if match:
+        return match["state"]
+
+    raise Exception(f"Unable to get state of VM {vm_uuid}")
 
 
 def wait_until_vm_state(vm_uuid, target_state):
