@@ -48,45 +48,31 @@ def run_vboxmanage(cmd):
     return result.stdout
 
 
+def get_hostonlyif_name():
+    """Get the name of the host-only interface. Return None if there is no host-only interface"""
+    # Example of `VBoxManage list hostonlyifs` relevant output:
+    # Name:            vboxnet0
+    hostonlyifs_info = run_vboxmanage(["list", "hostonlyifs"])
+
+    match = re.search(f"^Name: *(?P<hostonlyif_name>\S+)", hostonlyifs_info, flags=re.M)
+    if match:
+        return match["hostonlyif_name"]
+
 def ensure_hostonlyif_exists():
-    """Gets the name of, or creates a new hostonlyif"""
-    try:
-        # Name:            vboxnet0
-        # GUID:            f0000000-dae8-4abf-8000-0a0027000000
-        # DHCP:            Disabled
-        # IPAddress:       192.168.56.1
-        # NetworkMask:     255.255.255.0
-        # IPV6Address:     fe80::800:27ff:fe00:0
-        # IPV6NetworkMaskPrefixLength: 64
-        # HardwareAddress: 0a:00:27:00:00:00
-        # MediumType:      Ethernet
-        # Wireless:        No
-        # Status:          Up
-        # VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+    """Get the name of the host-only interface. Create the interface if it doesn't exist."""
+    hostonlyif_name = get_hostonlyif_name()
 
-        # Find existing hostonlyif
-        hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])
-        for line in hostonlyifs_output.splitlines():
-            if line.startswith("Name:"):
-                hostonlyif_name = line.split(":")[1].strip()
-                print(f"Found existing hostonlyif {hostonlyif_name}")
-                return hostonlyif_name
-
+    if not hostonlyif_name:
         # No host-only interface found, create one
-        print("No host-only interface found. Creating one...")
         run_vboxmanage(["hostonlyif", "create"])
-        hostonlyifs_output = run_vboxmanage(
-            ["list", "hostonlyifs"]
-        )  # Get the updated list
-        for line in hostonlyifs_output.splitlines():
-            if line.startswith("Name:"):
-                hostonlyif_name = line.split(":")[1].strip()
-                print(f"Created hostonlyif {hostonlyif_name}")
-                return hostonlyif_name
-        print("Failed to create new hostonlyif. Exiting...")
-        raise Exception("Failed to create new hostonlyif.")
-    except Exception as e:
-        raise Exception("Failed to verify host-only interface exists") from e
+
+        hostonlyif_name = get_hostonlyif_name()
+        if not hostonlyif_name:
+            raise RuntimeError("Failed to create new hostonly interface.")
+
+        print(f"VM {vm_uuid} Created hostonly interface: {hostonlyif_name}")
+
+    return hostonlyif_name
 
 
 def get_vm_state(vm_uuid):
