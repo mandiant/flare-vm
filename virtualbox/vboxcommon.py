@@ -12,20 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import subprocess
 import time
 
 
-# cmd is an array of string arguments to pass
+def format_arg(arg):
+    """Add quotes to the string arg if it contains spaces."""
+    if " " in arg:
+        return f"'{arg}'"
+    return arg
+
+def cmd_to_str(cmd):
+    """Convert a list of string arguments to a string."""
+    return " ".join(format_arg(arg) for arg in cmd)
+
 def run_vboxmanage(cmd):
-    """Runs a VBoxManage command and returns the output."""
-    try:
-        result = subprocess.run(
-            ["VBoxManage"] + cmd, capture_output=True, text=True, check=True
-        )
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error running VBoxManage command: {e} ({e.stderr})")
+    """Runs a VBoxManage command and returns the output.
+
+    Args:
+      cmd: list of string arguments to pass to VBoxManage
+    """
+    cmd = ["VBoxManage"] + cmd
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode:
+        # Use only the first "VBoxManage: error:" line to prevent using the long
+        # VBoxManage help message or noisy information like the details and context.
+        error = f"Command '{cmd_to_str(cmd)}' failed"
+        stderr_info = re.search("^VBoxManage: error: (.*)", result.stderr, flags=re.M)
+        if stderr_info:
+            error += f": {stderr_info.group(1)}"
+        raise RuntimeError(error)
+
+    return result.stdout
 
 
 def ensure_hostonlyif_exists():
