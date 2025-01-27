@@ -79,6 +79,9 @@ def get_vm_uuid(vm_name):
 
 def change_network_adapters_to_hostonly(vm_uuid):
     """Changes all active network adapters to Host-Only. Must be poweredoff"""
+    # VM must be shutdown before changing the adapters
+    ensure_vm_shutdown(vm_uuid)
+
     ensure_hostonlyif_exists()
     try:
         # disable all the nics to get to a clean state
@@ -117,6 +120,10 @@ def change_network_adapters_to_hostonly(vm_uuid):
 
 
 def restore_snapshot(vm_uuid, snapshot_name):
+    """Restore snapshot"""
+    # VM must be shutdown before restoring snapshot
+    ensure_vm_shutdown(vm_uuid)
+
     status = run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
     print(f"Restored '{snapshot_name}'")
     return status
@@ -133,16 +140,8 @@ if __name__ == "__main__":
     print(f'Exporting snapshots from "{VM_NAME}" {vm_uuid}')
     for snapshot_name, extension, description in SNAPSHOTS:
         try:
-            # Shutdown machine
-            ensure_vm_shutdown(vm_uuid)
-
-            # Restore snapshot (must be shutdown)
             restore_snapshot(vm_uuid, snapshot_name)
 
-            # Shutdown machine (incase the snapshot was taken while running)
-            ensure_vm_shutdown(vm_uuid)
-
-            # change all adapters to hostonly (must be shutdown)
             change_network_adapters_to_hostonly(vm_uuid)
 
             # do a power cycle to ensure everything is good
