@@ -101,72 +101,50 @@ def get_vm_state(vm_uuid):
     raise Exception(f"Could not start VM '{vm_uuid}'")
 
 
-def ensure_vm_running(vm_uuid):
-    """Checks if the VM is running and starts it if it's not.
-    Waits up to 1 minute for the VM to transition to the 'running' state.
-    """
-    try:
-        vm_state = get_vm_state(vm_uuid)
-        if vm_state != "running":
-            print(
-                f"VM {vm_uuid} is not running (state: {vm_state}). Starting VM..."
-            )
-            run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
+def wait_until_vm_state(vm_uuid, target_state):
+    """Wait for VM state to change.
 
-            # Wait for VM to start (up to 1 minute)
-            timeout = 60  # seconds
-            check_interval = 5  # seconds
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                vm_state = get_vm_state(vm_uuid)
-                if vm_state == "running":
-                    print(f"VM {vm_uuid} started.")
-                    time.sleep(5)  # wait a bit to be careful and avoid any weird races
-                    return
-                print(f"Waiting for VM (state: {vm_state})")
-                time.sleep(check_interval)
-            print("Timeout waiting for VM to start. Exiting...")
-            raise TimeoutError(
-                f"VM did not start within the timeout period {timeout}s."
-            )
-        else:
-            print("VM is already running.")
-            return
-    except Exception as e:
-        raise Exception(f"Could not ensure '{vm_uuid}' running") from e
+    Return True if the state changed to the target_stated within one minute.
+    Return False otherwise.
+    """
+    timeout = 60  # seconds
+    check_interval = 5  # seconds
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        vm_state = get_vm_state(vm_uuid)
+        if vm_state == target_state:
+            time.sleep(5)  # wait a bit to be careful and avoid any weird races
+            return True
+        time.sleep(check_interval)
+    return False
+
+
+def ensure_vm_running(vm_uuid):
+    """Start the VM if its state is not 'running'."""
+    vm_state = get_vm_state(vm_uuid)
+    if vm_state == "running":
+        return
+
+    print(f"VM {vm_uuid} state: {vm_state}. Starting VM...")
+    run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
+
+    if not wait_until_vm_state(vm_uuid, "running"):
+        raise RuntimeError(f"Unable to start VM {vm_uuid}.")
 
 
 def ensure_vm_shutdown(vm_uuid):
-    """Checks if the VM is running and shuts it down if it is."""
-    try:
-        vm_state = get_vm_state(vm_uuid)
-        if vm_state == "saved":
-            print(
-                f"VM {vm_uuid} is in a saved state. Powering on for a while then shutting down..."
-            )
-            ensure_vm_running(vm_uuid)
-            time.sleep(120)  # 2 minutes to boot up
+    """Shut down the VM if its state is not 'poweroff'. If the VM status is 'saved' start it before shutting it down."""
+    vm_state = get_vm_state(vm_uuid)
+    if vm_state == "poweroff":
+        return
 
+    if vm_state == "saved":
+        ensure_vm_running(vm_uuid)
         vm_state = get_vm_state(vm_uuid)
-        if vm_state != "poweroff":
-            print(f"VM {vm_uuid} is not powered off. Shutting down VM...")
-            run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
 
-            # Wait for VM to shut down (up to 1 minute)
-            timeout = 60  # seconds
-            check_interval = 5  # seconds
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                vm_state = get_vm_state(vm_uuid)
-                if vm_state == "poweroff":
-                    print(f"VM {vm_uuid} is shut down (status: {vm_state}).")
-                    time.sleep(5)  # wait a bit to be careful and avoid any weird races
-                    return
-                time.sleep(check_interval)
-            print("Timeout waiting for VM to shut down. Exiting...")
-            raise TimeoutError("VM did not shut down within the timeout period.")
-        else:
-            print(f"VM {vm_uuid} is already shut down (state: {vm_state}).")
-            return
-    except Exception as e:
-        raise Exception(f"Could not ensure '{vm_uuid}' shutdown") from e
+    print(f"VM {vm_uuid} state: {vm_state}. Shutting down VM...")
+    run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
+
+    if not wait_until_vm_state(vm_uuid, "poweroff"):
+        raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")
+
