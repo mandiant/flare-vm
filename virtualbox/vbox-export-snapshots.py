@@ -65,19 +65,16 @@ def sha256_file(filename):
 
 
 def get_vm_uuid(vm_name):
-    """Gets the machine UUID for a given VM name using 'VBoxManage list vms'."""
-    try:
-        # regex VM name and extract the GUID
-        # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
-        vms_output = run_vboxmanage(["list", "vms"])
-        match = re.search(rf'"{vm_name}" \{{(.*?)\}}', vms_output)
-        if match:
-            uuid = "{" + match.group(1) + "}"
-            return uuid
-        else:
-            raise Exception(f"Could not find VM '{vm_name}'")
-    except Exception as e:
-        raise Exception(f"Could not find VM '{vm_name}'") from e
+    """Get the machine UUID for a given VM name using 'VBoxManage list vms'. Return None if not found."""
+    # regex VM name and extract the GUID
+    # Example of `VBoxManage list vms` output:
+    # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
+    # "FLARE-VM" {a23c0c37-2062-4cf0-882b-9e9747dd33b6}
+    vms_info = run_vboxmanage(["list", "vms"])
+
+    match = re.search(rf'^"{vm_name}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
+    if match:
+        return match.group("uuid")
 
 
 def change_network_adapters_to_hostonly(vm_uuid):
@@ -128,10 +125,14 @@ def restore_snapshot(vm_uuid, snapshot_name):
 if __name__ == "__main__":
     date = datetime.today().strftime("%Y%m%d")
 
+    vm_uuid = get_vm_uuid(VM_NAME)
+    if not vm_uuid:
+        print(f'ERROR: "{VM_NAME}" not found')
+        exit()
+
+    print(f'Exporting snapshots from "{VM_NAME}" {vm_uuid}')
     for snapshot_name, extension, description in SNAPSHOTS:
-        print(f"Starting operations on {snapshot_name}")
         try:
-            vm_uuid = get_vm_uuid(VM_NAME)
             # Shutdown machine
             ensure_vm_shutdown(vm_uuid)
 
