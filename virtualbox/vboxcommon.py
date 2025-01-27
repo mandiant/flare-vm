@@ -23,12 +23,14 @@ def format_arg(arg):
         return f"'{arg}'"
     return arg
 
+
 def cmd_to_str(cmd):
     """Convert a list of string arguments to a string."""
     return " ".join(format_arg(arg) for arg in cmd)
 
+
 def run_vboxmanage(cmd):
-    """Runs a VBoxManage command and returns the output.
+    """Run a VBoxManage command and return the output.
 
     Args:
       cmd: list of string arguments to pass to VBoxManage
@@ -40,9 +42,9 @@ def run_vboxmanage(cmd):
         # Use only the first "VBoxManage: error:" line to prevent using the long
         # VBoxManage help message or noisy information like the details and context.
         error = f"Command '{cmd_to_str(cmd)}' failed"
-        stderr_info = re.search("^VBoxManage: error: (.*)", result.stderr, flags=re.M)
-        if stderr_info:
-            error += f": {stderr_info.group(1)}"
+        match = re.search("^VBoxManage: error: (?P<stderr_info>.*)", result.stderr, flags=re.M)
+        if match:
+            error += f": {match['stderr_info']}"
         raise RuntimeError(error)
 
     return result.stdout
@@ -57,6 +59,7 @@ def get_hostonlyif_name():
     match = re.search(f"^Name: *(?P<hostonlyif_name>\S+)", hostonlyifs_info, flags=re.M)
     if match:
         return match["hostonlyif_name"]
+
 
 def ensure_hostonlyif_exists():
     """Get the name of the host-only interface. Create the interface if it doesn't exist."""
@@ -134,4 +137,3 @@ def ensure_vm_shutdown(vm_uuid):
 
     if not wait_until_vm_state(vm_uuid, "poweroff"):
         raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")
-
