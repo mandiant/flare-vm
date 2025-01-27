@@ -89,38 +89,38 @@ def ensure_hostonlyif_exists():
         raise Exception("Failed to verify host-only interface exists") from e
 
 
-def get_vm_state(machine_guid):
+def get_vm_state(vm_uuid):
     """Gets the VM state using 'VBoxManage showvminfo'."""
     # VMState="poweroff"
     # VMStateChangeTime="2025-01-02T16:31:51.000000000"
 
-    vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+    vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
     for line in vminfo.splitlines():
         if line.startswith("VMState"):
             return line.split("=")[1].strip('"')
-    raise Exception(f"Could not start VM '{machine_guid}'")
+    raise Exception(f"Could not start VM '{vm_uuid}'")
 
 
-def ensure_vm_running(machine_guid):
+def ensure_vm_running(vm_uuid):
     """Checks if the VM is running and starts it if it's not.
     Waits up to 1 minute for the VM to transition to the 'running' state.
     """
     try:
-        vm_state = get_vm_state(machine_guid)
+        vm_state = get_vm_state(vm_uuid)
         if vm_state != "running":
             print(
-                f"VM {machine_guid} is not running (state: {vm_state}). Starting VM..."
+                f"VM {vm_uuid} is not running (state: {vm_state}). Starting VM..."
             )
-            run_vboxmanage(["startvm", machine_guid, "--type", "gui"])
+            run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
 
             # Wait for VM to start (up to 1 minute)
             timeout = 60  # seconds
             check_interval = 5  # seconds
             start_time = time.time()
             while time.time() - start_time < timeout:
-                vm_state = get_vm_state(machine_guid)
+                vm_state = get_vm_state(vm_uuid)
                 if vm_state == "running":
-                    print(f"VM {machine_guid} started.")
+                    print(f"VM {vm_uuid} started.")
                     time.sleep(5)  # wait a bit to be careful and avoid any weird races
                     return
                 print(f"Waiting for VM (state: {vm_state})")
@@ -133,40 +133,40 @@ def ensure_vm_running(machine_guid):
             print("VM is already running.")
             return
     except Exception as e:
-        raise Exception(f"Could not ensure '{machine_guid}' running") from e
+        raise Exception(f"Could not ensure '{vm_uuid}' running") from e
 
 
-def ensure_vm_shutdown(machine_guid):
+def ensure_vm_shutdown(vm_uuid):
     """Checks if the VM is running and shuts it down if it is."""
     try:
-        vm_state = get_vm_state(machine_guid)
+        vm_state = get_vm_state(vm_uuid)
         if vm_state == "saved":
             print(
-                f"VM {machine_guid} is in a saved state. Powering on for a while then shutting down..."
+                f"VM {vm_uuid} is in a saved state. Powering on for a while then shutting down..."
             )
-            ensure_vm_running(machine_guid)
+            ensure_vm_running(vm_uuid)
             time.sleep(120)  # 2 minutes to boot up
 
-        vm_state = get_vm_state(machine_guid)
+        vm_state = get_vm_state(vm_uuid)
         if vm_state != "poweroff":
-            print(f"VM {machine_guid} is not powered off. Shutting down VM...")
-            run_vboxmanage(["controlvm", machine_guid, "poweroff"])
+            print(f"VM {vm_uuid} is not powered off. Shutting down VM...")
+            run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
 
             # Wait for VM to shut down (up to 1 minute)
             timeout = 60  # seconds
             check_interval = 5  # seconds
             start_time = time.time()
             while time.time() - start_time < timeout:
-                vm_state = get_vm_state(machine_guid)
+                vm_state = get_vm_state(vm_uuid)
                 if vm_state == "poweroff":
-                    print(f"VM {machine_guid} is shut down (status: {vm_state}).")
+                    print(f"VM {vm_uuid} is shut down (status: {vm_state}).")
                     time.sleep(5)  # wait a bit to be careful and avoid any weird races
                     return
                 time.sleep(check_interval)
             print("Timeout waiting for VM to shut down. Exiting...")
             raise TimeoutError("VM did not shut down within the timeout period.")
         else:
-            print(f"VM {machine_guid} is already shut down (state: {vm_state}).")
+            print(f"VM {vm_uuid} is already shut down (state: {vm_state}).")
             return
     except Exception as e:
-        raise Exception(f"Could not ensure '{machine_guid}' shutdown") from e
+        raise Exception(f"Could not ensure '{vm_uuid}' shutdown") from e
