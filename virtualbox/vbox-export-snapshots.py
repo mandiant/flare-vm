@@ -120,13 +120,12 @@ def change_network_adapters_to_hostonly(vm_uuid):
 
 
 def restore_snapshot(vm_uuid, snapshot_name):
-    """Restore snapshot"""
+    """Restore a given snapshot in the given VM."""
     # VM must be shutdown before restoring snapshot
     ensure_vm_shutdown(vm_uuid)
 
-    status = run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
-    print(f"Restored '{snapshot_name}'")
-    return status
+    run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
+    print(f'VM {vm_uuid} ✨ restored snapshot "{snapshot_name}"')
 
 
 if __name__ == "__main__":
