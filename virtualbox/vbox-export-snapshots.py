@@ -77,46 +77,45 @@ def get_vm_uuid(vm_name):
         return match.group("uuid")
 
 
-def change_network_adapters_to_hostonly(vm_uuid):
-    """Changes all active network adapters to Host-Only. Must be poweredoff"""
+def set_network_to_hostonly(vm_uuid):
+    """Set the NIC 1 to hostonly and disable the rest."""
     # VM must be shutdown before changing the adapters
     ensure_vm_shutdown(vm_uuid)
 
+    # Ensure a hostonly interface exists to prevent issues starting the VM
     ensure_hostonlyif_exists()
-    try:
-        # disable all the nics to get to a clean state
-        vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-        for nic_number, nic_value in re.findall(
-            '^nic(\d+)="(\S+)"', vminfo, flags=re.M
-        ):
-            if nic_value != "none":  # Ignore NICs with value "none"
-                run_vboxmanage(["modifyvm", vm_uuid, f"--nic{nic_number}", "none"])
-                print(f"Changed nic{nic_number}")
 
-        # set first nic to hostonly
-        run_vboxmanage(["modifyvm", vm_uuid, f"--nic1", "hostonly"])
+    # Example of `VBoxManage showvminfo <VM_UUID> --machinereadable` relevant output:
+    # nic1="none"
+    # bridgeadapter2="wlp9s0"
+    # macaddress2="0800271DDA9D"
+    # cableconnected2="on"
+    # nic2="bridged"
+    # nictype2="82540EM"
+    # nicspeed2="0"
+    # nic3="none"
+    # nic4="none"
+    # nic5="none"
+    # nic6="none"
+    # nic7="none"
+    # nic8="none"
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
 
-        # ensure changes applied
-        vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-        for nic_number, nic_value in re.findall(
-            '^nic(\d+)="(\S+)"', vminfo, flags=re.M
-        ):
-            if nic_number == "1" and nic_value != "hostonly":
-                print("Invalid nic configuration detected, nic1 not hostonly")
-                raise Exception(
-                    "Invalid nic configuration detected, first nic not hostonly"
-                )
-            elif nic_number != "1" and nic_value != "none":
-                print(
-                    f"Invalid nic configuration detected, nic{nic_number} not disabled"
-                )
-                raise Exception(
-                    f"Invalid nic configuration detected, nic{nic_number} not disabled"
-                )
-        print("Nic configuration verified correct")
-        return
-    except Exception as e:
-        raise Exception("Failed to change VM network adapters to hostonly") from e
+    # Set all NICs to none to avoid running into strange situations
+    for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vm_info, flags=re.M):
+        if nic_value != "none":  # Ignore NICs that are already none
+            run_vboxmanage(["modifyvm", vm_uuid, f"--nic{nic_number}", "none"])
+
+    # Set NIC 1 to hostonly
+    run_vboxmanage(["modifyvm", vm_uuid, "--nic1", "hostonly"])
+
+    # Ensure changes applied
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
+    nic_values = re.findall(r'^nic\d+="(\S+)"', vm_info, flags=re.M)
+    if nic_values[0] != "hostonly" or any(nic_value != "none" for nic_value in nic_values[1:]):
+        raise RuntimeError(f"Unable to change NICs to a single hostonly in VM {vm_uuid}")
+
+    print(f"VM {vm_uuid} ⚙️  network set to single hostonly adapter")
 
 
 def restore_snapshot(vm_uuid, snapshot_name):
@@ -141,7 +140,7 @@ if __name__ == "__main__":
         try:
             restore_snapshot(vm_uuid, snapshot_name)
 
-            change_network_adapters_to_hostonly(vm_uuid)
+            set_network_to_hostonly(vm_uuid)
 
             # do a power cycle to ensure everything is good
             print("Power cycling before export...")
