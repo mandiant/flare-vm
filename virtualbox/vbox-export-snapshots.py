@@ -163,9 +163,14 @@ if __name__ == "__main__":
             time.sleep(POWER_CYCLE_TIME)
             ensure_vm_shutdown(vm_uuid)
 
-            # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
             exported_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.ova")
+
+            # Provide better error if OVA already exists (for example if the script is called twice)
+            if os.path.exists(exported_ova_filepath):
+                raise FileExistsError(f'"{exported_ova_filepath}" already exists')
+
+            # Export .ova
             print(f'VM {vm_uuid} 🚧 exporting "{exported_vm_name}"{LONG_WAIT}')
             run_vboxmanage(
                 [
