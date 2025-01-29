@@ -140,6 +140,12 @@ if __name__ == "__main__":
         exit()
 
     print(f'Exporting snapshots from "{VM_NAME}" {vm_uuid}')
+
+    # Create export directory
+    export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
+    os.makedirs(export_directory, exist_ok=True)
+    print(f'Export directory: "{export_directory}"\n')
+
     for snapshot_name, extension, description in SNAPSHOTS:
         try:
             restore_snapshot(vm_uuid, snapshot_name)
@@ -155,10 +161,7 @@ if __name__ == "__main__":
 
             # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
-            export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
-            os.makedirs(export_directory, exist_ok=True)
             filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
-
             print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
             run_vboxmanage(
                 [
