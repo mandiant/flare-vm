@@ -58,6 +58,10 @@ SNAPSHOTS = [
     ),
 ]
 
+# Duration of the power cycle: the seconds we wait between starting the VM and powering it off.
+# It should be long enough for the internet_detector to detect the network change.
+POWER_CYCLE_TIME = 240  # 4 minutes
+
 
 def sha256_file(filename):
     with open(filename, "rb") as f:
@@ -142,14 +146,12 @@ if __name__ == "__main__":
 
             set_network_to_hostonly(vm_uuid)
 
-            # do a power cycle to ensure everything is good
-            print("Power cycling before export...")
-
-            # TODO: Add a guest notifier (read: run a script in the guest) to say when windows boots, only then shutdown.
-            # this works right now but it's a hardcoded sleep which wasts time and isn't guaranteed to not race. Fine for now.
+            # Do a power cycle to ensure everything is good and
+            # give the internet detector time to detect the network change
+            print(f"VM {vm_uuid} 🔄 power cycling before export... (it will take some time, go for an 🍦!)")
             ensure_vm_running(vm_uuid)
+            time.sleep(POWER_CYCLE_TIME)
             ensure_vm_shutdown(vm_uuid)
-            print("Power cycling done.")
 
             # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
