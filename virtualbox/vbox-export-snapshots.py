@@ -63,6 +63,10 @@ SNAPSHOTS = [
 POWER_CYCLE_TIME = 240  # 4 minutes
 
 
+# Message to add to the output when waiting for a long operation to complete.
+LONG_WAIT = "... (it will take some time, go for an 🍦!)"
+
+
 def sha256_file(filename):
     with open(filename, "rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
@@ -139,7 +143,7 @@ if __name__ == "__main__":
         print(f'ERROR: "{VM_NAME}" not found')
         exit()
 
-    print(f'Exporting snapshots from "{VM_NAME}" {vm_uuid}')
+    print(f'\nExporting snapshots from "{VM_NAME}" {vm_uuid}')
 
     # Create export directory
     export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
@@ -154,33 +158,35 @@ if __name__ == "__main__":
 
             # Do a power cycle to ensure everything is good and
             # give the internet detector time to detect the network change
-            print(f"VM {vm_uuid} 🔄 power cycling before export... (it will take some time, go for an 🍦!)")
+            print(f"VM {vm_uuid} 🔄 power cycling before export{LONG_WAIT}")
             ensure_vm_running(vm_uuid)
             time.sleep(POWER_CYCLE_TIME)
             ensure_vm_shutdown(vm_uuid)
 
             # Export .ova
             exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
-            filename = os.path.join(export_directory, f"{exported_vm_name}.ova")
-            print(f"Exporting {filename} (this will take some time, go for an 🍦!)")
+            exported_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.ova")
+            print(f'VM {vm_uuid} 🚧 exporting "{exported_vm_name}"{LONG_WAIT}')
             run_vboxmanage(
                 [
                     "export",
                     vm_uuid,
-                    f"--output={filename}",
+                    f"--output={exported_ova_filepath}",
                     "--vsys=0",  # We need to specify the index of the VM, 0 as we only export 1 VM
                     f"--vmname={exported_vm_name}",
                     f"--description={description}",
                 ]
             )
+            print(f'VM {vm_uuid} ✅ EXPORTED "{exported_ova_filepath}"')
 
             # Generate file with SHA256
-            with open(f"{filename}.sha256", "w") as f:
-                f.write(sha256_file(filename))
+            sha256 = sha256_file(exported_ova_filepath)
+            sha256_filepath = f"{exported_ova_filepath}.sha256"
+            with open(sha256_filepath, "w") as f:
+                f.write(sha256)
 
-            print(f"Exported {filename}! 🎉")
+            print(f'VM {vm_uuid} ✅ GENERATED "{sha256_filepath}": {sha256}\n')
         except Exception as e:
-            print(f"Unexpectedly failed doing operations on {VM_NAME}, snapshot ({snapshot_name}).\n{e}")
-            break
-        print(f"All operations on {VM_NAME}, snapshot ({snapshot_name}), successful ✅")
-    print("Done. Exiting...")
+            print(f'VM {vm_uuid} ❌ ERROR exporting "{snapshot_name}":{e}\n')
+
+    print("Done! 🙃")
