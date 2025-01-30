@@ -260,7 +260,7 @@ if (-not $noChecks.IsPresent) {
         Start-Sleep 3
         exit 1
     } else {
-        Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
+        Write-Host "`t[+] Username '${Env:UserName}' does not contain any spaces." -ForegroundColor Green
     }
 
     # Check if host has enough disk space
