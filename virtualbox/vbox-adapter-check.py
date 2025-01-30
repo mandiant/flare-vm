@@ -51,9 +51,7 @@ def get_vm_uuids(dynamic_only):
     return vm_uuids
 
 
-def change_network_adapters_to_hostonly(
-    vm_uuid, vm_name, hostonly_ifname, do_not_modify
-):
+def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
     """Verify all adapters are in an allowed configuration. Must be poweredoff"""
     try:
         # gather adapters in incorrect configurations
@@ -72,9 +70,7 @@ def change_network_adapters_to_hostonly(
         # nic8="none"
 
         vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-        for nic_number, nic_value in re.findall(
-            '^nic(\d+)="(\S+)"', vminfo, flags=re.M
-        ):
+        for nic_number, nic_value in re.findall('^nic(\d+)="(\S+)"', vminfo, flags=re.M):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
                 nics_with_internet.append(f"nic{nic_number}")
                 invalid_nics_msg += f"{nic_number} "
@@ -115,9 +111,7 @@ def change_network_adapters_to_hostonly(
 
             # Show notification using PyGObject
             Notify.init("VirtualBox adapter check")
-            notification = Notify.Notification.new(
-                f"INTERNET IN VM: {vm_name}", message, "dialog-error"
-            )
+            notification = Notify.Notification.new(f"INTERNET IN VM: {vm_name}", message, "dialog-error")
             # Set highest priority
             notification.set_urgency(2)
             notification.show()
@@ -167,9 +161,7 @@ def main(argv=None):
         vm_uuids = get_vm_uuids(args.dynamic_only)
         if len(vm_uuids) > 0:
             for vm_name, vm_uuid in vm_uuids:
-                change_network_adapters_to_hostonly(
-                    vm_uuid, vm_name, hostonly_ifname, args.do_not_modify
-                )
+                change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
         else:
             print(f"[Warning ⚠️] No VMs found")
     except Exception as e:
