@@ -26,6 +26,7 @@ def is_protected(protected_snapshots, snapshot_name):
     """Check if snapshot_name contains any of the strings in the protected_snapshots list (case insensitive)"""
     return any(p.lower() in snapshot_name.lower() for p in protected_snapshots)
 
+
 def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
     """Get the children of a snapshot (including the snapshot) using 'VBoxManage snapshot' with the 'list' option.
 
@@ -149,9 +150,7 @@ def main(argv=None):
     )
     args = parser.parse_args(args=argv)
 
-    delete_snapshot_and_children(
-        args.vm_name, args.root_snapshot, args.protected_snapshots
-    )
+    delete_snapshot_and_children(args.vm_name, args.root_snapshot, args.protected_snapshots)
 
 
 if __name__ == "__main__":
