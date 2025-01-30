@@ -13,55 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Export one or more snapshots in the same VirtualBox VM as .ova, changing the network adapter to Host-Only.
-Generate a file with the SHA256 of the exported .ova.
-The exported VM names start with "FLARE-VM.{date}".
-"""
-
+import argparse
 import hashlib
 import os
 import re
+import sys
+import textwrap
 from datetime import datetime
 
 from vboxcommon import *
 
-# Base name of the exported VMs
-EXPORTED_VM_NAME = "FLARE-VM"
 
-# Name of the VM to export the snapshots from
-VM_NAME = f"{EXPORTED_VM_NAME}.testing"
+DESCRIPTION = "Export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface. Generate a file with the SHA256 of the exported OVA(s)."
 
-# Name of the directory in HOME to export the VMs
-# The directory is created if it does not exist
-EXPORT_DIR_NAME = "EXPORTED VMS"
+EPILOG = textwrap.dedent(
+    """
+    Example usage:
+      # Export the "FLARE-VM" snapshot from the "FLARE-VM.testing" VM
+      vbox-export-snapshots.py "FLARE-VM.testing" --snapshot "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration"
 
-# Array with snapshots to export as .ova where every entry is a tuple with the info:
-# - Snapshot name
-# - VM name extension (exported VM name: "FLARE-VM.<date>.<extension")
-# - Exported VM description
-SNAPSHOTS = [
-    (
-        "FLARE-VM",
-        ".dynamic",
-        "Windows 10 VM with FLARE-VM default configuration installed",
-    ),
-    (
-        "FLARE-VM.full",
-        ".full.dynamic",
-        "Windows 10 VM with FLARE-VM default configuration + the packages 'visualstudio.vm' and 'pdbs.pdbresym.vm' installed",
-    ),
-    (
-        "FLARE-VM.EDU",
-        ".EDU",
-        "Windows 10 VM with FLARE-VM default configuration installed + FLARE-EDU teaching materials",
-    ),
-]
+      # Export three snapshots from the "FLARE-VM.testing" VM
+      vbox-export-snapshots.py "FLARE-VM.testing" --snapshot "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration" --snapshot "FLARE-VM.full,.full.dynamic,Windows 10 VM with FLARE-VM default configuration + 'visualstudio.vm' + 'pdbs.pdbresym.vm'" --snapshot "FLARE-VM.EDU,.EDU,Windows 10 VM with FLARE-VM default configuration + FLARE-EDU materials"
+
+      # Export the "DONE" snapshot from the "REMnux.testing" VM with name "REMnux"
+      vbox-export-snapshots.py "REMnux.testing" --exported_vm_name "REMnux" --snapshot "DONE,.dynamic,REMnux (based on Ubuntu) with improved configuration"
+    """
+)
 
 # Duration of the power cycle: the seconds we wait between starting the VM and powering it off.
 # It should be long enough for the internet_detector to detect the network change.
 POWER_CYCLE_TIME = 240  # 4 minutes
-
 
 # Message to add to the output when waiting for a long operation to complete.
 LONG_WAIT = "... (it will take some time, go for an 🍦!)"
@@ -135,22 +116,22 @@ def restore_snapshot(vm_uuid, snapshot_name):
     print(f'VM {vm_uuid} ✨ restored snapshot "{snapshot_name}"')
 
 
-if __name__ == "__main__":
+def export_snapshots(vm_name, export_dir_name, exported_vm_name, snapshots):
     date = datetime.today().strftime("%Y%m%d")
 
-    vm_uuid = get_vm_uuid(VM_NAME)
+    vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'ERROR: "{VM_NAME}" not found')
+        print(f'ERROR: "{vm_name}" not found')
         exit()
 
-    print(f'\nExporting snapshots from "{VM_NAME}" {vm_uuid}')
+    print(f'\nExporting snapshots from "{vm_name}" {vm_uuid}')
 
     # Create export directory
-    export_directory = os.path.expanduser(f"~/{EXPORT_DIR_NAME}")
+    export_directory = os.path.expanduser(f"~/{export_dir_name}")
     os.makedirs(export_directory, exist_ok=True)
     print(f'Export directory: "{export_directory}"\n')
 
-    for snapshot_name, extension, description in SNAPSHOTS:
+    for snapshot_name, extension, description in snapshots:
         try:
             restore_snapshot(vm_uuid, snapshot_name)
 
@@ -163,7 +144,7 @@ if __name__ == "__main__":
             time.sleep(POWER_CYCLE_TIME)
             ensure_vm_shutdown(vm_uuid)
 
-            exported_vm_name = f"{EXPORTED_VM_NAME}.{date}{extension}"
+            exported_vm_name = f"{exported_vm_name}.{date}{extension}"
             exported_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.ova")
 
             # Provide better error if OVA already exists (for example if the script is called twice)
@@ -195,3 +176,43 @@ if __name__ == "__main__":
             print(f'VM {vm_uuid} ❌ ERROR exporting "{snapshot_name}":{e}\n')
 
     print("Done! 🙃")
+
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+
+    parser = argparse.ArgumentParser(
+        description=DESCRIPTION,
+        epilog=EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("vm_name", help="name of the VM to export snapshots from.")
+    parser.add_argument("--exported_vm_name", help="name of the exported VMs.", default="FLARE-VM")
+    parser.add_argument(
+        "--export_dir_name",
+        help="name of the directory in HOME to export the VMs. The directory is created if it does not exist.",
+        default="EXPORTED VMS",
+    )
+    parser.add_argument(
+        "--snapshot",
+        type=lambda s: s.split(","),
+        action="append",
+        help=textwrap.dedent(
+            """
+            comma-separated list of strings with the information of the snapshot to export: "<SNAPSHOT_NAME>,<EXPORTED_VM_EXTENSION>,<DESCRIPTION>".
+            <SNAPSHOT_NAME> is the name of the snapshot to export.
+            <EXPORTED_VM_EXTENSION> is appended to the exported VM name: "<EXPORTED_VM_NAME>.<DATE>.<EXPORTED_VM_EXTENSION>".
+            <DESCRIPTION> is used as the appliance description.
+            Example: "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration installed".
+            This argument can be provided more than one to export several snapshots, every of them in a different appliance.
+            """
+        ),
+    )
+    args = parser.parse_args(args=argv)
+
+    export_snapshots(args.vm_name, args.export_dir_name, args.exported_vm_name, args.snapshot)
+
+
+if __name__ == "__main__":
+    main()
