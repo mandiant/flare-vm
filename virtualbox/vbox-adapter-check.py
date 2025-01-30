@@ -33,26 +33,26 @@ ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
 
 def get_vm_uuids(dynamic_only):
     """Gets the machine UUID(s) for a given VM name using 'VBoxManage list vms'."""
-    machine_guids = []
+    vm_uuids = []
     try:
         # regex VM name and extract the GUID
         # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
-        vms_output = run_vboxmanage(["list", "vms"])
+        vms_info = run_vboxmanage(["list", "vms"])
         pattern = r'"(.*?)" \{(.*?)\}'
-        matches = re.findall(pattern, vms_output)
+        matches = re.findall(pattern, vms_info)
         for match in matches:
             vm_name = match[0]
-            machine_guid = match[1]
+            vm_uuid = match[1]
             # either get all vms if dynamic_only false, or just the dynamic vms if true
             if (not dynamic_only) or DYNAMIC_VM_NAME in vm_name:
-                machine_guids.append((vm_name, machine_guid))
+                vm_uuids.append((vm_name, vm_uuid))
     except Exception as e:
         raise Exception(f"Error finding machines UUIDs") from e
-    return machine_guids
+    return vm_uuids
 
 
 def change_network_adapters_to_hostonly(
-    machine_guid, vm_name, hostonly_ifname, do_not_modify
+    vm_uuid, vm_name, hostonly_ifname, do_not_modify
 ):
     """Verify all adapters are in an allowed configuration. Must be poweredoff"""
     try:
@@ -71,7 +71,7 @@ def change_network_adapters_to_hostonly(
         # nic7="none"
         # nic8="none"
 
-        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
         for nic_number, nic_value in re.findall(
             '^nic(\d+)="(\S+)"', vminfo, flags=re.M
         ):
@@ -87,11 +87,11 @@ def change_network_adapters_to_hostonly(
                 else:
                     message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
                     # different commands are necessary if the machine is running.
-                    if get_vm_state(machine_guid) == "poweroff":
+                    if get_vm_state(vm_uuid) == "poweroff":
                         run_vboxmanage(
                             [
                                 "modifyvm",
-                                machine_guid,
+                                vm_uuid,
                                 f"--{nic}",
                                 DISABLED_ADAPTER_TYPE,
                             ]
@@ -100,7 +100,7 @@ def change_network_adapters_to_hostonly(
                         run_vboxmanage(
                             [
                                 "controlvm",
-                                machine_guid,
+                                vm_uuid,
                                 nic,
                                 "hostonly",
                                 hostonly_ifname,
@@ -164,11 +164,11 @@ def main(argv=None):
 
     try:
         hostonly_ifname = ensure_hostonlyif_exists()
-        machine_guids = get_vm_uuids(args.dynamic_only)
-        if len(machine_guids) > 0:
-            for vm_name, machine_guid in machine_guids:
+        vm_uuids = get_vm_uuids(args.dynamic_only)
+        if len(vm_uuids) > 0:
+            for vm_name, vm_uuid in vm_uuids:
                 change_network_adapters_to_hostonly(
-                    machine_guid, vm_name, hostonly_ifname, args.do_not_modify
+                    vm_uuid, vm_name, hostonly_ifname, args.do_not_modify
                 )
         else:
             print(f"[Warning ⚠️] No VMs found")

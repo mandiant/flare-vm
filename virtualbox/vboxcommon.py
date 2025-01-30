@@ -23,12 +23,14 @@ def format_arg(arg):
         return f"'{arg}'"
     return arg
 
+
 def cmd_to_str(cmd):
     """Convert a list of string arguments to a string."""
     return " ".join(format_arg(arg) for arg in cmd)
 
+
 def run_vboxmanage(cmd):
-    """Runs a VBoxManage command and returns the output.
+    """Run a VBoxManage command and return the output.
 
     Args:
       cmd: list of string arguments to pass to VBoxManage
@@ -40,133 +42,98 @@ def run_vboxmanage(cmd):
         # Use only the first "VBoxManage: error:" line to prevent using the long
         # VBoxManage help message or noisy information like the details and context.
         error = f"Command '{cmd_to_str(cmd)}' failed"
-        stderr_info = re.search("^VBoxManage: error: (.*)", result.stderr, flags=re.M)
-        if stderr_info:
-            error += f": {stderr_info.group(1)}"
+        match = re.search("^VBoxManage: error: (?P<stderr_info>.*)", result.stderr, flags=re.M)
+        if match:
+            error += f": {match['stderr_info']}"
         raise RuntimeError(error)
 
     return result.stdout
 
 
+def get_hostonlyif_name():
+    """Get the name of the host-only interface. Return None if there is no host-only interface"""
+    # Example of `VBoxManage list hostonlyifs` relevant output:
+    # Name:            vboxnet0
+    hostonlyifs_info = run_vboxmanage(["list", "hostonlyifs"])
+
+    match = re.search(f"^Name: *(?P<hostonlyif_name>\S+)", hostonlyifs_info, flags=re.M)
+    if match:
+        return match["hostonlyif_name"]
+
+
 def ensure_hostonlyif_exists():
-    """Gets the name of, or creates a new hostonlyif"""
-    try:
-        # Name:            vboxnet0
-        # GUID:            f0000000-dae8-4abf-8000-0a0027000000
-        # DHCP:            Disabled
-        # IPAddress:       192.168.56.1
-        # NetworkMask:     255.255.255.0
-        # IPV6Address:     fe80::800:27ff:fe00:0
-        # IPV6NetworkMaskPrefixLength: 64
-        # HardwareAddress: 0a:00:27:00:00:00
-        # MediumType:      Ethernet
-        # Wireless:        No
-        # Status:          Up
-        # VBoxNetworkName: HostInterfaceNetworking-vboxnet0
+    """Get the name of the host-only interface. Create the interface if it doesn't exist."""
+    hostonlyif_name = get_hostonlyif_name()
 
-        # Find existing hostonlyif
-        hostonlyifs_output = run_vboxmanage(["list", "hostonlyifs"])
-        for line in hostonlyifs_output.splitlines():
-            if line.startswith("Name:"):
-                hostonlyif_name = line.split(":")[1].strip()
-                print(f"Found existing hostonlyif {hostonlyif_name}")
-                return hostonlyif_name
-
+    if not hostonlyif_name:
         # No host-only interface found, create one
-        print("No host-only interface found. Creating one...")
         run_vboxmanage(["hostonlyif", "create"])
-        hostonlyifs_output = run_vboxmanage(
-            ["list", "hostonlyifs"]
-        )  # Get the updated list
-        for line in hostonlyifs_output.splitlines():
-            if line.startswith("Name:"):
-                hostonlyif_name = line.split(":")[1].strip()
-                print(f"Created hostonlyif {hostonlyif_name}")
-                return hostonlyif_name
-        print("Failed to create new hostonlyif. Exiting...")
-        raise Exception("Failed to create new hostonlyif.")
-    except Exception as e:
-        raise Exception("Failed to verify host-only interface exists") from e
+
+        hostonlyif_name = get_hostonlyif_name()
+        if not hostonlyif_name:
+            raise RuntimeError("Failed to create new hostonly interface.")
+
+        print(f"VM {vm_uuid} Created hostonly interface: {hostonlyif_name}")
+
+    return hostonlyif_name
 
 
-def get_vm_state(machine_guid):
-    """Gets the VM state using 'VBoxManage showvminfo'."""
+def get_vm_state(vm_uuid):
+    """Get the VM state using 'VBoxManage showvminfo'."""
+    # Example of `VBoxManage showvminfo <VM_UUID> --machinereadable` relevant output:
     # VMState="poweroff"
-    # VMStateChangeTime="2025-01-02T16:31:51.000000000"
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
 
-    vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
-    for line in vminfo.splitlines():
-        if line.startswith("VMState"):
-            return line.split("=")[1].strip('"')
-    raise Exception(f"Could not start VM '{machine_guid}'")
+    match = re.search(f'^VMState="(?P<state>\S+)"', vm_info, flags=re.M)
+    if match:
+        return match["state"]
+
+    raise Exception(f"Unable to get state of VM {vm_uuid}")
 
 
-def ensure_vm_running(machine_guid):
-    """Checks if the VM is running and starts it if it's not.
-    Waits up to 1 minute for the VM to transition to the 'running' state.
+def wait_until_vm_state(vm_uuid, target_state):
+    """Wait for VM state to change.
+
+    Return True if the state changed to the target_stated within one minute.
+    Return False otherwise.
     """
-    try:
-        vm_state = get_vm_state(machine_guid)
-        if vm_state != "running":
-            print(
-                f"VM {machine_guid} is not running (state: {vm_state}). Starting VM..."
-            )
-            run_vboxmanage(["startvm", machine_guid, "--type", "gui"])
-
-            # Wait for VM to start (up to 1 minute)
-            timeout = 60  # seconds
-            check_interval = 5  # seconds
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                vm_state = get_vm_state(machine_guid)
-                if vm_state == "running":
-                    print(f"VM {machine_guid} started.")
-                    time.sleep(5)  # wait a bit to be careful and avoid any weird races
-                    return
-                print(f"Waiting for VM (state: {vm_state})")
-                time.sleep(check_interval)
-            print("Timeout waiting for VM to start. Exiting...")
-            raise TimeoutError(
-                f"VM did not start within the timeout period {timeout}s."
-            )
-        else:
-            print("VM is already running.")
-            return
-    except Exception as e:
-        raise Exception(f"Could not ensure '{machine_guid}' running") from e
+    timeout = 60  # seconds
+    check_interval = 5  # seconds
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        vm_state = get_vm_state(vm_uuid)
+        if vm_state == target_state:
+            time.sleep(5)  # wait a bit to be careful and avoid any weird races
+            return True
+        time.sleep(check_interval)
+    return False
 
 
-def ensure_vm_shutdown(machine_guid):
-    """Checks if the VM is running and shuts it down if it is."""
-    try:
-        vm_state = get_vm_state(machine_guid)
-        if vm_state == "saved":
-            print(
-                f"VM {machine_guid} is in a saved state. Powering on for a while then shutting down..."
-            )
-            ensure_vm_running(machine_guid)
-            time.sleep(120)  # 2 minutes to boot up
+def ensure_vm_running(vm_uuid):
+    """Start the VM if its state is not 'running'."""
+    vm_state = get_vm_state(vm_uuid)
+    if vm_state == "running":
+        return
 
-        vm_state = get_vm_state(machine_guid)
-        if vm_state != "poweroff":
-            print(f"VM {machine_guid} is not powered off. Shutting down VM...")
-            run_vboxmanage(["controlvm", machine_guid, "poweroff"])
+    print(f"VM {vm_uuid} state: {vm_state}. Starting VM...")
+    run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
 
-            # Wait for VM to shut down (up to 1 minute)
-            timeout = 60  # seconds
-            check_interval = 5  # seconds
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                vm_state = get_vm_state(machine_guid)
-                if vm_state == "poweroff":
-                    print(f"VM {machine_guid} is shut down (status: {vm_state}).")
-                    time.sleep(5)  # wait a bit to be careful and avoid any weird races
-                    return
-                time.sleep(check_interval)
-            print("Timeout waiting for VM to shut down. Exiting...")
-            raise TimeoutError("VM did not shut down within the timeout period.")
-        else:
-            print(f"VM {machine_guid} is already shut down (state: {vm_state}).")
-            return
-    except Exception as e:
-        raise Exception(f"Could not ensure '{machine_guid}' shutdown") from e
+    if not wait_until_vm_state(vm_uuid, "running"):
+        raise RuntimeError(f"Unable to start VM {vm_uuid}.")
+
+
+def ensure_vm_shutdown(vm_uuid):
+    """Shut down the VM if its state is not 'poweroff'. If the VM status is 'saved' start it before shutting it down."""
+    vm_state = get_vm_state(vm_uuid)
+    if vm_state == "poweroff":
+        return
+
+    if vm_state == "saved":
+        ensure_vm_running(vm_uuid)
+        vm_state = get_vm_state(vm_uuid)
+
+    print(f"VM {vm_uuid} state: {vm_state}. Shutting down VM...")
+    run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
+
+    if not wait_until_vm_state(vm_uuid, "poweroff"):
+        raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")

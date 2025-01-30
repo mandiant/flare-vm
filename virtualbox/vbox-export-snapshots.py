@@ -80,24 +80,24 @@ def get_vm_uuid(vm_name):
         raise Exception(f"Could not find VM '{vm_name}'") from e
 
 
-def change_network_adapters_to_hostonly(machine_guid):
+def change_network_adapters_to_hostonly(vm_uuid):
     """Changes all active network adapters to Host-Only. Must be poweredoff"""
     ensure_hostonlyif_exists()
     try:
         # disable all the nics to get to a clean state
-        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
         for nic_number, nic_value in re.findall(
             '^nic(\d+)="(\S+)"', vminfo, flags=re.M
         ):
             if nic_value != "none":  # Ignore NICs with value "none"
-                run_vboxmanage(["modifyvm", machine_guid, f"--nic{nic_number}", "none"])
+                run_vboxmanage(["modifyvm", vm_uuid, f"--nic{nic_number}", "none"])
                 print(f"Changed nic{nic_number}")
 
         # set first nic to hostonly
-        run_vboxmanage(["modifyvm", machine_guid, f"--nic1", "hostonly"])
+        run_vboxmanage(["modifyvm", vm_uuid, f"--nic1", "hostonly"])
 
         # ensure changes applied
-        vminfo = run_vboxmanage(["showvminfo", machine_guid, "--machinereadable"])
+        vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
         for nic_number, nic_value in re.findall(
             '^nic(\d+)="(\S+)"', vminfo, flags=re.M
         ):
@@ -119,8 +119,8 @@ def change_network_adapters_to_hostonly(machine_guid):
         raise Exception("Failed to change VM network adapters to hostonly") from e
 
 
-def restore_snapshot(machine_guid, snapshot_name):
-    status = run_vboxmanage(["snapshot", machine_guid, "restore", snapshot_name])
+def restore_snapshot(vm_uuid, snapshot_name):
+    status = run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
     print(f"Restored '{snapshot_name}'")
     return status
 
