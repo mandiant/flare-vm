@@ -12,7 +12,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Install black
-        run: pip install black
+      - name: Install dependencies
+        run: pip install black isort
       - name: Run black
         run: black --line-length=120 --check --diff .
+      - name: Run isort
+        run: isort --check --diff .
+
