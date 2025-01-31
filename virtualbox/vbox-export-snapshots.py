@@ -15,28 +15,23 @@
 
 import argparse
 import hashlib
+import json
 import os
 import re
 import sys
 import textwrap
 from datetime import datetime
 
+import jsonschema
 from vboxcommon import *
-
 
 DESCRIPTION = "Export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface. Generate a file with the SHA256 of the exported OVA(s)."
 
 EPILOG = textwrap.dedent(
     """
     Example usage:
-      # Export the "FLARE-VM" snapshot from the "FLARE-VM.testing" VM
-      vbox-export-snapshots.py "FLARE-VM.testing" --snapshot "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration"
-
-      # Export three snapshots from the "FLARE-VM.testing" VM
-      vbox-export-snapshots.py "FLARE-VM.testing" --snapshot "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration" --snapshot "FLARE-VM.full,.full.dynamic,Windows 10 VM with FLARE-VM default configuration + 'visualstudio.vm' + 'pdbs.pdbresym.vm'" --snapshot "FLARE-VM.EDU,.EDU,Windows 10 VM with FLARE-VM default configuration + FLARE-EDU materials"
-
-      # Export the "DONE" snapshot from the "REMnux.testing" VM with name "REMnux"
-      vbox-export-snapshots.py "REMnux.testing" --exported_vm_name "REMnux" --snapshot "DONE,.dynamic,REMnux (based on Ubuntu) with improved configuration"
+      # Export snapshots using the information in the "configs/export_win10_flare-vm.json" config file
+      ./vbox-export-snapshots.py configs/export_win10_flare-vm.json
     """
 )
 
@@ -46,6 +41,23 @@ POWER_CYCLE_TIME = 240  # 4 minutes
 
 # Message to add to the output when waiting for a long operation to complete.
 LONG_WAIT = "... (it will take some time, go for an 🍦!)"
+
+
+# Format of snapshot information in the configuration file whose path is provided as argument
+snapshotsSchema = {
+    "type": "object",
+    "properties": {
+        "VM_NAME": {"type": "string"},
+        "EXPORTED_VM_NAME": {"type": "string"},
+        "SNAPSHOTS": {
+            "type": "array",
+            "items": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3},
+            "minItems": 1,
+        },
+        "EXPORT_DIR_NAME": {"type": "string"},
+    },
+    "required": ["VM_NAME", "EXPORTED_VM_NAME", "SNAPSHOTS"],
+}
 
 
 def sha256_file(filename):
@@ -116,7 +128,7 @@ def restore_snapshot(vm_uuid, snapshot_name):
     print(f'VM {vm_uuid} ✨ restored snapshot "{snapshot_name}"')
 
 
-def export_snapshots(vm_name, export_dir_name, exported_vm_name, snapshots):
+def export_snapshots(vm_name, exported_vm_name, snapshots, export_dir_name):
     date = datetime.today().strftime("%Y%m%d")
 
     vm_uuid = get_vm_uuid(vm_name)
@@ -187,31 +199,36 @@ def main(argv=None):
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("vm_name", help="name of the VM to export snapshots from.")
-    parser.add_argument("--exported_vm_name", help="name of the exported VMs.", default="FLARE-VM")
     parser.add_argument(
-        "--export_dir_name",
-        help="name of the directory in HOME to export the VMs. The directory is created if it does not exist.",
-        default="EXPORTED VMS",
-    )
-    parser.add_argument(
-        "--snapshot",
-        type=lambda s: s.split(","),
-        action="append",
+        "config_path",
         help=textwrap.dedent(
             """
-            comma-separated list of strings with the information of the snapshot to export: "<SNAPSHOT_NAME>,<EXPORTED_VM_EXTENSION>,<DESCRIPTION>".
-            <SNAPSHOT_NAME> is the name of the snapshot to export.
-            <EXPORTED_VM_EXTENSION> is appended to the exported VM name: "<EXPORTED_VM_NAME>.<DATE>.<EXPORTED_VM_EXTENSION>".
-            <DESCRIPTION> is used as the appliance description.
-            Example: "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration installed".
-            This argument can be provided more than one to export several snapshots, every of them in a different appliance.
-            """
+           path of the JSON configuration file.
+             "VM_NAME" is the name of the VM to export snapshots from.
+               Example: "FLARE-VM.testing".
+             "EXPORTED_VM_NAME" is the name of the exported VMs.
+               Example: "FLARE-VM".
+             "SNAPSHOTS" is a list of lists with information of the snapshots to export: ["SNAPSHOT_NAME", "EXPORTED_VM_EXTENSION", "DESCRIPTION"].
+               Example: ["FLARE-VM", ".dynamic", "Windows 10 VM with FLARE-VM default configuration"].
+             "EXPORT_DIR_NAME" (optional) is the name of the directory in HOME to export the VMs.
+               The directory is created if it does not exist.
+               Default: "EXPORTED VMS".
+           """
         ),
     )
     args = parser.parse_args(args=argv)
 
-    export_snapshots(args.vm_name, args.export_dir_name, args.exported_vm_name, args.snapshot)
+    try:
+        with open(args.config_path) as f:
+            config = json.load(f)
+
+        jsonschema.validate(instance=config, schema=snapshotsSchema)
+    except Exception as e:
+        print(f'Invalid "{args.config_path}": {e}')
+        exit()
+
+    export_dir_name = config.get("EXPORT_DIR_NAME", "EXPORTED VMS")
+    export_snapshots(config["VM_NAME"], config["EXPORTED_VM_NAME"], config["SNAPSHOTS"], export_dir_name)
 
 
 if __name__ == "__main__":

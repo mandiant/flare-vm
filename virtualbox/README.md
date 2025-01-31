@@ -9,11 +9,13 @@ It also generates a file with the SHA256 hash of the exported `.ova`.
 This script is useful to export several versions of FLARE-VM after its installation consistently and with the internet disabled by default (desired for malware analysis).
 For example, you may want to export a VM with the default FLARE-VM configuration and another installing in addition the packages `visualstudio.vm` and `pdbs.pdbresym.vm`.
 These packages are useful for malware analysis but are not included in the default configuration because of the consequent increase in size.
+The scripts receives the path of the JSON configuration file as argument.
+See configuration example files in the [`configs`](configs/) directory.
 
 ### Example
 
 ```
-$ ./vbox-export-snapshots.py "FLARE-VM.testing" --snapshot "FLARE-VM,.dynamic,Windows 10 VM with FLARE-VM default configuration" --snapshot "FLARE-VM.full,.full.dynamic,Windows 10 VM with FLARE-VM default configuration + 'visualstudio.vm' + 'pdbs.pdbresym.vm'"
+$ ./vbox-export-snapshots.py configs/export_win10_flare-vm.json
 
 Exporting snapshots from "FLARE-VM.testing" {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d}
 Export directory: "/home/anamg/EXPORTED VMS"
