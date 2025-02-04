@@ -20,12 +20,14 @@ import os
 import re
 import sys
 import textwrap
+import time
 from datetime import datetime
 
 import jsonschema
-from vboxcommon import *
+from vboxcommon import ensure_hostonlyif_exists, ensure_vm_running, ensure_vm_shutdown, run_vboxmanage
 
-DESCRIPTION = "Export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface. Generate a file with the SHA256 of the exported OVA(s)."
+DESCRIPTION = """Export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface.
+Generate a file with the SHA256 of the exported OVA(s)."""
 
 EPILOG = textwrap.dedent(
     """
@@ -201,20 +203,18 @@ def main(argv=None):
     )
     parser.add_argument(
         "config_path",
-        help=textwrap.dedent(
-            """
-           path of the JSON configuration file.
+        help=""" path of the JSON configuration file.
              "VM_NAME" is the name of the VM to export snapshots from.
                Example: "FLARE-VM.testing".
              "EXPORTED_VM_NAME" is the name of the exported VMs.
                Example: "FLARE-VM".
-             "SNAPSHOTS" is a list of lists with information of the snapshots to export: ["SNAPSHOT_NAME", "EXPORTED_VM_EXTENSION", "DESCRIPTION"].
+             "SNAPSHOTS" is a list of lists with information of the snapshots to export:
+               ["SNAPSHOT_NAME", "EXPORTED_VM_EXTENSION", "DESCRIPTION"].
                Example: ["FLARE-VM", ".dynamic", "Windows 10 VM with FLARE-VM default configuration"].
              "EXPORT_DIR_NAME" (optional) is the name of the directory in HOME to export the VMs.
                The directory is created if it does not exist.
                Default: "EXPORTED VMS".
-           """
-        ),
+             """,
     )
     args = parser.parse_args(args=argv)
 

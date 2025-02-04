@@ -19,7 +19,30 @@ import re
 import sys
 import textwrap
 
-from vboxcommon import *
+from vboxcommon import get_vm_state, run_vboxmanage
+
+DESCRIPTION = "Clean a VirtualBox VM up by deleting a snapshot and its children recursively skipping snapshots with a substring in the name."
+
+EPILOG = textwrap.dedent(
+    """
+    Example usage:
+      # Delete all snapshots excluding the default protected ones (with 'clean' or 'done' in the name, case insensitive) in the 'FLARE-VM.20240604' VM
+      vbox-clean-snapshots.py FLARE-VM.20240604
+
+      # Delete all snapshots that do not include 'clean', 'done', or 'important' (case insensitive) in the name in the 'FLARE-VM.20240604' VM
+      vbox-clean-snapshots.py FLARE-VM.20240604 --protected_snapshots "clean,done,important"
+
+      # Delete the 'Snapshot 3' snapshot and its children recursively skipping the default protected ones in the 'FLARE-VM.20240604' VM
+      vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot "Snapshot 3"
+
+      # Delete the 'CLEAN with IDA 8.4"' children snapshots recursively skipping the default protected ones in the 'FLARE-VM.20240604' VM
+      # NOTE: the 'CLEAN with IDA 8.4' root snapshot is skipped in this case
+      vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot "CLEAN with IDA 8.4"
+
+      # Delete all snapshots in the 'FLARE-VM.20240604' VM
+      vbox-clean-snapshots.py FLARE-VM.20240604 --protected_snapshots ""
+    """
+)
 
 
 def is_protected(protected_snapshots, snapshot_name):
@@ -60,7 +83,7 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
     root_snapshot_index = ""
     if root_snapshot_name:
         # Find root snapshot: first snapshot with name root_snapshot_name (case sensitive)
-        root_snapshot_regex = f'^SnapshotName(?P<index>(?:-\d+)*)="{root_snapshot_name}"\n'
+        root_snapshot_regex = rf'^SnapshotName(?P<index>(?:-\d+)*)="{root_snapshot_name}"\n'
         root_snapshot = re.search(root_snapshot_regex, snapshots_info, flags=re.M)
         if root_snapshot:
             root_snapshot_index = root_snapshot["index"]
@@ -69,7 +92,7 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
 
     # Find all root and child snapshots as (snapshot_name, snapshot_id)
     # Children of a snapshot share the same prefix index
-    index_regex = f"{root_snapshot_index}(?:-\d+)*"
+    index_regex = rf"{root_snapshot_index}(?:-\d+)*"
     snapshot_regex = f'^SnapshotName{index_regex}="(.*?)"\nSnapshotUUID{index_regex}="(.*?)"'
     snapshots = re.findall(snapshot_regex, snapshots_info, flags=re.M)
 
@@ -112,41 +135,25 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
-    epilog = textwrap.dedent(
-        """
-        Example usage:
-          # Delete all snapshots that do not include 'clean' or 'done' in the name (case insensitive) in the 'FLARE-VM.20240604' VM
-          vbox-clean-snapshots.py FLARE-VM.20240604
-
-          # Delete all snapshots that do not include 'clean', 'done', or 'important in the name in the 'FLARE-VM.20240604' VM
-          vbox-clean-snapshots.py FLARE-VM.20240604 --protected_snapshots "clean,done,important"
-
-          # Delete the 'CLEAN with IDA 8.4' children snapshots recursively skipping the ones that include 'clean' or 'done' in the name (case insensitive) in the 'FLARE-VM.20240604' VM
-          # NOTE: the 'CLEAN with IDA 8.4' root snapshot is skipped in this case
-          vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot CLEAN with IDA 8.4
-
-          # Delete the 'Snapshot 3' snapshot and its children recursively skipping the ones that include 'clean' or 'done' in the name (case insensitive) in the 'FLARE-VM.20240604' VM
-          vbox-clean-snapshots.py FLARE-VM.20240604 --root_snapshot Snapshot 3
-
-          # Delete all snapshots in the 'FLARE-VM.20240604' VM
-          vbox-clean-snapshots.py FLARE-VM.20240604 --protected_snapshots ""
-        """
-    )
+    epilog = EPILOG
     parser = argparse.ArgumentParser(
-        description="Clean a VirtualBox VM up by deleting a snapshot and its children recursively skipping snapshots with a substring in the name.",
+        description=DESCRIPTION,
         epilog=epilog,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("vm_name", help="Name of the VM to clean up")
     parser.add_argument(
         "--root_snapshot",
-        help="Snapshot name (case sensitive) to delete (and its children recursively). Leave empty to clean all snapshots in the VM.",
+        help="""Snapshot name (case sensitive) to delete (and its children recursively).
+                Leave empty to clean all snapshots in the VM.""",
     )
     parser.add_argument(
         "--protected_snapshots",
         default="clean,done",
         type=lambda s: s.split(","),
-        help='Comma-separated list of strings. Snapshots with any of the strings included in the name (case insensitive) are not deleted. Default: "clean,done"',
+        help='''Comma-separated list of strings.
+                Snapshots with any of the strings included in the name (case insensitive) are not deleted.
+                Default: "clean,done"''',
     )
     args = parser.parse_args(args=argv)
 
