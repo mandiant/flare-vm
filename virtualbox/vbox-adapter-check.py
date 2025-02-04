@@ -23,7 +23,6 @@ import gi
 
 gi.require_version("Notify", "0.7")
 from gi.repository import Notify
-
 from vboxcommon import *
 
 DYNAMIC_VM_NAME = ".dynamic"
