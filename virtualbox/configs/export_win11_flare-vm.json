@@ -1,0 +1,16 @@
+{
+  "VM_NAME": "FLARE-VM.Win11.testing",
+  "EXPORTED_VM_NAME": "FLARE-VM",
+  "SNAPSHOTS": [
+    [
+      "FLARE-VM",
+      ".win11.dynamic",
+      "Windows 11 VM with FLARE-VM default configuration"
+    ],
+    [
+      "FLARE-VM.full",
+      "win11.full.dynamic",
+      "Windows 11 VM with FLARE-VM default configuration + visualstudio.vm + pdbs.pdbresym.vm + microsoft-office.vm"
+    ]
+  ]
+}
