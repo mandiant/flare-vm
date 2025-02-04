@@ -67,6 +67,7 @@
         <package name="ida.plugin.dereferencing.vm"/>
         <package name="ida.plugin.diaphora.vm"/>
         <package name="ida.plugin.flare.vm"/>
+        <package name="ida.plugin.hrtng.vm"/>
         <package name="ida.plugin.ifl.vm"/>
         <package name="ida.plugin.xray.vm"/>
         <package name="ida.plugin.xrefer.vm"/>
@@ -86,7 +87,6 @@
         <package name="magika.vm"/>
         <package name="malware-jail.vm"/>
         <package name="map.vm"/>
-        <package name="microsoft-office.vm"/>
         <package name="nasm.vm"/>
         <package name="net-reactor-slayer.vm"/>
         <package name="notepadplusplus.vm"/>
