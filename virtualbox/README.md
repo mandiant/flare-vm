@@ -128,3 +128,7 @@ VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ❌ ERROR exporting "FLARE-VM.full":Co
 Done! 🙃
 ```
 
+## Build FLARE-VM
+
+[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) prepares a VirtualBox VM for building FLARE-VM.
+

@@ -24,7 +24,14 @@ import time
 from datetime import datetime
 
 import jsonschema
-from vboxcommon import ensure_hostonlyif_exists, ensure_vm_running, ensure_vm_shutdown, run_vboxmanage
+from vboxcommon import (
+    ensure_hostonlyif_exists,
+    ensure_vm_running,
+    ensure_vm_shutdown,
+    get_vm_uuid,
+    restore_snapshot,
+    run_vboxmanage,
+)
 
 DESCRIPTION = """Export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface.
 Generate a file with the SHA256 of the exported OVA(s)."""
@@ -65,19 +72,6 @@ snapshotsSchema = {
 def sha256_file(filename):
     with open(filename, "rb") as f:
         return hashlib.file_digest(f, "sha256").hexdigest()
-
-
-def get_vm_uuid(vm_name):
-    """Get the machine UUID for a given VM name using 'VBoxManage list vms'. Return None if not found."""
-    # regex VM name and extract the GUID
-    # Example of `VBoxManage list vms` output:
-    # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
-    # "FLARE-VM" {a23c0c37-2062-4cf0-882b-9e9747dd33b6}
-    vms_info = run_vboxmanage(["list", "vms"])
-
-    match = re.search(rf'^"{vm_name}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
-    if match:
-        return match.group("uuid")
 
 
 def set_network_to_hostonly(vm_uuid):
@@ -121,21 +115,12 @@ def set_network_to_hostonly(vm_uuid):
     print(f"VM {vm_uuid} ⚙️  network set to single hostonly adapter")
 
 
-def restore_snapshot(vm_uuid, snapshot_name):
-    """Restore a given snapshot in the given VM."""
-    # VM must be shutdown before restoring snapshot
-    ensure_vm_shutdown(vm_uuid)
-
-    run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
-    print(f'VM {vm_uuid} ✨ restored snapshot "{snapshot_name}"')
-
-
 def export_snapshots(vm_name, exported_vm_name, snapshots, export_dir_name):
     date = datetime.today().strftime("%Y%m%d")
 
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'ERROR: "{vm_name}" not found')
+        print(f'❌ ERROR: "{vm_name}" not found')
         exit()
 
     print(f'\nExporting snapshots from "{vm_name}" {vm_uuid}')
