@@ -19,7 +19,7 @@ jobs:
       - name: Run black
         run: black --line-length=120 --check --diff .
       - name: Run flake8
-        run: flake8 --max-line-length 150
+        run: flake8 --max-line-length=150
       - name: Run isort
-        run: isort --check --diff --profile black --line-length 120 .
+        run: isort --check --diff --profile black --line-length=120 .
 
