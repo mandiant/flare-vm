@@ -20,14 +20,30 @@ import sys
 import textwrap
 
 import gi
+from vboxcommon import ensure_hostonlyif_exists, get_vm_state, run_vboxmanage
 
 gi.require_version("Notify", "0.7")
-from gi.repository import Notify
-from vboxcommon import *
+from gi.repository import Notify  # noqa: E402
 
 DYNAMIC_VM_NAME = ".dynamic"
 DISABLED_ADAPTER_TYPE = "hostonly"
 ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
+
+DESCRIPTION = f"""Print the status of all internet adapters of all VMs in VirtualBox.
+Notify if any VM with {DYNAMIC_VM_NAME} in the name has an adapter whose type is not allowed.
+This is useful to detect internet access which is undesirable for dynamic malware analysis.
+Optionally change the type of the adapters with non-allowed type to Host-Only."""
+
+EPILOG = textwrap.dedent(
+    f"""
+    Example usage:
+      # Print status of all interfaces and disable internet access in VMs whose name contain {DYNAMIC_VM_NAME}
+      vbox-adapter-check.vm
+
+      # Print status of all interfaces without modifying any of them
+      vbox-adapter-check.vm --do_not_modify
+    """
+)
 
 
 def get_vm_uuids(dynamic_only):
@@ -46,7 +62,7 @@ def get_vm_uuids(dynamic_only):
             if (not dynamic_only) or DYNAMIC_VM_NAME in vm_name:
                 vm_uuids.append((vm_name, vm_uuid))
     except Exception as e:
-        raise Exception(f"Error finding machines UUIDs") from e
+        raise Exception("Error finding machines UUIDs") from e
     return vm_uuids
 
 
@@ -69,7 +85,7 @@ def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_no
         # nic8="none"
 
         vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-        for nic_number, nic_value in re.findall('^nic(\d+)="(\S+)"', vminfo, flags=re.M):
+        for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vminfo, flags=re.M):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
                 nics_with_internet.append(f"nic{nic_number}")
                 invalid_nics_msg += f"{nic_number} "
@@ -80,7 +96,11 @@ def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_no
                 if do_not_modify:
                     message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. Please double check your VMs settings."
                 else:
-                    message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
+                    message = (
+                        f"{vm_name} may be connected to the internet on adapter(s): {nic}."
+                        "The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity."
+                        "Please double check your VMs settings."
+                    )
                     # different commands are necessary if the machine is running.
                     if get_vm_state(vm_uuid) == "poweroff":
                         run_vboxmanage(
@@ -106,7 +126,11 @@ def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_no
             if do_not_modify:
                 message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. Please double check your VMs settings."
             else:
-                message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity. Please double check your VMs settings."
+                message = (
+                    f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
+                    "The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity."
+                    "Please double check your VMs settings."
+                )
 
             # Show notification using PyGObject
             Notify.init("VirtualBox adapter check")
@@ -128,19 +152,9 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
-    epilog = textwrap.dedent(
-        f"""
-        Example usage:
-          # Print status of all internet adapters and disable the adapters with internet access in VMs with {DYNAMIC_VM_NAME} in the name
-          vbox-adapter-check.vm
-
-          # Print status of all internet adapters without modifying any of them
-          vbox-adapter-check.vm --do_not_modify
-        """
-    )
     parser = argparse.ArgumentParser(
-        description=f"Print the status of all internet adapters of all VMs in VirtualBox. Notify if any VM with {DYNAMIC_VM_NAME} in the name has an adapter whose type is not allowed (internet access is undesirable for dynamic malware analysis)i. Optionally change the type of the adapters with non-allowed type to Host-Only.",
-        epilog=epilog,
+        description=DESCRIPTION,
+        epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -162,7 +176,7 @@ def main(argv=None):
             for vm_name, vm_uuid in vm_uuids:
                 change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
         else:
-            print(f"[Warning ⚠️] No VMs found")
+            print("[Warning ⚠️] No VMs found")
     except Exception as e:
         print(f"Error verifying dynamic VM hostonly configuration: {e}")
 

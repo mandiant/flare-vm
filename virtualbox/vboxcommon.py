@@ -56,7 +56,7 @@ def get_hostonlyif_name():
     # Name:            vboxnet0
     hostonlyifs_info = run_vboxmanage(["list", "hostonlyifs"])
 
-    match = re.search(f"^Name: *(?P<hostonlyif_name>\S+)", hostonlyifs_info, flags=re.M)
+    match = re.search(r"^Name: *(?P<hostonlyif_name>\S+)", hostonlyifs_info, flags=re.M)
     if match:
         return match["hostonlyif_name"]
 
@@ -73,7 +73,7 @@ def ensure_hostonlyif_exists():
         if not hostonlyif_name:
             raise RuntimeError("Failed to create new hostonly interface.")
 
-        print(f"VM {vm_uuid} Created hostonly interface: {hostonlyif_name}")
+        print(f"Hostonly interface created: {hostonlyif_name}")
 
     return hostonlyif_name
 
@@ -84,7 +84,7 @@ def get_vm_state(vm_uuid):
     # VMState="poweroff"
     vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
 
-    match = re.search(f'^VMState="(?P<state>\S+)"', vm_info, flags=re.M)
+    match = re.search(r'^VMState="(?P<state>\S+)"', vm_info, flags=re.M)
     if match:
         return match["state"]
 
