@@ -18,9 +18,12 @@ import time
 
 
 def format_arg(arg):
-    """Add quotes to the string arg if it contains spaces."""
-    if " " in arg:
-        return f"'{arg}'"
+    """Add quotes to the string arg if it contains special characters like spaces."""
+    if any(c in arg for c in (" ", "\\", "/")):
+        if "'" not in arg:
+            return f"'{arg}'"
+        if '"' not in arg:
+            return f'"{arg}"'
     return arg
 
 

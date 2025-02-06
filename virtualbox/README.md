@@ -130,5 +130,9 @@ Done! 🙃
 
 ## Build FLARE-VM
 
-[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) prepares a VirtualBox VM for building FLARE-VM.
-
+[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) restores a `BUILD-READY` snapshot, copies files required for the installation (like the IDA Pro installer and the FLARE-VM configuration file) and starts the FLARE-VM installation.
+The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled
+To disable UAC execute in a cmd console with admin rights and restart the VM for the change to take effect:
+```
+%windir%\System32\reg.exe ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f
+```
