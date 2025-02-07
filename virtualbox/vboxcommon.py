@@ -107,18 +107,32 @@ def get_vm_state(vm_uuid):
     raise Exception(f"Unable to get state of VM {vm_uuid}")
 
 
-def wait_until_vm_state(vm_uuid, target_state):
-    """Wait for VM state to change.
+def get_num_logged_in_users(vm_uuid):
+    """Return the number of logged in users using 'VBoxManage guestproperty'."""
+    # Examples of 'VBoxManage guestproperty get <VM_UUID> "/VirtualBox/GuestInfo/OS/LoggedInUsers"' output:
+    # - 'Value: 1'
+    # - 'Value: 0'
+    # - 'No value set!'
+    logged_in_users_info = run_vboxmanage(["guestproperty", "get", vm_uuid, "/VirtualBox/GuestInfo/OS/LoggedInUsers"])
 
-    Return True if the state changed to the target_stated within one minute.
+    if logged_in_users_info:
+        match = re.search(r"^Value: (?P<logged_in_users>\d+)", logged_in_users_info)
+        if match:
+            return int(match["logged_in_users"])
+    return 0
+
+
+def wait_until(vm_uuid, condition):
+    """Wait for VM to verify a condition
+
+    Return True if the condition is met within one minute.
     Return False otherwise.
     """
     timeout = 60  # seconds
     check_interval = 5  # seconds
     start_time = time.time()
     while time.time() - start_time < timeout:
-        vm_state = get_vm_state(vm_uuid)
-        if vm_state == target_state:
+        if eval(condition):
             time.sleep(5)  # wait a bit to be careful and avoid any weird races
             return True
         time.sleep(check_interval)
@@ -126,15 +140,14 @@ def wait_until_vm_state(vm_uuid, target_state):
 
 
 def ensure_vm_running(vm_uuid):
-    """Start the VM if its state is not 'running'."""
+    """Start the VM if its state is not 'running' and ensure the user is logged in."""
     vm_state = get_vm_state(vm_uuid)
-    if vm_state == "running":
-        return
+    if not vm_state == "running":
+        print(f"VM {vm_uuid} state: {vm_state}. Starting VM...")
+        run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
 
-    print(f"VM {vm_uuid} state: {vm_state}. Starting VM...")
-    run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
-
-    if not wait_until_vm_state(vm_uuid, "running"):
+    # Wait until at least 1 user is logged in.
+    if not wait_until(vm_uuid, "get_num_logged_in_users(vm_uuid)"):
         raise RuntimeError(f"Unable to start VM {vm_uuid}.")
 
 
@@ -151,7 +164,7 @@ def ensure_vm_shutdown(vm_uuid):
     print(f"VM {vm_uuid} state: {vm_state}. Shutting down VM...")
     run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
 
-    if not wait_until_vm_state(vm_uuid, "poweroff"):
+    if not wait_until(vm_uuid, "get_vm_state(vm_uuid) == 'poweroff'"):
         raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")
 
 

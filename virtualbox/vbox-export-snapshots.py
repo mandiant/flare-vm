@@ -20,10 +20,10 @@ import os
 import re
 import sys
 import textwrap
-import time
 from datetime import datetime
 
 import jsonschema
+
 from vboxcommon import (
     ensure_hostonlyif_exists,
     ensure_vm_running,
@@ -43,10 +43,6 @@ EPILOG = textwrap.dedent(
       ./vbox-export-snapshots.py configs/export_win10_flare-vm.json
     """
 )
-
-# Duration of the power cycle: the seconds we wait between starting the VM and powering it off.
-# It should be long enough for the internet_detector to detect the network change.
-POWER_CYCLE_TIME = 240  # 4 minutes
 
 # Message to add to the output when waiting for a long operation to complete.
 LONG_WAIT = "... (it will take some time, go for an 🍦!)"
@@ -136,11 +132,9 @@ def export_snapshots(vm_name, exported_vm_name, snapshots, export_dir_name):
 
             set_network_to_hostonly(vm_uuid)
 
-            # Do a power cycle to ensure everything is good and
-            # give the internet detector time to detect the network change
+            # Do a power cycle to ensure everything is good
             print(f"VM {vm_uuid} 🔄 power cycling before export{LONG_WAIT}")
             ensure_vm_running(vm_uuid)
-            time.sleep(POWER_CYCLE_TIME)
             ensure_vm_shutdown(vm_uuid)
 
             exported_vm_name = f"{exported_vm_name}.{date}{extension}"
