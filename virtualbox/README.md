@@ -2,75 +2,6 @@
 
 **This folder contains several scripts related to enhance building, exporting, and using FLARE-VM in VirtualBox.**
 
-## Export snapshots
-
-[`vbox-export-snapshots.py`](vbox-export-snapshots.py) export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface.
-It also generates a file with the SHA256 hash of the exported `.ova`.
-This script is useful to export several versions of FLARE-VM after its installation consistently and with the internet disabled by default (desired for malware analysis).
-For example, you may want to export a VM with the default FLARE-VM configuration and another installing in addition the packages `visualstudio.vm` and `pdbs.pdbresym.vm`.
-These packages are useful for malware analysis but are not included in the default configuration because of the consequent increase in size.
-The scripts receives the path of the JSON configuration file as argument.
-See configuration example files in the [`configs`](configs/) directory.
-
-### Example
-
-```
-$ ./vbox-export-snapshots.py configs/export_win10_flare-vm.json
-
-Exporting snapshots from "FLARE-VM.testing" {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d}
-Export directory: "/home/anamg/EXPORTED VMS"
-
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✨ restored snapshot "FLARE-VM"
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: saved. Starting VM...
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ⚙️  network set to single hostonly adapter
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🔄 power cycling before export... (it will take some time, go for an 🍦!)
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: poweroff. Starting VM...
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🚧 exporting "FLARE-VM.20250129.dynamic"... (it will take some time, go for an 🍦!)
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/EXPORTED VMS/FLARE-VM.20250129.dynamic.ova"
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/EXPORTED VMS/FLARE-VM.20250129.dynamic.ova.sha256": 73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47
-
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ❌ ERROR exporting "FLARE-VM.full":Command 'VBoxManage snapshot {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} restore FLARE-VM.full' failed: Could not find a snapshot named 'FLARE-VM.full'
-
-Done! 🙃
-```
-
-## Check internet adapter status
-
-[`vbox-adapter-check.py`](vbox-adapter-check.py) prints the status of all internet adapters of all VMs in VirtualBox.
-The script also notifies if any dynamic analysis VM (with `.dynamic` in the name) has an adapter whose type is not allowed (internet access is undesirable for dynamic malware analysis).
-Unless the argument `--do_not_modify` is provided, the script changes the type of the adapters with non-allowed type to Host-Only.
-Unless the argument `--skip_disabled` is provided, the script also explores the disabled adapters, printing their status and possibly changing their type.
-The script has been tested in Debian 12 with GNOME 44.9.
-
-### Example
-
-```
-$ ./vbox-adapter-check.py
-windows10 1: Enabled  HostOnly
-windows10 2: Disabled Null
-windows10 3: Disabled Null
-windows10 4: Disabled Null
-windows10 5: Disabled Null
-windows10 6: Disabled Null
-windows10 7: Disabled Null
-windows10 8: Disabled Null
-FLARE-VM.20240808.dynamic 1: Enabled  NAT
-FLARE-VM.20240808.dynamic 2: Disabled NAT
-FLARE-VM.20240808.dynamic 3: Disabled Bridged
-FLARE-VM.20240808.dynamic 4: Enabled  Internal
-FLARE-VM.20240808.dynamic 5: Disabled Null
-FLARE-VM.20240808.dynamic 6: Disabled Null
-FLARE-VM.20240808.dynamic 7: Disabled Null
-FLARE-VM.20240808.dynamic 8: Disabled Null
-```
-
-#### Notification
-
-![Notification](../Images/vbox-adapter-check_notification.png)
-
 
 ## Clean up snapshots
 
@@ -120,9 +51,88 @@ See you next time you need to clean up your VMs! ✨
 
 ##### Before
 
-
 ![Before](../Images/vbox-clean-snapshots_before.png)
 
 ##### After
 
 ![After](../Images/vbox-clean-snapshots_after.png)
+
+
+## Check internet adapter status
+
+[`vbox-adapter-check.py`](vbox-adapter-check.py) prints the status of all internet adapters of all VMs in VirtualBox.
+The script also notifies if any dynamic analysis VM (with `.dynamic` in the name) has an adapter whose type is not allowed (internet access is undesirable for dynamic malware analysis).
+Unless the argument `--do_not_modify` is provided, the script changes the type of the adapters with non-allowed type to Host-Only.
+Unless the argument `--skip_disabled` is provided, the script also explores the disabled adapters, printing their status and possibly changing their type.
+The script has been tested in Debian 12 with GNOME 44.9.
+
+### Example
+
+```
+$ ./vbox-adapter-check.py
+windows10 1: Enabled  HostOnly
+windows10 2: Disabled Null
+windows10 3: Disabled Null
+windows10 4: Disabled Null
+windows10 5: Disabled Null
+windows10 6: Disabled Null
+windows10 7: Disabled Null
+windows10 8: Disabled Null
+FLARE-VM.20240808.dynamic 1: Enabled  NAT
+FLARE-VM.20240808.dynamic 2: Disabled NAT
+FLARE-VM.20240808.dynamic 3: Disabled Bridged
+FLARE-VM.20240808.dynamic 4: Enabled  Internal
+FLARE-VM.20240808.dynamic 5: Disabled Null
+FLARE-VM.20240808.dynamic 6: Disabled Null
+FLARE-VM.20240808.dynamic 7: Disabled Null
+FLARE-VM.20240808.dynamic 8: Disabled Null
+```
+
+#### Notification
+
+![Notification](../Images/vbox-adapter-check_notification.png)
+
+
+## Export snapshots
+
+[`vbox-export-snapshots.py`](vbox-export-snapshots.py) export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface.
+It also generates a file with the SHA256 hash of the exported `.ova`.
+This script is useful to export several versions of FLARE-VM after its installation consistently and with the internet disabled by default (desired for malware analysis).
+For example, you may want to export a VM with the default FLARE-VM configuration and another installing in addition the packages `visualstudio.vm` and `pdbs.pdbresym.vm`.
+These packages are useful for malware analysis but are not included in the default configuration because of the consequent increase in size.
+The scripts receives the path of the JSON configuration file as argument.
+See configuration example files in the [`configs`](configs/) directory.
+
+### Example
+
+```
+$ ./vbox-export-snapshots.py configs/export_win10_flare-vm.json
+
+Exporting snapshots from "FLARE-VM.testing" {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d}
+Export directory: "/home/anamg/EXPORTED VMS"
+
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✨ restored snapshot "FLARE-VM"
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: saved. Starting VM...
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ⚙️  network set to single hostonly adapter
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🔄 power cycling before export... (it will take some time, go for an 🍦!)
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: poweroff. Starting VM...
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🚧 exporting "FLARE-VM.20250129.dynamic"... (it will take some time, go for an 🍦!)
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/EXPORTED VMS/FLARE-VM.20250129.dynamic.ova"
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/EXPORTED VMS/FLARE-VM.20250129.dynamic.ova.sha256": 73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47
+
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ❌ ERROR exporting "FLARE-VM.full":Command 'VBoxManage snapshot {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} restore FLARE-VM.full' failed: Could not find a snapshot named 'FLARE-VM.full'
+
+Done! 🙃
+```
+
+## Build FLARE-VM
+
+[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) restores a `BUILD-READY` snapshot, copies files required for the installation (like the IDA Pro installer and the FLARE-VM configuration file) and starts the FLARE-VM installation.
+The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled
+To disable UAC execute in a cmd console with admin rights and restart the VM for the change to take effect:
+```
+%windir%\System32\reg.exe ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f
+```

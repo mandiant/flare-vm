@@ -18,9 +18,12 @@ import time
 
 
 def format_arg(arg):
-    """Add quotes to the string arg if it contains spaces."""
-    if " " in arg:
-        return f"'{arg}'"
+    """Add quotes to the string arg if it contains special characters like spaces."""
+    if any(c in arg for c in (" ", "\\", "/")):
+        if "'" not in arg:
+            return f"'{arg}'"
+        if '"' not in arg:
+            return f'"{arg}"'
     return arg
 
 
@@ -76,6 +79,19 @@ def ensure_hostonlyif_exists():
         print(f"Hostonly interface created: {hostonlyif_name}")
 
     return hostonlyif_name
+
+
+def get_vm_uuid(vm_name):
+    """Get the machine UUID for a given VM name using 'VBoxManage list vms'. Return None if not found."""
+    # regex VM name and extract the GUID
+    # Example of `VBoxManage list vms` output:
+    # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
+    # "FLARE-VM" {a23c0c37-2062-4cf0-882b-9e9747dd33b6}
+    vms_info = run_vboxmanage(["list", "vms"])
+
+    match = re.search(rf'^"{vm_name}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
+    if match:
+        return match.group("uuid")
 
 
 def get_vm_state(vm_uuid):
@@ -137,3 +153,12 @@ def ensure_vm_shutdown(vm_uuid):
 
     if not wait_until_vm_state(vm_uuid, "poweroff"):
         raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")
+
+
+def restore_snapshot(vm_uuid, snapshot_name):
+    """Restore a given snapshot in the given VM."""
+    # VM must be shutdown before restoring snapshot
+    ensure_vm_shutdown(vm_uuid)
+
+    run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
+    print(f'VM {vm_uuid} ✨ restored snapshot "{snapshot_name}"')
