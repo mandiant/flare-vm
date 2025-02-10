@@ -41,6 +41,19 @@ def cmd_to_str(cmd):
     return " ".join(format_arg(arg) for arg in cmd)
 
 
+def __run_vboxmanage(cmd, real_time=False):
+    """Run a command using 'subprocess.run' and return the output.
+
+    Args:
+        cmd: list with the command and its arguments
+        real_time: Boolean that determines if displaying the output in realtime or returning it.
+    """
+    if real_time:
+        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
+    else:
+        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+
 def run_vboxmanage(cmd, real_time=False):
     """Run a VBoxManage command and return the output.
 
@@ -49,10 +62,19 @@ def run_vboxmanage(cmd, real_time=False):
         real_time: Boolean that determines if displaying the output in realtime or returning it.
     """
     cmd = ["VBoxManage"] + cmd
-    if real_time:
-        result = subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
-    else:
-        result = subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = __run_vboxmanage(cmd, real_time)
+
+    if result.returncode:
+        # Check if we are affect by the following VERR_NO_LOW_MEMORY bug: https://www.virtualbox.org/ticket/22185
+        # and re-run the command every minute until the VERR_NO_LOW_MEMORY error is resolved
+        while result.stdout and "VERR_NO_LOW_MEMORY" in result.stdout:
+            print("❌ VirtualBox VERR_NO_LOW_MEMORY error (likely https://www.virtualbox.org/ticket/22185)")
+            print("🩹 Fit it running 'echo 3 | sudo tee /proc/sys/vm/drop_caches'")
+            print("⏳ I'll re-try the command in ~ 1 minute\n")
+            time.sleep(60)  # wait 1 minutes
+
+            # Re-try command
+            result = __run_vboxmanage(cmd, real_time)
 
     if result.returncode:
         error = f"Command '{cmd_to_str(cmd)}' failed"
