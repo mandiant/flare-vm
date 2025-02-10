@@ -93,25 +93,20 @@ FLARE-VM.20240808.dynamic 8: Disabled Null
 ![Notification](../Images/vbox-adapter-check_notification.png)
 
 
-## Export snapshots
+## Export snapshot
 
-[`vbox-export-snapshots.py`](vbox-export-snapshots.py) export one or more snapshots in the same VirtualBox VM as .ova, changing the network to a single Host-Only interface.
-It also generates a file with the SHA256 hash of the exported `.ova`.
-This script is useful to export several versions of FLARE-VM after its installation consistently and with the internet disabled by default (desired for malware analysis).
-For example, you may want to export a VM with the default FLARE-VM configuration and another installing in addition the packages `visualstudio.vm` and `pdbs.pdbresym.vm`.
-These packages are useful for malware analysis but are not included in the default configuration because of the consequent increase in size.
-The scripts receives the path of the JSON configuration file as argument.
-See configuration example files in the [`configs`](configs/) directory.
+[`vbox-export-snapshot.py`](vbox-export-snapshot.py) exports a VirtualBox snapshot as an Open Virtual Appliance (OVA) file.
+The script configures the exported VM with a single Host-Only network interface, and the resulting OVA file is named after the snapshot.
+A separate file containing the SHA256 hash of the OVA is also generated for verification.
+The script accepts an optional description for the OVA and the name of the export directory within the user's home directory (`$HOME`) where the OVA and SHA256 hash file will be saved.
+If no export directory is provided, the default directory name is `EXPORTED VMS`.
 
 ### Example
 
 ```
-$ ./vbox-export-snapshots.py configs/export_win10_flare-vm.json
+$ ./vbox-export-snapshots.py "FLARE-VM.testing" "FLARE-VM" --description "Windows 10 VM with FLARE-VM default configuration"
 
-Exporting snapshots from "FLARE-VM.testing" {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d}
-Export directory: "/home/anamg/EXPORTED VMS"
-
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
+Exporting snapshot "FLARE-VM" from "FLARE-VM.testing" {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d}...
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✨ restored snapshot "FLARE-VM"
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: saved. Starting VM...
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
@@ -119,13 +114,9 @@ VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ⚙️  network set to single hostonly
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🔄 power cycling before export... (it will take some time, go for an 🍦!)
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: poweroff. Starting VM...
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🚧 exporting "FLARE-VM.20250129.dynamic"... (it will take some time, go for an 🍦!)
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/EXPORTED VMS/FLARE-VM.20250129.dynamic.ova"
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/EXPORTED VMS/FLARE-VM.20250129.dynamic.ova.sha256": 73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47
-
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ❌ ERROR exporting "FLARE-VM.full":Command 'VBoxManage snapshot {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} restore FLARE-VM.full' failed: Could not find a snapshot named 'FLARE-VM.full'
-
-Done! 🙃
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🚧 exporting ... (it will take some time, go for an 🍦!)
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/None/FLARE-VM.ova"
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/None/FLARE-VM.ova.sha256": 987eed68038ce7c5072e7dc219ba82d11745267d8ab2ea7f76158877c13e3aa9
 ```
 
 ## Build FLARE-VM
