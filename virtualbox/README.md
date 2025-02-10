@@ -121,9 +121,18 @@ VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/None/FLARE-
 
 ## Build FLARE-VM
 
-[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) restores a `BUILD-READY` snapshot, copies files required for the installation (like the IDA Pro installer and the FLARE-VM configuration file) and starts the FLARE-VM installation.
+[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) automates the creation and export of customized FLARE-VM virtual machines (VMs).
+The script begins by restoring a pre-existing `BUILD-READY` snapshot of a clean Windows installation.
+The script then copies the required installation files (such as the IDA Pro installer, FLARE-VM configuration, and legal notices) into the guest VM.
+After installing FLARE-VM, a `base` snapshot is taken.
+This snapshot serves as the foundation for generating subsequent snapshots and exporting OVA images, all based on the configuration provided in a YAML file.
+This configuration file specifies the VM name, the exported VM name, and details for each snapshot.
+Individual snapshot configurations can include custom commands to be executed within the guest, legal notices to be applied, and file/folder exclusions for the automated cleanup process.
+See configuration example files in the [`configs`](configs/) directory.
+
 The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled
 To disable UAC execute in a cmd console with admin rights and restart the VM for the change to take effect:
 ```
 %windir%\System32\reg.exe ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f
 ```
+

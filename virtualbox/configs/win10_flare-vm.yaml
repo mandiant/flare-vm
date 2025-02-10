@@ -1,0 +1,27 @@
+VM_NAME: FLARE-VM.testing
+EXPORTED_VM_NAME: FLARE-VM.Win10
+SNAPSHOTS:
+- extension: ".dynamic"
+  description: "Windows 10 VM with FLARE-VM default configuration + idapro.vm + microsoft-office.vm"
+  cmd: "choco install idapro.vm microsoft-office.vm"
+  legal_notice: "legal_notice_win10.txt"
+- extension: ".full.dynamic"
+  description: "Windows 10 VM with FLARE-VM default configuration + idapro.vm + microsoft-office.vm + pdbs.pdbresym.vm + visualstudio.vm"
+  cmd: "choco install idapro.vm microsoft-office.vm pdbs.pdbresym.vm visualstudio.vm"
+  legal_notice: "legal_notice_win10.txt"
+- extension: ".EDU"
+  description: "Windows 10 VM with FLARE-VM default configuration + FLARE-EDU materials"
+  cmd: |
+    # Unzip EDU labs
+    VM-Unzip-Recursively;
+    # Install Office 2016. the installation takes 30 minutes
+    $desktop = "C:\Users\flare\Desktop";
+    $path = "$desktop\en_office_professional_plus_2016_x86_x64_dvd_6962141.iso";
+    $drive = (Mount-DiskImage -ImagePath $path | Get-Volume).DriveLetter;
+    Set-Location "$drive`:\";
+    .\setup.exe;
+    Start-Sleep 1800;
+    Dismount-DiskImage -ImagePath $path;
+  legal_notice: "legal_notice_edu.txt"
+  protected_folders: "'ATMA', 'MACC', 'MAF', 'MDA'"
+  protected_files: "'Labs.zip', 'MICROSOFT Windows 10 License Terms.txt', 'MICROSOFT Office 2016 License Terms.txt'"
