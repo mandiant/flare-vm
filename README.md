@@ -30,7 +30,7 @@ This section documents the steps to install FLARE-VM. You may also find useful t
       * GPO: [https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo](https://superuser.com/a/1757341)
       * Non-GPO - Manual: [https://www.maketecheasier.com/permanently-disable-windows-defender-windows-10/](https://www.maketecheasier.com/permanently-disable-windows-defender-windows-10)
       * Non-GPO - Automated: [https://github.com/ionuttbara/windows-defender-remover](https://github.com/ionuttbara/windows-defender-remover)
-      * Non-GPO - Semi-Automated (User needs to toggle off Tamper Protection): [https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1] (https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1)
+      * Non-GPO - Semi-Automated (User needs to toggle off Tamper Protection): https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1
 * Take a VM snapshot so you can always revert to a state before the FLARE-VM installation
 
 ### FLARE-VM installation
