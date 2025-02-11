@@ -188,7 +188,7 @@ def rename_old_snapshot(vm_uuid, snapshot_name):
     # Find how many snapshots have the given name and edit a snapshot with that name as many times
     snapshots = re.findall(rf'^SnapshotName(-\d+)*="{snapshot_name}"\n', snapshots_info, flags=re.M)
     for _ in range(len(snapshots)):
-        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD'"])
+        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD"])
 
 
 def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config):

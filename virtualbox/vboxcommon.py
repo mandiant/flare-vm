@@ -18,6 +18,7 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime
 
 # Message to add to the output when waiting for a long operation to complete.
 LONG_WAIT = "... (it will take some time, go for an 🍦!)"
@@ -172,9 +173,12 @@ def export_vm(vm_uuid, exported_vm_name, description="", export_dir_name=EXPORT_
 
     exported_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.ova")
 
-    # Provide better error if OVA already exists (for example if the script is called twice)
+    # Rename OVA if it already exists (for example if the script is called twice) or exporting will fail
     if os.path.exists(exported_ova_filepath):
-        raise FileExistsError(f'"{exported_ova_filepath}" already exists')
+        time_str = datetime.now().strftime("%H_%M")
+        old_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.{time_str}.ova")
+        os.rename(exported_ova_filepath, old_ova_filepath)
+        print(f"⚠️  Renamed old OVA to export new one: {old_ova_filepath}")
 
     # Turn off VM and export it to .ova
     ensure_vm_shutdown(vm_uuid)
