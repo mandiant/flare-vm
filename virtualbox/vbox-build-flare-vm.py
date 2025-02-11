@@ -196,7 +196,7 @@ def rename_old_snapshot(vm_uuid, snapshot_name):
         run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD"])
 
 
-def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config):
+def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_install_flare_vm):
     """"""
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
@@ -206,15 +206,18 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config):
     print(f'\nGetting the installation VM "{vm_name}" {vm_uuid} ready...')
     create_log_folder()
 
-    restore_snapshot(vm_uuid, BASE_SNAPSHOT)
-
-    control_guest(vm_uuid, ["copyto", "--recursive", f"--target-directory={REQUIRED_FILES_DEST}", REQUIRED_FILES_DIR])
-    print(f"VM {vm_uuid} 📁 Copied required files in: {REQUIRED_FILES_DIR}")
-
-    install_flare_vm(vm_uuid, exported_vm_name, custom_config)
-
     base_snapshot_name = f"{exported_vm_name}.{date}.base"
-    take_snapshot(vm_uuid, base_snapshot_name)
+
+    if not do_not_install_flare_vm:
+        restore_snapshot(vm_uuid, BASE_SNAPSHOT)
+
+        control_guest(
+            vm_uuid, ["copyto", "--recursive", f"--target-directory={REQUIRED_FILES_DEST}", REQUIRED_FILES_DIR]
+        )
+        print(f"VM {vm_uuid} 📁 Copied required files in: {REQUIRED_FILES_DIR}")
+
+        install_flare_vm(vm_uuid, exported_vm_name, custom_config)
+        take_snapshot(vm_uuid, base_snapshot_name)
 
     for snapshot in snapshots:
         restore_snapshot(vm_uuid, base_snapshot_name)
@@ -276,6 +279,12 @@ def main(argv=None):
         default=False,
         help=f"flag to use a custom configuration file named 'config.xml' (expected to be in {REQUIRED_FILES_DIR}) for the FLARE-VM installation.",
     )
+    parser.add_argument(
+        "--do-not-install-flare-vm",
+        action="store_true",
+        default=False,
+        help="flag to not install FLARE-VM and used an existent base snapshot.",
+    )
     args = parser.parse_args(args=argv)
 
     try:
@@ -285,7 +294,14 @@ def main(argv=None):
         print(f'Invalid "{args.config_path}": {e}')
         exit()
 
-    build_vm(config["VM_NAME"], config["EXPORTED_VM_NAME"], config["SNAPSHOTS"], args.date, args.custom_config)
+    build_vm(
+        config["VM_NAME"],
+        config["EXPORTED_VM_NAME"],
+        config["SNAPSHOTS"],
+        args.date,
+        args.custom_config,
+        args.do_not_install_flare_vm,
+    )
 
 
 if __name__ == "__main__":
