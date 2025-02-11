@@ -88,9 +88,14 @@ def control_guest(vm_uuid, args, real_time=False):
     """
     # VM must be running to control the guest
     ensure_vm_running(vm_uuid)
-    return run_vboxmanage(
-        ["guestcontrol", vm_uuid, f"--username={GUEST_USERNAME}", f"--password={GUEST_PASSWORD}"] + args, real_time
-    )
+    cmd = ["guestcontrol", vm_uuid, f"--username={GUEST_USERNAME}", f"--password={GUEST_PASSWORD}"] + args
+    try:
+        return run_vboxmanage(cmd, real_time)
+    except RuntimeError:
+        # The guest additions take a bit to load after the user is logged in
+        # In slow environments this may cause the command to fail, wait a bit and re-try
+        time.sleep(120)  # Wait 2 minutes
+        return run_vboxmanage(cmd, real_time)
 
 
 def run_command(vm_uuid, cmd, executable="PS"):
