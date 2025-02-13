@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install dependencies
-        run: pip install black isort flake8
+        run: pip install black==25.* isort==6.* flake8==7.*
       # Different line limits: Black/isort (120), Flake8 (150). 
       # Flake8 allows longer lines for better long string readability. Black doesn't enforce string length.
       - name: Run black
