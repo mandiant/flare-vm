@@ -94,14 +94,6 @@ param (
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
- 
-# https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.localaccounts/set-localuser
-if ( -not ([Environment]::Is64BitProcess)) {
-    Write-Host "`t[!] It seems like you are using 32 bit powershell. Exiting because some commands do not work correctly in this mode." -ForegroundColor Red
-    Write-Host "`t[-] Hint: Don't run powershell x86" -ForegroundColor Yellow
-    Start-Sleep 3
-    exit 1
-}
 
 # Function to test the network stack. Ping/GET requests to the resource to ensure that network stack looks good for installation
 function Test-WebConnection {
@@ -340,7 +332,7 @@ if (-not $noChecks.IsPresent) {
     }
 
     Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
-    Set-LocalUser -Name  "${Env:UserName}" -PasswordNeverExpires $true
+    wmic useraccount here "name='${Env:UserName}'" set PasswordExpires=False
 
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
