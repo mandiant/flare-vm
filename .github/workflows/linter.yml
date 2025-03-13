@@ -22,4 +22,7 @@ jobs:
         run: flake8 --max-line-length=150
       - name: Run isort
         run: isort --check --diff --profile black --line-length=120 .
+      - name: Run PowerShell linter
+        run: scripts/lint.ps1
+
 
