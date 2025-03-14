@@ -247,13 +247,13 @@ if (-not $noChecks.IsPresent) {
 
     # Check for spaces in the username, exit if identified
     Write-Host "[+] Checking for spaces in the username..."
-    if (${Env:userName} -match '\s') {
+    if (${Env:UserName} -match '\s') {
         Write-Host "`t[!] Username '${Env:UserName}' contains a space and will break installation." -ForegroundColor Red
         Write-Host "`t[!] Exiting..." -ForegroundColor Red
         Start-Sleep 3
         exit 1
     } else {
-        Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
+        Write-Host "`t[+] Username '${Env:UserName}' does not contain any spaces." -ForegroundColor Green
     }
 
     # Check if host has enough disk space
@@ -333,7 +333,7 @@ if (-not $noChecks.IsPresent) {
     }
 
     Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
-    $UserNoPasswd = Get-CimInstance Win32_UserAccount -Filter "Name='$Env:UserName'"
+    $UserNoPasswd = Get-CimInstance Win32_UserAccount -Filter "Name='${Env:UserName}'"
     $UserNoPasswd | Set-CimInstance -Property @{ PasswordExpires = $false }
 
     # Prompt user to remind them to take a snapshot
@@ -350,10 +350,10 @@ if (-not $noPassword.IsPresent) {
         Write-Host "[+] Getting user credentials ..."
         Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
         Start-Sleep -Milliseconds 500
-        $credentials = Get-Credential ${Env:username}
+        $credentials = Get-Credential ${Env:UserName}
     } else {
         $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
-        $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:username}, $securePassword
+        $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:UserName}, $securePassword
     }
 }
 
