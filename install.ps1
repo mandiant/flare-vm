@@ -461,6 +461,26 @@ if (-not $noGui.IsPresent) {
     ################################################################################
     Add-Type -AssemblyName System.Windows.Forms
 
+    function Get-Packages-Categories {
+      $categoriesFile = "${Env:VM_COMMON_DIR}\categories.txt"
+      $categoriesUrl = "https://raw.githubusercontent.com/mandiant/VM-Packages/refs/heads/main/categories.txt"
+      (New-Object net.webclient).DownloadFile($categoriesUrl, $backgroundImage)
+
+       Get-Content -Path $categoriesFile | ForEach-Object {
+         $currentCategory = $_
+         $packages = Find-Package -Source https://www.myget.org/F/vm-packages/ -FilterOnTag $currentCategory
+         $packagesByCategory[$currentCategory] = ""
+         Foreach ($package in $packages) {
+                $packageName = $package.Name
+                $description = $package.Summary
+                $packagesByCategory[$currentCategory] += $packageName +  "|" + $description + "`n"
+                #Write-Host "[+] Added the " $packageName " to the category " $currentCategory " with description " $description
+         }
+       }
+       return $packagesByCategory
+
+    }
+
     function Get-Folder($textBox, $envVar) {
         $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
         $folderBrowserDialog.RootFolder = 'MyComputer'
@@ -493,116 +513,35 @@ if (-not $noGui.IsPresent) {
             }
         }
     }
-
-    function Set-InitialPackages {
-        $selectedPackagesBox.Items.Clear()
-        foreach($package in $packagesToInstall)
-        {
-            $selectedPackagesBox.Items.Add($package) | Out-Null
-        }
-        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
-
-        $unselectedPackagesBox.Items.Clear()
-        foreach($package in $allPackages)
-        {
-            $unselectedPackagesBox.Items.Add($package) | Out-Null
-        }
-        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
-    }
-
-    function Add-SelectedPackages {
-        $unselectedPackages = $unselectedPackagesBox.SelectedItems
-        foreach($package in $unselectedPackages)
-        {
-            $selectedPackagesBox.BeginUpdate()
-            $selectedPackagesBox.Items.Add($package) | Out-Null
-            $selectedPackagesBox.EndUpdate()
-        }
-        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
-
-        $unselectedPackagesBox.BeginUpdate()
-        while ($unselectedPackagesBox.SelectedItems.count -gt 0) {
-            $unselectedPackagesBox.Items.RemoveAt($unselectedPackagesBox.SelectedIndex)
-        }
-        $unselectedPackagesBox.EndUpdate()
-        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
-    }
-
-    function Add-AllPackages {
-        foreach($package in $unselectedPackagesBox.Items)
-        {
-            $selectedPackagesBox.BeginUpdate()
-            $selectedPackagesBox.Items.Add($package) | Out-Null
-            $selectedPackagesBox.EndUpdate()
-        }
-        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
-
-        $unselectedPackagesBox.BeginUpdate()
-        $unselectedPackagesBox.Items.Clear()
-        $unselectedPackagesBox.EndUpdate()
-        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
-    }
-
-    function Remove-SelectedPackages {
-        $selectedPackages = $selectedPackagesBox.SelectedItems
-        foreach($package in $selectedPackages)
-        {
-            $unselectedPackagesBox.BeginUpdate()
-            $unselectedPackagesBox.Items.Add($package) | Out-Null
-            $unselectedPackagesBox.EndUpdate()
-        }
-        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
-
-        $selectedPackagesBox.BeginUpdate()
-        while ($selectedPackagesBox.SelectedItems.count -gt 0) {
-            $selectedPackagesBox.Items.RemoveAt($selectedPackagesBox.SelectedIndex)
-        }
-        $selectedPackagesBox.EndUpdate()
-        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
-    }
-
-    function Remove-AllPackages {
-        foreach($package in $selectedPackagesBox.Items)
-        {
-            $unselectedPackagesBox.BeginUpdate()
-            $unselectedPackagesBox.Items.Add($package) | Out-Null
-            $unselectedPackagesBox.EndUpdate()
-        }
-        $numUnselectedLabel.text = "Total: $($unselectedPackagesBox.Items.count)"
-
-        $selectedPackagesBox.BeginUpdate()
-        $selectedPackagesBox.Items.Clear()
-        $selectedPackagesBox.EndUpdate()
-        $numSelectedLabel.text = "Total: $($selectedPackagesBox.Items.count)"
-    }
-
+    
     # Gather lists of packages (i.e., available, already installed, to install)
     $excludedPackages = @("flarevm.installer.vm", "common.vm")
     $installedPackages = (Get-InstalledPackages).Name
     $packagesToInstall = $configXml.config.packages.package.name | Where-Object { $installedPackages -notcontains $_ }
-    $allPackages = (Get-InstallablePackages).Name | Where-Object { $packagesToInstall -notcontains $_ -and $installedPackages -notcontains $_ -and $excludedPackages -notcontains $_}
+    #$allPackages = (Get-InstallablePackages).Name | Where-Object { $packagesToInstall -notcontains $_ -and $installedPackages -notcontains $_ -and $excludedPackages -notcontains $_}
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
 
-    $form                   = New-Object system.Windows.Forms.Form
-    $form.ClientSize        = New-Object System.Drawing.Point(717,740)
-    $form.text              = "FLARE VM Install Customization"
-    $form.TopMost           = $true
-    $form.MaximizeBox       = $false
-    $form.FormBorderStyle   = 'FixedDialog'
-    $form.StartPosition     = 'CenterScreen'
+    
+    #needed to use Find-Package
+    install-packageprovider nuget -force
+    $packagesByCategory = @{}
+    Write-Host "[+ ]Getting categories and listing packages per category"
+    $packagesByCategory = Get-Packages-Categories
+
+    $formEnv                   = New-Object system.Windows.Forms.Form
+    $formEnv.ClientSize        = New-Object System.Drawing.Point(820,523)
+    $formEnv.text              = "FLARE VM Install Customization"
+    $formEnv.TopMost           = $true
+    $formEnv.MaximizeBox       = $false
+    $formEnv.FormBorderStyle   = 'FixedDialog'
+    $formEnv.StartPosition     = 'CenterScreen'
 
     $envVarGroup            = New-Object system.Windows.Forms.Groupbox
     $envVarGroup.height     = 201
     $envVarGroup.width      = 690
     $envVarGroup.text       = "Environment Variable Customization"
     $envVarGroup.location   = New-Object System.Drawing.Point(15,59)
-
-    $packageGroup           = New-Object system.Windows.Forms.Groupbox
-    $packageGroup.height    = 385
-    $packageGroup.width     = 540
-    $packageGroup.text      = "Package Installation Customization"
-    $packageGroup.location  = New-Object System.Drawing.Point(81,285)
 
     $welcomeLabel           = New-Object system.Windows.Forms.Label
     $welcomeLabel.text      = "Welcome to FLARE VM's custom installer. Please select your options below.`nDefault values will be used if you make no modifications."
@@ -612,93 +551,7 @@ if (-not $noGui.IsPresent) {
     $welcomeLabel.location  = New-Object System.Drawing.Point(15,14)
     $welcomeLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-    $selectedPackagesBox                 = New-Object system.Windows.Forms.ListBox
-    $selectedPackagesBox.text            = "listBox"
-    $selectedPackagesBox.SelectionMode   = 'MultiSimple'
-    $selectedPackagesBox.Sorted          = $true
-    $selectedPackagesBox.width           = 246
-    $selectedPackagesBox.height          = 322
-    $selectedPackagesBox.location        = New-Object System.Drawing.Point(288,40)
-
-    $unselectedPackagesBox               = New-Object system.Windows.Forms.ListBox
-    $unselectedPackagesBox.text          = "listBox"
-    $unselectedPackagesBox.SelectionMode = 'MultiSimple'
-    $unselectedPackagesBox.Sorted        = $true
-    $unselectedPackagesBox.width         = 246
-    $unselectedPackagesBox.height        = 322
-    $unselectedPackagesBox.location      = New-Object System.Drawing.Point(6,40)
-
-    $removePackageButton               = New-Object system.Windows.Forms.Button
-    $removePackageButton.text          = "<"
-    $removePackageButton.width         = 24
-    $removePackageButton.height        = 26
-    $removePackageButton.location      = New-Object System.Drawing.Point(258,170)
-    $removePackageButton.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $removePackageButton.Add_Click({Remove-SelectedPackages})
-
-    $removeAllPackageButton            = New-Object system.Windows.Forms.Button
-    $removeAllPackageButton.text       = "<<"
-    $removeAllPackageButton.width      = 24
-    $removeAllPackageButton.height     = 26
-    $removeAllPackageButton.location   = New-Object System.Drawing.Point(258,140)
-    $removeAllPackageButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',7,[System.Drawing.FontStyle]::Bold)
-    $removeAllPackageButton.Add_Click({Remove-AllPackages})
-
-    $addPackageButton                 = New-Object system.Windows.Forms.Button
-    $addPackageButton.text            = ">"
-    $addPackageButton.width           = 24
-    $addPackageButton.height          = 26
-    $addPackageButton.location        = New-Object System.Drawing.Point(258,206)
-    $addPackageButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $addPackageButton.Add_Click({Add-SelectedPackages})
-
-    $addAllPackageButton              = New-Object system.Windows.Forms.Button
-    $addAllPackageButton.text         = ">>"
-    $addAllPackageButton.width        = 24
-    $addAllPackageButton.height       = 26
-    $addAllPackageButton.location     = New-Object System.Drawing.Point(258,236)
-    $addAllPackageButton.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',7,[System.Drawing.FontStyle]::Bold)
-    $addAllPackageButton.Add_Click({Add-AllPackages})
-
-    $dontInstallLabel                = New-Object system.Windows.Forms.Label
-    $dontInstallLabel.text           = "Available to Install"
-    $dontInstallLabel.AutoSize       = $true
-    $dontInstallLabel.width          = 25
-    $dontInstallLabel.height         = 10
-    $dontInstallLabel.location       = New-Object System.Drawing.Point(7,20)
-    $dontInstallLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-    $numUnselectedLabel              = New-Object system.Windows.Forms.Label
-    $numUnselectedLabel.text         = "Total: ???"
-    $numUnselectedLabel.AutoSize     = $true
-    $numUnselectedLabel.width        = 25
-    $numUnselectedLabel.height       = 10
-    $numUnselectedLabel.location     = New-Object System.Drawing.Point(6,355)
-    $numUnselectedLabel.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
-
-    $numSelectedLabel                = New-Object system.Windows.Forms.Label
-    $numSelectedLabel.text           = "Total: ???"
-    $numSelectedLabel.AutoSize       = $true
-    $numSelectedLabel.width          = 25
-    $numSelectedLabel.height         = 10
-    $numSelectedLabel.location       = New-Object System.Drawing.Point(288,355)
-    $numSelectedLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
-
-    $doInstallLabel                  = New-Object system.Windows.Forms.Label
-    $doInstallLabel.text             = "To Install"
-    $doInstallLabel.AutoSize         = $true
-    $doInstallLabel.width            = 25
-    $doInstallLabel.height           = 10
-    $doInstallLabel.location         = New-Object System.Drawing.Point(289,20)
-    $doInstallLabel.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-    $resetButton                 = New-Object system.Windows.Forms.Button
-    $resetButton.text            = "Reset"
-    $resetButton.width           = 48
-    $resetButton.height          = 18
-    $resetButton.location        = New-Object System.Drawing.Point(485,358)
-    $resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
-    $resetButton.Add_Click({Set-InitialPackages})
+    
 
     $vmCommonDirText                 = New-Object system.Windows.Forms.TextBox
     $vmCommonDirText.multiline       = $false
@@ -799,68 +652,32 @@ if (-not $noGui.IsPresent) {
     $rawToolsDirNote.location        = New-Object System.Drawing.Point(190,137)
     $rawToolsDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-    $metapackageNote1                = New-Object system.Windows.Forms.Label
-    $metapackageNote1.text           = "Metapackages may install in a different location (package author`'s decision)"
-    $metapackageNote1.AutoSize       = $true
-    $metapackageNote1.width          = 25
-    $metapackageNote1.height         = 10
-    $metapackageNote1.location       = New-Object System.Drawing.Point(220,157)
-    $metapackageNote1.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-    $metapackageNote2                = New-Object system.Windows.Forms.Label
-    $metapackageNote2.text           = "Metapackages are wrappers around tools that install via dependencies"
-    $metapackageNote2.AutoSize       = $true
-    $metapackageNote2.width          = 25
-    $metapackageNote2.height         = 10
-    $metapackageNote2.location       = New-Object System.Drawing.Point(220,176)
-    $metapackageNote2.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-    $metapackageNote3                = New-Object system.Windows.Forms.Label
-    $metapackageNote3.text           = "Note:"
-    $metapackageNote3.AutoSize       = $true
-    $metapackageNote3.width          = 25
-    $metapackageNote3.height         = 10
-    $metapackageNote3.location       = New-Object System.Drawing.Point(182,157)
-    $metapackageNote3.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]::Bold)
 
     $okButton                        = New-Object system.Windows.Forms.Button
-    $okButton.text                   = "OK"
-    $okButton.width                  = 90
-    $okButton.height                 = 30
+    $okButton.text                   = "Continue"
+    $okButton.width                  = 97
+    $okButton.height                 = 37
     $okButton.location               = New-Object System.Drawing.Point(481,700)
-    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
 
-    $cancelButton                    = New-Object system.Windows.Forms.Button
-    $cancelButton.text               = "Cancel"
-    $cancelButton.width              = 90
-    $cancelButton.height             = 30
-    $cancelButton.location           = New-Object System.Drawing.Point(587,700)
-    $cancelButton.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
 
-    $form.controls.AddRange(@($envVarGroup,$packageGroup,$okButton,$cancelButton,$welcomeLabel))
-    $form.AcceptButton = $okButton
-    $form.CancelButton = $cancelButton
-    $packageGroup.controls.AddRange(@($unselectedPackagesBox,$selectedPackagesBox,$removePackageButton,$removeAllPackageButton,$addPackageButton,$addAllPackageButton,$dontInstallLabel,$doInstallLabel,$numSelectedLabel,$numUnselectedLabel,$resetButton))
-    $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote,$metapackageNote1,$metapackageNote2,$metapackageNote3))
 
-    Set-InitialPackages
 
-    $form.Topmost = $true
-    $Result = $form.ShowDialog()
+    $formEnv.controls.AddRange(@($envVarGroup,$okButton,$welcomeLabel))
+
+   
+    $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote))
+
+
+    $formEnv.Topmost = $true
+    $Result = $formEnv.ShowDialog()
 
     if ($Result -eq [System.Windows.Forms.DialogResult]::OK) {
-        Write-Host "[+] Installing selected packages..."
+        
 
         # Remove default environment variables
         $nodes = $configXml.SelectNodes('//config/envs/env')
-        foreach($node in $nodes) {
-            $node.ParentNode.RemoveChild($node) | Out-Null
-        }
-
-        # Remove default packages
-        $nodes = $configXml.SelectNodes('//config/packages/package')
         foreach($node in $nodes) {
             $node.ParentNode.RemoveChild($node) | Out-Null
         }
@@ -877,17 +694,100 @@ if (-not $noGui.IsPresent) {
         $newXmlNode.SetAttribute("name", "RAW_TOOLS_DIR")
         $newXmlNode.SetAttribute("value", $rawToolsDirText.text)
 
-        # Add selected packages
-        $packages = $configXml.SelectSingleNode('//packages')
-        foreach($package in $selectedPackagesBox.Items) {
-            $newXmlNode = $packages.AppendChild($configXml.CreateElement("package"))
-            $newXmlNode.SetAttribute("name", $package)
-        }
-    } else {
-        Write-Host "[+] Cancel pressed, stopping installation..."
-        Start-Sleep 3
-        exit 1
+
+        [void]$formEnv.Close()
+
+    } 
+
+    ################################################################################
+    ## PACKAGE SELECTION BY CATEGORY
+    ################################################################################
+
+
+    Add-Type -AssemblyName System.Windows.Forms
+    [System.Windows.Forms.Application]::EnableVisualStyles()
+
+    $FormCategories                            = New-Object system.Windows.Forms.Form
+    $FormCategories.ClientSize                 = New-Object System.Drawing.Point(815,850)
+    $FormCategories.text                       = "FLAREVM Package selection"
+    $FormCategories.StartPosition              = 'CenterScreen'
+    $FormCategories.TopMost                    = $true
+
+
+    $categories_label                = New-Object system.Windows.Forms.Label
+    $categories_label.text           = "Select packages grouped by category"
+    $categories_label.AutoSize       = $true
+    $categories_label.width          = 25
+    $categories_label.height         = 10
+    $categories_label.location       = New-Object System.Drawing.Point(40,20)
+    $categories_label.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+
+    $Panel_Categories                = New-Object system.Windows.Forms.Panel
+    $Panel_Categories.height         = 700
+    $Panel_Categories.width          = 770
+    $Panel_Categories.location       = New-Object System.Drawing.Point(40,30)
+    $Panel_Categories.BackColor      = [System.Drawing.ColorTranslator]::FromHtml("#fafafa")
+    $Panel_Categories.AutoScroll     = $true
+
+    # this doesn't work yet
+    $resetButton                 = New-Object system.Windows.Forms.Button
+    $resetButton.text            = "Reset"
+    $resetButton.width           = 48
+    $resetButton.height          = 18
+    $resetButton.location        = New-Object System.Drawing.Point(100,530)
+    $resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+    $resetButton.Add_Click({Set-InitialPackages})#it doesn't work
+
+    $ContinueButton            = New-Object system.Windows.Forms.Button
+    $ContinueButton.text       = "Continue"
+    $ContinueButton.width      = 97
+    $ContinueButton.height     = 37
+    $ContinueButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
+    $ContinueButton.location   = New-Object System.Drawing.Point(270,550)
+    $ContinueButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+    $ContinueButton.Add_Click({
+        [void]$FormCategories.Close()
+    })
+
+
+    # Create checkboxes for each category
+    $verticalPosition = 30  # Initial vertical position for checkboxes
+    $numCheckBoxPackages = 1
+    foreach ($category in $packagesByCategory.Keys |Sort-Object) {
+      
+        $label = New-Object System.Windows.Forms.Label
+        $label.Text = $category
+        $label.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+        $label.AutoSize = $true
+        $label.Location = New-Object System.Drawing.Point(20, $verticalPosition)
+        $Panel_Categories.Controls.Add($label)
+
+        $NumPackages = 0
+        $verticalPosition2 = $verticalPosition + 20
+        $lines = $packagesByCategory[$category] -split "`n"
+        foreach ($line in $lines) {
+            if ($line.Trim()) {
+                    $name, $description = $line -split '\|'
+                    $NumPackages++
+                    $checkBox = New-Object System.Windows.Forms.CheckBox
+                    $checkBox.Text = $line
+                    $checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+                    $checkBox.AutoSize = $true
+                    $checkBox.Location = New-Object System.Drawing.Point(40, $verticalPosition2)
+                    $checkBox.Name = "checkBox$numCheckBoxPackages"
+                    $Panel_Categories.Controls.Add($checkBox)
+                    $verticalPosition2 += 20
+                    $numCheckBoxPackages ++
+                    
+             }       
+         } 
+         $verticalPosition += 20 * ($NumPackages ) + 30  # Increment to space checkboxes vertically
+         $numCategories ++
     }
+
+$FormCategories.controls.AddRange(@($categories_label,$Panel_Categories,$ContinueButton,$resetButton))
+$FormCategories.Add_Shown({$FormCategories.Activate()})
+[void]$FormCategories.ShowDialog()    
 
     ################################################################################
     ## END GUI
@@ -989,3 +889,4 @@ if ($noPassword.IsPresent) {
 } else {
     Install-BoxstarterPackage -packageName $PackageName -credential $credentials
 }
+
