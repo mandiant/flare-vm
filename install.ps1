@@ -191,11 +191,12 @@ if (-not $noChecks.IsPresent) {
         Start-Sleep -Milliseconds 500
     }
 
+    # Check if Windows < 10
     $os = Get-CimInstance -Class Win32_OperatingSystem
-    # Check if Windows 7
-    Write-Host "[+] Checking to make sure Operating System is compatible..."
-    if ($os.Version -eq "6.1.7601") {
-        Write-Host "`t[!] Windows 7 is no longer supported / tested" -ForegroundColor Yellow
+    $osMajorVersion = $os.Version.Split('.')[0] # Version examples: "6.1.7601", "10.0.19045"
+    Write-Host "[+] Checking Operating System version compatibility..."
+    if ($osMajorVersion -lt 10) {
+        Write-Host "`t[!] Only Windows >= 10 is supported" -ForegroundColor Yellow
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
         $response = Read-Host
         if ($response -notin @("y","Y")) {
