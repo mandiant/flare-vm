@@ -139,7 +139,7 @@ function Get-ConfigFile {
         # If the source doesn't exist, assume it's a URL and download the file.
         Write-Host "[+] Downloading config file from '$fileSource'"
         try {
-            (New-Object System.Net.WebClient).DownloadFile($fileSource, $fileDestination)
+            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
         } catch {
             Write-Host "`t[!] Failed to download '$fileSource'"
             Write-Host "`t[!] $_"
@@ -191,10 +191,12 @@ if (-not $noChecks.IsPresent) {
         Start-Sleep -Milliseconds 500
     }
 
-    # Check if Windows 7
-    Write-Host "[+] Checking to make sure Operating System is compatible..."
-    if ((Get-WmiObject -class Win32_OperatingSystem).Version -eq "6.1.7601") {
-        Write-Host "`t[!] Windows 7 is no longer supported / tested" -ForegroundColor Yellow
+    # Check if Windows < 10
+    $os = Get-CimInstance -Class Win32_OperatingSystem
+    $osMajorVersion = $os.Version.Split('.')[0] # Version examples: "6.1.7601", "10.0.19045"
+    Write-Host "[+] Checking Operating System version compatibility..."
+    if ($osMajorVersion -lt 10) {
+        Write-Host "`t[!] Only Windows >= 10 is supported" -ForegroundColor Yellow
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
         $response = Read-Host
         if ($response -notin @("y","Y")) {
@@ -203,12 +205,11 @@ if (-not $noChecks.IsPresent) {
     }
 
     # Check if host has been tested
-    $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
     # 17763: the version used by windows-2019 in GH actions
     # 19045: https://www.microsoft.com/en-us/software-download/windows10ISO downloaded on April 25 2023.
     # 20348: the version used by windows-2022 in GH actions
     $testedVersions = @(17763, 19045, 20348)
-    if ($osVersion -notin $testedVersions) {
+    if ($os.BuildNumber -notin $testedVersions) {
         Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
         Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
         Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
@@ -222,7 +223,7 @@ if (-not $noChecks.IsPresent) {
 
     # Check if system is a virtual machine
     $virtualModels = @('VirtualBox', 'VMware', 'Virtual Machine', 'Hyper-V')
-    $computerSystemModel = (Get-WmiObject win32_computersystem).model
+    $computerSystemModel = (Get-CimInstance -Class Win32_ComputerSystem).Model
     $isVirtualModel = $false
 
     foreach ($model in $virtualModels) {
@@ -246,13 +247,13 @@ if (-not $noChecks.IsPresent) {
 
     # Check for spaces in the username, exit if identified
     Write-Host "[+] Checking for spaces in the username..."
-    if (${Env:userName} -match '\s') {
+    if (${Env:UserName} -match '\s') {
         Write-Host "`t[!] Username '${Env:UserName}' contains a space and will break installation." -ForegroundColor Red
         Write-Host "`t[!] Exiting..." -ForegroundColor Red
         Start-Sleep 3
         exit 1
     } else {
-        Write-Host "`t[+] Username '$extractedUsername' does not contain any spaces." -ForegroundColor Green
+        Write-Host "`t[+] Username '${Env:UserName}' does not contain any spaces." -ForegroundColor Green
     }
 
     # Check if host has enough disk space
@@ -332,9 +333,9 @@ if (-not $noChecks.IsPresent) {
     }
 
     Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
-    $UserNoPasswd = Get-CimInstance Win32_UserAccount -Filter "Name='$Env:UserName'"
+    $UserNoPasswd = Get-CimInstance Win32_UserAccount -Filter "Name='${Env:UserName}'"
     $UserNoPasswd | Set-CimInstance -Property @{ PasswordExpires = $false }
-    
+
     # Prompt user to remind them to take a snapshot
     Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
     $response = Read-Host
@@ -349,10 +350,10 @@ if (-not $noPassword.IsPresent) {
         Write-Host "[+] Getting user credentials ..."
         Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
         Start-Sleep -Milliseconds 500
-        $credentials = Get-Credential ${Env:username}
+        $credentials = Get-Credential ${Env:UserName}
     } else {
         $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
-        $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:username}, $securePassword
+        $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:UserName}, $securePassword
     }
 }
 
@@ -367,7 +368,7 @@ if (${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco
 if (-not $boxstarterVersionGood) {
     Write-Host "[+] Installing Boxstarter..." -ForegroundColor Cyan
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
+    (New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1') | Out-Null
     Get-Boxstarter -Force
 
     Start-Sleep -Milliseconds 500
@@ -959,13 +960,13 @@ if (-not $noWait.IsPresent) {
     Write-Host @"
 [!] INSTALL NOTES - PLEASE READ CAREFULLY [!]
 
-- This install is not 100% unattended. Please monitor the install for possible failures. If install 
+- This install is not 100% unattended. Please monitor the install for possible failures. If install
 fails, you may restart the install by re-running the install script with the following command:
 
     .\install.ps1 -password <password> -noWait -noGui -noChecks
 
-- You can check which packages failed to install by listing the C:\ProgramData\chocolatey\lib-bad 
-directory. Failed packages are stored by folder name. You may attempt manual installation with the 
+- You can check which packages failed to install by listing the C:\ProgramData\chocolatey\lib-bad
+directory. Failed packages are stored by folder name. You may attempt manual installation with the
 following command:
 
     choco install -y <package_name>
