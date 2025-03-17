@@ -461,46 +461,12 @@ if (-not $noGui.IsPresent) {
     ################################################################################
     Add-Type -AssemblyName System.Windows.Forms
 
-    function Get-Packages-Categories {
-      $categoriesFile = "${Env:VM_COMMON_DIR}\categories.txt"
-      $categoriesUrl = "https://raw.githubusercontent.com/mandiant/VM-Packages/refs/heads/main/categories.txt"
-      (New-Object net.webclient).DownloadFile($categoriesUrl, $backgroundImage)
-
-       Get-Content -Path $categoriesFile | ForEach-Object {
-         $currentCategory = $_
-         $packages = Find-Package -Source https://www.myget.org/F/vm-packages/ -FilterOnTag $currentCategory
-         $packagesByCategory[$currentCategory] = ""
-         Foreach ($package in $packages) {
-                $packageName = $package.Name
-                $description = $package.Summary
-                $packagesByCategory[$currentCategory] += $packageName +  "|" + $description + "`n"
-                #Write-Host "[+] Added the " $packageName " to the category " $currentCategory " with description " $description
-         }
-       }
-       return $packagesByCategory
-
-    }
 
     function Get-Folder($textBox, $envVar) {
         $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
         $folderBrowserDialog.RootFolder = 'MyComputer'
         if ($folderBrowserDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs[$envVar] -Leaf))
-        }
-    }
-
-    function Get-InstallablePackages {
-        $availablePackagesPath = "$desktopPath\available_packages.txt"
-        if (-not (Test-Path $availablePackagesPath)) {
-            Write-Host "[+] Downloading list of available packages, may take a bit. Please be patient..."
-            choco search -s "https://www.myget.org/F/vm-packages/api/v2" -r | Out-File $availablePackagesPath
-        }
-        (Get-Content $availablePackagesPath) | ForEach-Object {
-            $Name, $Version = $_ -split '\|'
-            New-Object -TypeName psobject -Property @{
-                'Name' = $Name
-                'Version' = $Version
-            }
         }
     }
 
@@ -513,24 +479,65 @@ if (-not $noGui.IsPresent) {
             }
         }
     }
-    
-    # Gather lists of packages (i.e., available, already installed, to install)
-    $excludedPackages = @("flarevm.installer.vm", "common.vm")
-    $installedPackages = (Get-InstalledPackages).Name
-    $packagesToInstall = $configXml.config.packages.package.name | Where-Object { $installedPackages -notcontains $_ }
-    #$allPackages = (Get-InstallablePackages).Name | Where-Object { $packagesToInstall -notcontains $_ -and $installedPackages -notcontains $_ -and $excludedPackages -notcontains $_}
+
+    function Get-Packages-Categories {
+     $vmPackagesUrl = "https://www.myget.org/F/vm-packages/api/v2/Packages?$filter=IsLatestVersion%20eq%20true"
+     $vmPackagesFile = "${Env:VM_COMMON_DIR}\vm-packages.xml"
+     $packagesByCategory=@{}
+     do {
+        # Download the XML from MyGet API
+        try {
+            Invoke-WebRequest -Uri $vmPackagesUrl -OutFile $vmPackagesFile -ErrorAction Stop
+        }
+        catch {
+            Write-Error "`t[!] Failed to get vm-packages from '$vmPackagesUrl. Error: $_"
+            exit
+        }
+        # Load the XML content
+        [xml]$vm_packages = Get-Content $vmPackagesFile
+
+        # Define the namespace
+        $ns = New-Object System.Xml.XmlNamespaceManager($vm_packages.NameTable)
+        $ns.AddNamespace("atom", "http://www.w3.org/2005/Atom")
+        $ns.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices")
+        $ns.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata")
+
+        # Extract package information from the XML
+        $vm_packages.SelectNodes("//atom:entry", $ns) | ForEach-Object {
+            $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
+            if ($isLatestVersion -eq "true") {
+                $packageName = $_.SelectSingleNode("m:properties/d:Id", $ns).InnerText
+                  $description = $_.SelectSingleNode("m:properties/d:Description", $ns).InnerText
+                  $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
+                  if ($category -ne ""){
+                    if (-not ($packagesByCategory.ContainsKey($category))) {
+                     $packagesByCategory[$category] = ""
+                    }
+                    $packagesByCategory[$category] += $packageName +  ":" + $description + "`n"
+                  }
+             }
+        }
+        # Check if there is a next link in the XML and set the API URL to that link if it exists
+        $nextLink = $vm_packages.SelectSingleNode("//atom:link[@rel='next']/@href", $ns)
+        $vmPackagesUrl = $nextLink."#text"
+
+      } while ($nul -ne $vmPackagesUrl)
+
+  return $packagesByCategory
+
+ }
+
+    # Gather lists of packages
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
-
-    
-    #needed to use Find-Package
-    install-packageprovider nuget -force
     $packagesByCategory = @{}
-    Write-Host "[+ ]Getting categories and listing packages per category"
+    Write-Host "[+]Getting categories and listing packages per category"
     $packagesByCategory = Get-Packages-Categories
 
+
+
     $formEnv                   = New-Object system.Windows.Forms.Form
-    $formEnv.ClientSize        = New-Object System.Drawing.Point(820,523)
+    $formEnv.ClientSize        = New-Object System.Drawing.Point(750,573)
     $formEnv.text              = "FLARE VM Install Customization"
     $formEnv.TopMost           = $true
     $formEnv.MaximizeBox       = $false
@@ -551,7 +558,7 @@ if (-not $noGui.IsPresent) {
     $welcomeLabel.location  = New-Object System.Drawing.Point(15,14)
     $welcomeLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-    
+
 
     $vmCommonDirText                 = New-Object system.Windows.Forms.TextBox
     $vmCommonDirText.multiline       = $false
@@ -652,29 +659,35 @@ if (-not $noGui.IsPresent) {
     $rawToolsDirNote.location        = New-Object System.Drawing.Point(190,137)
     $rawToolsDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-
     $okButton                        = New-Object system.Windows.Forms.Button
     $okButton.text                   = "Continue"
     $okButton.width                  = 97
     $okButton.height                 = 37
-    $okButton.location               = New-Object System.Drawing.Point(481,700)
-    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+    $okButton.location               = New-Object System.Drawing.Point(481,470)
+    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',11)
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
 
+    $cancelButton                    = New-Object system.Windows.Forms.Button
+    $cancelButton.text               = "Cancel"
+    $cancelButton.width              = 97
+    $cancelButton.height             = 37
+    $cancelButton.location           = New-Object System.Drawing.Point(587,470)
+    $cancelButton.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',11)
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
 
 
+    $formEnv.controls.AddRange(@($envVarGroup,$okButton,$cancelButton,$welcomeLabel))
+    $formEnv.AcceptButton = $okButton
+    $formEnv.CancelButton = $cancelButton
 
-    $formEnv.controls.AddRange(@($envVarGroup,$okButton,$welcomeLabel))
-
-   
-    $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote))
+    $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,   $toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote))
 
 
     $formEnv.Topmost = $true
     $Result = $formEnv.ShowDialog()
 
     if ($Result -eq [System.Windows.Forms.DialogResult]::OK) {
-        
+
 
         # Remove default environment variables
         $nodes = $configXml.SelectNodes('//config/envs/env')
@@ -697,12 +710,78 @@ if (-not $noGui.IsPresent) {
 
         [void]$formEnv.Close()
 
-    } 
+    } else {
+        Write-Host "[+] Cancel pressed, stopping installation..."
+        Start-Sleep 3
+        exit 1
+    }
 
     ################################################################################
     ## PACKAGE SELECTION BY CATEGORY
     ################################################################################
 
+    function Install-Selected-Packages
+    {
+      $selectedPackages  = @()
+      foreach ($checkBox in $checkboxesPackages){
+        if ($checkBox.Checked){
+            $package =$checkbox.Text.split(" :")[0]
+            Write-Host ("{0} has been selected" -f $package)
+            $selectedPackages+=$package
+        }
+      }
+      # Add selected packages
+      $packages = $configXml.SelectSingleNode('//packages')
+      foreach($package in $selectedPackages) {
+           Write-Host ($package)
+           $newXmlNode = $packages.AppendChild($configXml.CreateElement("package"))
+           $newXmlNode.SetAttribute("name", $package)
+       }
+    }
+
+    function Set-InitialPackages {
+        foreach ($checkBox in $checkboxesPackages){
+            $package =$checkbox.Text.split(" :")[0]
+            if (($checkbox.Checked) -and ($package -notin $packagesToInstall)){
+                $checkBox.Checked = $false
+            }else{
+              if ((-not $checkbox.Checked ) -and ($package -in $packagesToInstall)){
+                 $checkBox.Checked = $true
+              }
+            }
+
+        }
+    }
+
+    function Select-AllPackages {
+        foreach ($checkBox in $checkboxesPackages){
+            $checkBox.Checked = $true
+        }
+    }
+
+    function Clear-AllPackages {
+	foreach ($checkBox in $checkboxesPackages){
+            $checkBox.Checked = $false
+        }
+    }
+
+    function Get-PackagesByCategory{
+        param (
+         [string]$category
+        )
+        $packages = @()
+        $lines = $packagesByCategory[$category] -split "`n"
+        foreach ($line in $lines) {
+            if ($line.Trim()){
+               $package, $description = $line -split '\|'
+			   $packages += [PSCustomObject]@{
+                        PackageName   = $package
+                        PackageDescription = $description
+                    }
+            }
+        }
+        return $packages
+    }
 
     Add-Type -AssemblyName System.Windows.Forms
     [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -719,75 +798,108 @@ if (-not $noGui.IsPresent) {
     $categories_label.AutoSize       = $true
     $categories_label.width          = 25
     $categories_label.height         = 10
-    $categories_label.location       = New-Object System.Drawing.Point(40,20)
+    $categories_label.location       = New-Object System.Drawing.Point(30,20)
     $categories_label.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $Panel_Categories                = New-Object system.Windows.Forms.Panel
     $Panel_Categories.height         = 700
     $Panel_Categories.width          = 770
-    $Panel_Categories.location       = New-Object System.Drawing.Point(40,30)
-    $Panel_Categories.BackColor      = [System.Drawing.ColorTranslator]::FromHtml("#fafafa")
+    $Panel_Categories.location       = New-Object System.Drawing.Point(30,30)
     $Panel_Categories.AutoScroll     = $true
 
     # this doesn't work yet
     $resetButton                 = New-Object system.Windows.Forms.Button
     $resetButton.text            = "Reset"
-    $resetButton.width           = 48
-    $resetButton.height          = 18
-    $resetButton.location        = New-Object System.Drawing.Point(100,530)
-    $resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+    $resetButton.AutoSize        = $true
+    $resetButton.location        = New-Object System.Drawing.Point(50,750)
+    $resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $resetButton.Add_Click({Set-InitialPackages})#it doesn't work
+
+    $allPackagesButton                 = New-Object system.Windows.Forms.Button
+    $allPackagesButton.text            = "Select All"
+    $allPackagesButton.AutoSize        = $true
+    $allPackagesButton.location        = New-Object System.Drawing.Point(130,750)
+    $allPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $allPackagesButton.Add_Click({Select-AllPackages})
+
+    $clearPackagesButton			   = New-Object system.Windows.Forms.Button
+    $clearPackagesButton.text            = "Select All"
+    $clearPackagesButton.AutoSize        = $true
+    $clearPackagesButton.location        = New-Object System.Drawing.Point(210,750)
+    $clearPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $clearPackagesButton.Add_Click({Clear-AllPackages})
 
     $ContinueButton            = New-Object system.Windows.Forms.Button
     $ContinueButton.text       = "Continue"
     $ContinueButton.width      = 97
     $ContinueButton.height     = 37
     $ContinueButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
-    $ContinueButton.location   = New-Object System.Drawing.Point(270,550)
+    $ContinueButton.location   = New-Object System.Drawing.Point(500,750)
     $ContinueButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
-    $ContinueButton.Add_Click({
-        [void]$FormCategories.Close()
-    })
+
+    $cancelButton            = New-Object system.Windows.Forms.Button
+    $cancelButton.text       = "Cancel"
+    $cancelButton.width      = 97
+    $cancelButton.height     = 37
+    $cancelButton.location   = New-Object System.Drawing.Point(600,750)
+    $cancelButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
 
 
-    # Create checkboxes for each category
+    $FormCategories.AcceptButton = $ContinueButton
+    $FormCategories.CancelButton = $cancelButton
+
+    # Read packages to install from the config
+    $packagesToInstall = $configXml.config.packages.package.name
+
+    # Create checkboxes for each packages
+    $checkboxesPackages = New-Object System.Collections.Generic.List[System.Object]
     $verticalPosition = 30  # Initial vertical position for checkboxes
     $numCheckBoxPackages = 1
+    $packages = @()
     foreach ($category in $packagesByCategory.Keys |Sort-Object) {
-      
-        $label = New-Object System.Windows.Forms.Label
-        $label.Text = $category
-        $label.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-        $label.AutoSize = $true
-        $label.Location = New-Object System.Drawing.Point(20, $verticalPosition)
-        $Panel_Categories.Controls.Add($label)
+        #labels for categories
+        $labelCategory = New-Object System.Windows.Forms.Label
+        $labelCategory.Text = $category
+        $labelCategory.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+        $labelCategory.AutoSize = $true
+        $labelCategory.Location = New-Object System.Drawing.Point(20, $verticalPosition)
+        $Panel_Categories.Controls.Add($labelCategory)
 
         $NumPackages = 0
         $verticalPosition2 = $verticalPosition + 20
-        $lines = $packagesByCategory[$category] -split "`n"
-        foreach ($line in $lines) {
-            if ($line.Trim()) {
-                    $name, $description = $line -split '\|'
-                    $NumPackages++
-                    $checkBox = New-Object System.Windows.Forms.CheckBox
-                    $checkBox.Text = $line
-                    $checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
-                    $checkBox.AutoSize = $true
-                    $checkBox.Location = New-Object System.Drawing.Point(40, $verticalPosition2)
-                    $checkBox.Name = "checkBox$numCheckBoxPackages"
-                    $Panel_Categories.Controls.Add($checkBox)
-                    $verticalPosition2 += 20
-                    $numCheckBoxPackages ++
-                    
-             }       
-         } 
-         $verticalPosition += 20 * ($NumPackages ) + 30  # Increment to space checkboxes vertically
-         $numCategories ++
-    }
+		$packages= Get-PackagesByCategory -category $category
+		foreach ($package in $packages)
+		{
+			$NumPackages++
+			$checkBox = New-Object System.Windows.Forms.CheckBox
+			$checkBox.Text = $package.PackageName + " : " + $package.PackageDescription
+			$checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+			$checkBox.AutoSize = $true
+			$checkBox.Location = New-Object System.Drawing.Point(40, $verticalPosition2)
+			if ($package.PackageName -in $packagesToInstall){
+			   $checkBox.Checked = $true
+			}
+			$checkBox.Name = "checkBox$numCheckBoxPackages"
+			$checkboxesPackages.Add($checkBox)
+			$Panel_Categories.Controls.Add($checkBox)
+			$verticalPosition2 += 20
+			$numCheckBoxPackages ++
+		}
+		$verticalPosition += 20 * ($NumPackages ) + 30  # Increment to space checkboxes vertically
+		$numCategories ++
+	}
 
-$FormCategories.controls.AddRange(@($categories_label,$Panel_Categories,$ContinueButton,$resetButton))
-$FormCategories.Add_Shown({$FormCategories.Activate()})
-[void]$FormCategories.ShowDialog()    
+	$FormCategories.controls.AddRange(@($categories_label,$Panel_Categories,$ContinueButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton))
+	$FormCategories.Add_Shown({$FormCategories.Activate()})
+	$resultCategories = $FormCategories.ShowDialog()
+	if ($resultCategories -eq [System.Windows.Forms.DialogResult]::OK){
+		Install-Selected-Packages
+	} else {
+		Write-Host "[+] Cancel pressed, stopping installation..."
+		Start-Sleep 3
+		exit 1
+	}
 
     ################################################################################
     ## END GUI
