@@ -139,7 +139,7 @@ function Get-ConfigFile {
         # If the source doesn't exist, assume it's a URL and download the file.
         Write-Host "[+] Downloading config file from '$fileSource'"
         try {
-            Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
+            (New-Object System.Net.WebClient).DownloadFile($fileSource, $fileDestination)
         } catch {
             Write-Host "`t[!] Failed to download '$fileSource'"
             Write-Host "`t[!] $_"
@@ -368,7 +368,7 @@ if (${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco
 if (-not $boxstarterVersionGood) {
     Write-Host "[+] Installing Boxstarter..." -ForegroundColor Cyan
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    (New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1') | Out-Null
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
     Get-Boxstarter -Force
 
     Start-Sleep -Milliseconds 500
