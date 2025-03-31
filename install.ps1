@@ -481,7 +481,8 @@ if (-not $noGui.IsPresent) {
     }
 
     function Get-Packages-Categories {
-     $vmPackagesUrl = "https://www.myget.org/F/vm-packages/api/v2/Packages?$filter=IsLatestVersion%20eq%20true"
+     # MyGet API
+     $vmPackagesUrl = "https://www.myget.org/F/vm-packages/api/v2/Packages"
      $vmPackagesFile = "${Env:VM_COMMON_DIR}\vm-packages.xml"
      $packagesByCategory=@{}
      do {
@@ -504,18 +505,26 @@ if (-not $noGui.IsPresent) {
 
         # Extract package information from the XML
         $vm_packages.SelectNodes("//atom:entry", $ns) | ForEach-Object {
-            $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
-            if ($isLatestVersion -eq "true") {
-                $packageName = $_.SelectSingleNode("m:properties/d:Id", $ns).InnerText
+             $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
+             $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
+
+             #we select only packages that have the latest version and contain a category
+             if ($isLatestVersion -eq "true" -and $category) {
+                  $packageName = $_.SelectSingleNode("m:properties/d:Id", $ns).InnerText
                   $description = $_.SelectSingleNode("m:properties/d:Description", $ns).InnerText
-                  $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
-                  if ($category -ne ""){
-                    if (-not ($packagesByCategory.ContainsKey($category))) {
-                     $packagesByCategory[$category] = ""
-                    }
-                    $packagesByCategory[$category] += $packageName +  ":" + $description + "`n"
+
+                  if (-not ($packagesByCategory.ContainsKey($category))) {
+                     # Initialize as an empty array
+                     $packagesByCategory[$category] = @()
                   }
-             }
+                  # category should not be empty, this condition should be removed after all the old packages in nuget are removed
+                  if ($category -ne ""){
+                    $packagesByCategory[$category] += [PSCustomObject]@{
+                      PackageName = $packageName
+                      PackageDescription = $description
+                      }
+                  }
+              }
         }
         # Check if there is a next link in the XML and set the API URL to that link if it exists
         $nextLink = $vm_packages.SelectSingleNode("//atom:link[@rel='next']/@href", $ns)
@@ -769,17 +778,7 @@ if (-not $noGui.IsPresent) {
         param (
          [string]$category
         )
-        $packages = @()
-        $lines = $packagesByCategory[$category] -split "`n"
-        foreach ($line in $lines) {
-            if ($line.Trim()){
-               $package, $description = $line -split '\|'
-			   $packages += [PSCustomObject]@{
-                        PackageName   = $package
-                        PackageDescription = $description
-                    }
-            }
-        }
+        $packages = $packagesByCategory[$category]
         return $packages
     }
 
@@ -822,8 +821,8 @@ if (-not $noGui.IsPresent) {
     $allPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $allPackagesButton.Add_Click({Select-AllPackages})
 
-    $clearPackagesButton			   = New-Object system.Windows.Forms.Button
-    $clearPackagesButton.text            = "Select All"
+    $clearPackagesButton	         = New-Object system.Windows.Forms.Button
+    $clearPackagesButton.text            = "Deselect All"
     $clearPackagesButton.AutoSize        = $true
     $clearPackagesButton.location        = New-Object System.Drawing.Point(210,750)
     $clearPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
@@ -877,9 +876,6 @@ if (-not $noGui.IsPresent) {
 			$checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
 			$checkBox.AutoSize = $true
 			$checkBox.Location = New-Object System.Drawing.Point(40, $verticalPosition2)
-			if ($package.PackageName -in $packagesToInstall){
-			   $checkBox.Checked = $true
-			}
 			$checkBox.Name = "checkBox$numCheckBoxPackages"
 			$checkboxesPackages.Add($checkBox)
 			$Panel_Categories.Controls.Add($checkBox)
@@ -889,6 +885,10 @@ if (-not $noGui.IsPresent) {
 		$verticalPosition += 20 * ($NumPackages ) + 30  # Increment to space checkboxes vertically
 		$numCategories ++
 	}
+
+    #select packages that are in the config.xml
+    Set-InitialPackages
+
 
 	$FormCategories.controls.AddRange(@($categories_label,$Panel_Categories,$ContinueButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton))
 	$FormCategories.Add_Shown({$FormCategories.Activate()})
