@@ -46,24 +46,29 @@ EPILOG = textwrap.dedent(
 )
 
 
-def get_vm_uuids(dynamic_only):
-    """Gets the machine UUID(s) for a given VM name using 'VBoxManage list vms'."""
-    vm_uuids = []
-    try:
-        # regex VM name and extract the GUID
-        # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
-        vms_info = run_vboxmanage(["list", "vms"])
-        pattern = r'"(.*?)" \{(.*?)\}'
-        matches = re.findall(pattern, vms_info)
-        for match in matches:
-            vm_name = match[0]
-            vm_uuid = match[1]
-            # either get all vms if dynamic_only false, or just the dynamic vms if true
-            if (not dynamic_only) or DYNAMIC_VM_NAME in vm_name:
-                vm_uuids.append((vm_name, vm_uuid))
-    except Exception as e:
-        raise Exception("Error finding machines UUIDs") from e
-    return vm_uuids
+def get_vms(dynamic_only):
+    """Get the names and UUID of the VirtualBox VMs using 'VBoxManage list vms'.
+
+    Args:
+        dynamic_only: If true, only the VMs containing DYNAMIC_VM_NAME in the name are returned.
+
+    Returns:
+        A list of tuples, where each tuple contains the VM name (str) and VM UUID (str).
+        Returns an empty list if no VMs are found.
+    """
+    vms_list = []
+    # regex VM name and extract the GUID
+    # Example of `VBoxManage list vms` output:
+    # "FLARE-VM.testing" {b76d628b-737f-40a3-9a16-c5f66ad2cfcc}
+    # "FLARE-VM" {a23c0c37-2062-4cf0-882b-9e9747dd33b6}
+    vms_info = run_vboxmanage(["list", "vms"])
+
+    vms = re.findall(r'"(.*?)" (\{.*?\})', vms_info)
+    for vm_name, vm_uuid in vms:
+        # Get only the VMs containing DYNAMIC_VM_NAME in the name if dynamic_only is true
+        if not (dynamic_only and (DYNAMIC_VM_NAME in vm_name)):
+            vms_list.append((vm_name, vm_uuid))
+    return vms_list
 
 
 def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
@@ -171,9 +176,9 @@ def main(argv=None):
 
     try:
         hostonly_ifname = ensure_hostonlyif_exists()
-        vm_uuids = get_vm_uuids(args.dynamic_only)
-        if len(vm_uuids) > 0:
-            for vm_name, vm_uuid in vm_uuids:
+        vms = get_vms(args.dynamic_only)
+        if len(vms) > 0:
+            for vm_name, vm_uuid in vms:
                 change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
         else:
             print("[Warning ⚠️] No VMs found")
