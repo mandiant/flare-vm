@@ -100,13 +100,21 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
         )
 
 
-def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
-    """Verify all adapters are in an allowed configuration. Must be poweredoff"""
-    try:
-        # gather adapters in incorrect configurations
-        nics_with_internet = []
-        invalid_nics_msg = ""
+def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
+    """Verify and optionally correct network adapter configurations for a given VM.
 
+    Check the network adapter types of a given VM against a list of allowed types (`ALLOWED_ADAPTER_TYPES`).
+    If not allowed adapter types are found, print a warning and, if `do_not_modify` is False, disable the adapters and sends a desktop notification.
+
+    Args:
+        vm_uuid: The unique identifier (UUID) of the VM.
+        vm_name: The name of the VM.
+        hostonly_ifname: The name of the host-only network interface. This is passed for potential use in
+                         disabling adapters (though not directly used in the verification logic).
+        do_not_modify: A boolean flag. If True, invalid adapters will only be reported, and no automatic modification will be attempted.
+    """
+    try:
+        # Example of `VBoxManage showvm_info <VM_UUID> --machinereadable` relevant output:
         # nic1="hostonly"
         # nictype1="82540EM"
         # nicspeed1="0"
@@ -117,50 +125,50 @@ def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_no
         # nic6="none"
         # nic7="none"
         # nic8="none"
+        vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
 
-        vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-        for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vminfo, flags=re.M):
+        # Gather adapters in incorrect configurations
+        invalid_nics = []
+        invalid_nics_msg = ""
+        for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vm_info, flags=re.M):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
-                nics_with_internet.append(nic_number)
+                invalid_nics.append(nic_number)
                 invalid_nics_msg += f"{nic_number} "
 
-        # modify the invalid adapters if allowed
-        if nics_with_internet:
-            for nic in nics_with_internet:
-                if do_not_modify:
-                    message = f"{vm_name} may be connected to the internet on adapter(s): {nic}. Please double check your VMs settings."
-                else:
-                    message = (
-                        f"{vm_name} may be connected to the internet on adapter(s): {nic}."
-                        "The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity."
-                        "Please double check your VMs settings."
-                    )
-                    disable_adapter(vm_uuid, nic, hostonly_ifname)
-                    print(f"Set VM {vm_name} adaper {nic} to hostonly")
-
-            if do_not_modify:
-                message = f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}. Please double check your VMs settings."
-            else:
-                message = (
-                    f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
-                    "The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity."
-                    "Please double check your VMs settings."
-                )
-
-            # Show notification using PyGObject
-            Notify.init("VirtualBox adapter check")
-            notification = Notify.Notification.new(f"INTERNET IN VM: {vm_name}", message, "dialog-error")
-            # Set highest priority
-            notification.set_urgency(2)
-            notification.show()
-            print(f"{vm_name} network configuration not ok, sent notifaction")
+        if not invalid_nics:
+            print(f"VM {vm_uuid} ✅ {vm_name} network configuration is ok")
             return
+
+        print(f"VM {vm_uuid} ⚠️  {vm_name} is connected to the internet on adapter(s): {invalid_nics_msg}")
+
+        if do_not_modify:
+            message = (
+                f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
+                "Please double check your VMs settings."
+            )
         else:
-            print(f"{vm_name} network configuration is ok")
-            return
+            message = (
+                f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
+                "The network adapter(s) may have been disabled automatically to prevent an undesired internet connectivity."
+                "Please double check your VMs settings."
+            )
+            # Disable invalid nics
+            for nic in invalid_nics:
+                try:
+                    disable_adapter(vm_uuid, nic, hostonly_ifname)
+                    print(f"VM {vm_uuid} ⚙️  {vm_name} set adapter {nic} to {DISABLED_ADAPTER_TYPE}")
+                except Exception as e:
+                    print(f"VM {vm_uuid} ❌ {vm_name} unable to disable adapter {nic}: {e}")
+
+        # Show notification using PyGObject
+        Notify.init("VirtualBox adapter check")
+        notification = Notify.Notification.new(f"⚠️  INTERNET IN VM: {vm_name}", message, "dialog-error")
+        # Set highest priority
+        notification.set_urgency(2)
+        notification.show()
 
     except Exception as e:
-        raise Exception("Failed to verify VM adapter configuration") from e
+        print(f"VM {vm_uuid} {vm_name} ❌ Unable to verify network adapters: {e}")
 
 
 def main(argv=None):
@@ -189,7 +197,7 @@ def main(argv=None):
         vms = get_vms(args.dynamic_only)
         if len(vms) > 0:
             for vm_name, vm_uuid in vms:
-                change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
+                verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
         else:
             print("[Warning ⚠️] No VMs found")
     except Exception as e:
