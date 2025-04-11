@@ -71,6 +71,35 @@ def get_vms(dynamic_only):
     return vms_list
 
 
+def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
+    """Disable the network adapter of the VM by setting it to DISABLED_ADAPTER_TYPE
+
+    Args:
+        vm_uuid: VM UUID
+        nic_number: nic to disable
+    """
+    # We need to run a different command if the machine is running.
+    if get_vm_state(vm_uuid) == "poweroff":
+        run_vboxmanage(
+            [
+                "modifyvm",
+                vm_uuid,
+                f"--nic{nic_number}",
+                DISABLED_ADAPTER_TYPE,
+            ]
+        )
+    else:
+        run_vboxmanage(
+            [
+                "controlvm",
+                vm_uuid,
+                f"nic{nic_number}",
+                DISABLED_ADAPTER_TYPE,
+                hostonly_ifname,
+            ]
+        )
+
+
 def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
     """Verify all adapters are in an allowed configuration. Must be poweredoff"""
     try:
@@ -92,7 +121,7 @@ def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_no
         vminfo = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
         for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vminfo, flags=re.M):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
-                nics_with_internet.append(f"nic{nic_number}")
+                nics_with_internet.append(nic_number)
                 invalid_nics_msg += f"{nic_number} "
 
         # modify the invalid adapters if allowed
@@ -106,26 +135,7 @@ def change_network_adapters_to_hostonly(vm_uuid, vm_name, hostonly_ifname, do_no
                         "The network adapter(s) have been disabled automatically to prevent an undesired internet connectivity."
                         "Please double check your VMs settings."
                     )
-                    # different commands are necessary if the machine is running.
-                    if get_vm_state(vm_uuid) == "poweroff":
-                        run_vboxmanage(
-                            [
-                                "modifyvm",
-                                vm_uuid,
-                                f"--{nic}",
-                                DISABLED_ADAPTER_TYPE,
-                            ]
-                        )
-                    else:
-                        run_vboxmanage(
-                            [
-                                "controlvm",
-                                vm_uuid,
-                                nic,
-                                "hostonly",
-                                hostonly_ifname,
-                            ]
-                        )
+                    disable_adapter(vm_uuid, nic, hostonly_ifname)
                     print(f"Set VM {vm_name} adaper {nic} to hostonly")
 
             if do_not_modify:
