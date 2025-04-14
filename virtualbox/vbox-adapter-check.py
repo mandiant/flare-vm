@@ -80,12 +80,51 @@ def get_vms(dynamic_only):
     return vms_list
 
 
+def get_nics(vm_uuid, only_nic=None):
+    """
+    Retrieves the configured network interfaces and their types for a given virtual machine.
+
+    Args:
+        vm_uuid: The unique identifier (UUID) of the virtual machine.
+        only_nic: An optional string specifying a specific NIC number to retrieve
+                  (e.g., "1" for nic1). If None, information for all configured NICs
+                  will be returned.
+
+    Returns:
+        A list of tuples, where each tuple contains:
+        - The NIC number as a string (e.g., "1", "2")
+        - The NIC value (e.g., "hostonly", "nat")
+    """
+
+    # Example of `VBoxManage showvm_info <VM_UUID> --machinereadable` relevant output:
+    # nic1="hostonly"
+    # nictype1="82540EM"
+    # nicspeed1="0"
+    # nic2="none"
+    # nic3="none"
+    # nic4="none"
+    # nic5="none"
+    # nic6="none"
+    # nic7="none"
+    # nic8="none"
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
+
+    # If no nic provided, get all possible numbers using RegExp
+    only_nic = r"\d+"
+
+    # Get adapters numbers and their values as a list: [(nic_number, nic_value)]
+    return re.findall(rf'^nic({only_nic})="(\S+)"', vm_info, flags=re.M)
+
+
 def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
     """Disable the network adapter of the VM by setting it to DISABLED_ADAPTER_TYPE
 
     Args:
         vm_uuid: VM UUID
         nic_number: nic to disable
+
+    Raises:
+        RuntimeError: If the nic type is not changed to DISABLED_ADAPTER_TYPE
     """
     # We need to run a different command if the machine is running.
     if get_vm_state(vm_uuid) == "poweroff":
@@ -108,6 +147,11 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
             ]
         )
 
+    # Verify nic has been modify as the command may return code 0 even if it fails to set the adapter
+    _, nic_value = get_nics(vm_uuid, nic_number)[0]
+    if nic_value != DISABLED_ADAPTER_TYPE:
+        raise RuntimeError(f"nic{nic_number} has type '{nic_value}'")
+
 
 def list_to_str(string_list):
     """Joins a list of strings with ", "."""
@@ -128,22 +172,8 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify
         modify_and_notify: A boolean flag. If False, invalid adapters will only be reported, without automatic modification and notification.
     """
     try:
-        # Example of `VBoxManage showvm_info <VM_UUID> --machinereadable` relevant output:
-        # nic1="hostonly"
-        # nictype1="82540EM"
-        # nicspeed1="0"
-        # nic2="none"
-        # nic3="none"
-        # nic4="none"
-        # nic5="none"
-        # nic6="none"
-        # nic7="none"
-        # nic8="none"
-        vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-
-        # Gather adapters in incorrect configurations
         invalid_nics = []
-        for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vm_info, flags=re.M):
+        for nic_number, nic_value in get_nics(vm_uuid):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
                 invalid_nics.append(nic_number)
 
