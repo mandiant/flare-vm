@@ -192,16 +192,13 @@ def main(argv=None):
     )
     args = parser.parse_args(args=argv)
 
-    try:
-        hostonly_ifname = ensure_hostonlyif_exists()
-        vms = get_vms(args.dynamic_only)
-        if len(vms) > 0:
-            for vm_name, vm_uuid in vms:
-                verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
-        else:
-            print("[Warning ⚠️] No VMs found")
-    except Exception as e:
-        print(f"Error verifying dynamic VM hostonly configuration: {e}")
+    hostonly_ifname = ensure_hostonlyif_exists()
+    vms = get_vms(args.dynamic_only)
+    if len(vms) > 0:
+        for vm_name, vm_uuid in vms:
+            verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
+    else:
+        print("⚠️  No VMs found!")
 
 
 if __name__ == "__main__":
