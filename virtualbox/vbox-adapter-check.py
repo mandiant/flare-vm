@@ -30,18 +30,27 @@ DISABLED_ADAPTER_TYPE = "hostonly"
 ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
 
 DESCRIPTION = f"""Print the status of all internet adapters of all VMs in VirtualBox.
-Notify if any VM with {DYNAMIC_VM_NAME} in the name has an adapter whose type is not allowed.
-This is useful to detect internet access which is undesirable for dynamic malware analysis.
-Optionally change the type of the adapters with non-allowed type to Host-Only."""
+Optionally, if any VM with {DYNAMIC_VM_NAME} in the name has an adapter whose type is not allowed,
+send a notification and change the type of the adapters with non-allowed type to {DISABLED_ADAPTER_TYPE}.
+This is useful to detect internet access which is undesirable for dynamic malware analysis."""
+
 
 EPILOG = textwrap.dedent(
     f"""
     Example usage:
-      # Print status of all interfaces and disable internet access in VMs whose name contain {DYNAMIC_VM_NAME}
+      # Print status of all interfaces. For the VMs whose name contain {DYNAMIC_VM_NAME},
+      # show a notification and disable internet if enabled.
       vbox-adapter-check.vm
 
-      # Print status of all interfaces without modifying any of them
+      # For the VMs whose name contain {DYNAMIC_VM_NAME}, print the status of their interfaces.
+      # If internet is enabled, show a notification and disable internet.
+      vbox-adapter-check.vm --dynamic_only
+
+      # Print status of all interfaces without modifying any of them.
       vbox-adapter-check.vm --do_not_modify
+
+      # Print status of all interfaces in VMs whose name contain {DYNAMIC_VM_NAME} without modifying any of them.
+      vbox-adapter-check.vm --dynamic_only --do_not_modify
     """
 )
 
@@ -100,7 +109,7 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
         )
 
 
-def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
+def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify):
     """Verify and optionally correct network adapter configurations for a given VM.
 
     Check the network adapter types of a given VM against a list of allowed types (`ALLOWED_ADAPTER_TYPES`).
@@ -111,7 +120,7 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
         vm_name: The name of the VM.
         hostonly_ifname: The name of the host-only network interface. This is passed for potential use in
                          disabling adapters (though not directly used in the verification logic).
-        do_not_modify: A boolean flag. If True, invalid adapters will only be reported, and no automatic modification will be attempted.
+        modify_and_notify: A boolean flag. If False, invalid adapters will only be reported, without automatic modification and notification.
     """
     try:
         # Example of `VBoxManage showvm_info <VM_UUID> --machinereadable` relevant output:
@@ -141,17 +150,7 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
 
         print(f"VM {vm_uuid} ⚠️  {vm_name} is connected to the internet on adapter(s): {invalid_nics_msg}")
 
-        if do_not_modify:
-            message = (
-                f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
-                "Please double check your VMs settings."
-            )
-        else:
-            message = (
-                f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
-                "The network adapter(s) may have been disabled automatically to prevent an undesired internet connectivity."
-                "Please double check your VMs settings."
-            )
+        if modify_and_notify:
             # Disable invalid nics
             for nic in invalid_nics:
                 try:
@@ -160,12 +159,17 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, do_not_modify):
                 except Exception as e:
                     print(f"VM {vm_uuid} ❌ {vm_name} unable to disable adapter {nic}: {e}")
 
-        # Show notification using PyGObject
-        Notify.init("VirtualBox adapter check")
-        notification = Notify.Notification.new(f"⚠️  INTERNET IN VM: {vm_name}", message, "dialog-error")
-        # Set highest priority
-        notification.set_urgency(2)
-        notification.show()
+            message = (
+                f"{vm_name} may be connected to the internet on adapter(s): {invalid_nics_msg}."
+                "The network adapter(s) may have been disabled automatically to prevent an undesired internet connectivity."
+                "Please double check your VMs settings."
+            )
+            # Show notification using PyGObject
+            Notify.init("VirtualBox adapter check")
+            notification = Notify.Notification.new(f"⚠️  INTERNET IN VM: {vm_name}", message, "dialog-error")
+            # Set highest priority
+            notification.set_urgency(2)
+            notification.show()
 
     except Exception as e:
         print(f"VM {vm_uuid} {vm_name} ❌ Unable to verify network adapters: {e}")
@@ -183,7 +187,7 @@ def main(argv=None):
     parser.add_argument(
         "--do_not_modify",
         action="store_true",
-        help="Only print the status of the internet adapters without modifying them.",
+        help="Only print the status of the internet adapters without modifying them and without showing a notification.",
     )
     parser.add_argument(
         "--dynamic_only",
@@ -196,7 +200,9 @@ def main(argv=None):
     vms = get_vms(args.dynamic_only)
     if len(vms) > 0:
         for vm_name, vm_uuid in vms:
-            verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, args.do_not_modify)
+            # Never modify VMs without DYNAMIC_VM_NAME in the name (only check the status)
+            modify_and_notify = (DYNAMIC_VM_NAME in vm_name) and (not args.do_not_modify)
+            verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify)
     else:
         print("⚠️  No VMs found!")
 
