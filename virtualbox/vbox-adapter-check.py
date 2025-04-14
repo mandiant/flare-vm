@@ -109,6 +109,11 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
         )
 
 
+def list_to_str(string_list):
+    """Joins a list of strings with ", "."""
+    return ", ".join(string_list)
+
+
 def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify):
     """Verify and optionally correct network adapter configurations for a given VM.
 
@@ -138,16 +143,15 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify
 
         # Gather adapters in incorrect configurations
         invalid_nics = []
-        invalid_nics_msg = ""
         for nic_number, nic_value in re.findall(r'^nic(\d+)="(\S+)"', vm_info, flags=re.M):
             if nic_value not in ALLOWED_ADAPTER_TYPES:
                 invalid_nics.append(nic_number)
-                invalid_nics_msg += f"{nic_number} "
 
         if not invalid_nics:
             print(f"VM {vm_uuid} ✅ {vm_name} network configuration is ok")
             return
 
+        invalid_nics_msg = list_to_str(invalid_nics)
         print(f"VM {vm_uuid} ⚠️  {vm_name} is connected to the internet on adapter(s): {invalid_nics_msg}")
 
         if modify_and_notify:
