@@ -127,7 +127,7 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
         RuntimeError: If the nic type is not changed to DISABLED_ADAPTER_TYPE
     """
     # We need to run a different command if the machine is running.
-    if get_vm_state(vm_uuid) == "poweroff":
+    if get_vm_state(vm_uuid) in ("poweroff", "aborted"):
         run_vboxmanage(
             [
                 "modifyvm",
