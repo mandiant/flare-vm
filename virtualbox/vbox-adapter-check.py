@@ -136,6 +136,16 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
                 DISABLED_ADAPTER_TYPE,
             ]
         )
+        # Set the hostonlyadapter for nic as "VBoxManage modifyvm --nic" does not set it
+        # If hostonlyadapter is empty, starting the VM raises an error
+        run_vboxmanage(
+            [
+                "modifyvm",
+                vm_uuid,
+                f"--hostonlyadapter{nic_number}",
+                hostonly_ifname,
+            ]
+        )
     else:
         run_vboxmanage(
             [
