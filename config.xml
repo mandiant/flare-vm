@@ -205,6 +205,21 @@
         <registry-item name="Set Dark Mode on Apps" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" value="AppsUseLightTheme" type="DWord" data="0"/>
         -->
     </registry-items>
+    <locales>
+        <!--
+        INFO:
+        Install extra system locales. Useful to analyse malware that behave differently depending on the locale.
+        FORMAT:
+        <locale name="DESCRIPTIVE_NAME" lang="LANGUAGE_VALUE"/>
+        -->
+        <locale name="Chinese" lang="zh-CN"/>
+        <locale name="English (United Kingdom)" lang="en-GB"/>
+        <locale name="German (Germany)" lang="de-DE"/>
+        <locale name="Russian" lang="ru-RU"/>
+        <locale name="Spanish (Spain)" lang="es-ES"/>
+        <locale name="Ukrainian" lang="uk-UA"/>
+        <locale name="Brazilian Portuguese" lang="pt-BR"/>
+    </locales>
     <custom-items>
         <!--
         INFO:
