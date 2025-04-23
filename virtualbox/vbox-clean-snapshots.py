@@ -150,7 +150,7 @@ def main(argv=None):
     parser.add_argument(
         "--protected_snapshots",
         default="clean,done",
-        type=lambda s: s.split(","),
+        type=lambda s: s.split(",") if s else [],
         help='''Comma-separated list of strings.
                 Snapshots with any of the strings included in the name (case insensitive) are not deleted.
                 Default: "clean,done"''',
