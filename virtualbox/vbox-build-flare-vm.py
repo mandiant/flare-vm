@@ -270,7 +270,7 @@ def main(argv=None):
     parser.add_argument("config_path", help="path of the YAML configuration file.")
     parser.add_argument(
         "--date",
-        help="Date to include in the snapshots and the exported VMs in YYMMDD format. Today's date by default.",
+        help="Date to include in the snapshots and the exported VMs in YYYYMMDD format. Today's date by default.",
         default=datetime.today().strftime("%Y%m%d"),
     )
     parser.add_argument(
