@@ -26,6 +26,7 @@
         <package name="7zip.vm"/>
         <package name="apimonitor.vm"/>
         <package name="apktool.vm"/>
+        <package name="asar.vm"/>
         <package name="autoit-ripper.vm"/>
         <package name="bindiff.vm"/>
         <package name="blobrunner.vm"/>
@@ -59,6 +60,7 @@
         <package name="garbageman.vm"/>
         <package name="ghidra.vm"/>
         <package name="goresym.vm"/>
+        <package name="gostringungarbler.vm"/>
         <package name="hashmyfiles.vm"/>
         <package name="hollowshunter.vm"/>
         <package name="hxd.vm"/>
@@ -82,6 +84,7 @@
         <package name="isd.vm"/>
         <package name="js-beautify.vm"/>
         <package name="js-deobfuscator.vm"/>
+        <package name="keystone.vm"/>
         <package name="libraries.python3.vm"/>
         <package name="magika.vm"/>
         <package name="malware-jail.vm"/>
