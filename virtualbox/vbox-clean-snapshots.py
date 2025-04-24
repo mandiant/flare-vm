@@ -103,6 +103,11 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
 def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
     snaps_to_delete = get_snapshot_children(vm_name, snapshot_name, protected_snapshots)
 
+    if protected_snapshots:
+        print("\nSnapshots with the following strings in the name (case insensitive) won't be deleted:")
+        for protected_snapshot in protected_snapshots:
+            print(f"  {protected_snapshot}")
+
     if snaps_to_delete:
         print(f"\nCleaning {vm_name} 🫧 Snapshots to delete:")
         for snapshot_name, _ in snaps_to_delete:
