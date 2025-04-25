@@ -103,6 +103,11 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
 def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
     snaps_to_delete = get_snapshot_children(vm_name, snapshot_name, protected_snapshots)
 
+    if protected_snapshots:
+        print("\nSnapshots with the following strings in the name (case insensitive) won't be deleted:")
+        for protected_snapshot in protected_snapshots:
+            print(f"  {protected_snapshot}")
+
     if snaps_to_delete:
         print(f"\nCleaning {vm_name} 🫧 Snapshots to delete:")
         for snapshot_name, _ in snaps_to_delete:
@@ -150,7 +155,7 @@ def main(argv=None):
     parser.add_argument(
         "--protected_snapshots",
         default="clean,done",
-        type=lambda s: s.split(","),
+        type=lambda s: s.split(",") if s else [],
         help='''Comma-separated list of strings.
                 Snapshots with any of the strings included in the name (case insensitive) are not deleted.
                 Default: "clean,done"''',

@@ -14,6 +14,10 @@ It is not possible to select and delete several snapshots in VirtualBox, making 
 ```
 $ ./vbox-remove-snapshots.py FLARE-VM.20240604
 
+Snapshots with the following strings in the name (case insensitive) won't be deleted:
+  clean
+  done
+
 Cleaning FLARE-VM.20240604 🫧 Snapshots to delete:
   Snapshot 1
   wip unpacked
