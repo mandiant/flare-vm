@@ -110,6 +110,7 @@
         <package name="pma-labs.vm"/>
         <package name="procdot.vm"/>
         <package name="processdump.vm"/>
+        <package name="psnotify.vm"/>
         <package name="pycdas.vm"/>
         <package name="pycdc.vm"/>
         <package name="rat-king-parser.vm"/>
