@@ -720,32 +720,26 @@ if (-not $noGui.IsPresent) {
     ## PACKAGE SELECTION BY CATEGORY
     ################################################################################
 
-    # Function that updates the selected packages in the config.xml for the installation
+    # Function that adds the selected packages to the config.xml for the installation
     function Install-Selected-Packages{
       $selectedPackages  = @()
-      $unselectedPackages = @()
       $packages = $configXml.SelectSingleNode('//packages')
 
+      # Remove all child nodes inside <packages>
+      while ($packages.HasChildNodes) {
+        $packages.RemoveChild($packages.FirstChild)
+      }
+
       foreach ($checkBox in $checkboxesPackages){
-        $package =$checkbox.Text.split(":")[0]
         if ($checkBox.Checked){
+            $package =$checkbox.Text.split(":")[0]
             $selectedPackages+=$package
-        }else{
-            $unselectedPackages+=$package
         }
       }
       # Add selected packages
       foreach($package in $selectedPackages) {
            $newXmlNode = $packages.AppendChild($configXml.CreateElement("package"))
            $newXmlNode.SetAttribute("name", $package)
-      }
-      # Remove existent packages from the config
-      foreach($package in $unselectedPackages) {
-          # Select the package node to remove based on the 'name' attribute
-          $nodeToRemove = $configXml.SelectSingleNode("//packages/package[@name='$package']")
-          if ($nodeToRemove) {
-             $packages.RemoveChild($nodeToRemove)
-          }
       }
     }
 
