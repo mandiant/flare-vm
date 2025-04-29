@@ -299,9 +299,9 @@ def ensure_vm_shutdown(vm_uuid):
     if vm_state == "poweroff":
         return
 
-    # If the state is aborted-saved, the VM is not running and can't be turned off
+    # If the state is aborted, the VM is not running and can't be turned off
     # Log the state and return
-    if vm_state == "aborted-saved":
+    if vm_state in ("aborted-saved", "aborted"):
         print(f"VM {vm_uuid} state: {vm_state}")
         return
 
