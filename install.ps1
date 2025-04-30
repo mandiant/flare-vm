@@ -723,19 +723,24 @@ if (-not $noGui.IsPresent) {
     # Function that adds the selected packages to the config.xml for the installation
     function Install-Selected-Packages{
       $selectedPackages  = @()
+      $packages = $configXml.SelectSingleNode('//packages')
+
+      # Remove all child nodes inside <packages>
+      while ($packages.HasChildNodes) {
+        $packages.RemoveChild($packages.FirstChild)
+      }
+
       foreach ($checkBox in $checkboxesPackages){
         if ($checkBox.Checked){
             $package =$checkbox.Text.split(":")[0]
-            Write-Host ("{0} has been selected" -f $package)
             $selectedPackages+=$package
         }
       }
       # Add selected packages
-      $packages = $configXml.SelectSingleNode('//packages')
       foreach($package in $selectedPackages) {
            $newXmlNode = $packages.AppendChild($configXml.CreateElement("package"))
            $newXmlNode.SetAttribute("name", $package)
-       }
+      }
     }
 
     # Function that resets the checkboxes to match the config.xml
