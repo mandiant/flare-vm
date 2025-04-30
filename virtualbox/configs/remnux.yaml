@@ -1,0 +1,54 @@
+VM_NAME: REMnux.testing
+EXPORTED_VM_NAME: REMnux
+SNAPSHOT:
+  extension: ".dynamic"
+  description: "REMnux (based on Ubuntu) with improved configuration"
+CMDS:
+  - |
+    # Install additional useful packages
+    sudo apt-get --assume-yes install libwrap0-dev gdb-multiarch qemu gcc-multilib libcurl4:i386
+
+  - |
+    # Uninstall distro-info to fix "Invalid version: '0.23ubuntu1'" Python install warning
+    # Uninstall it in both the default and Python 3.9
+    sudo pip uninstall -y distro-info
+    sudo /usr/bin/python3.9 -m pip uninstall -y distro-info
+
+  - |
+    # Install additional Python libraries
+    pip install -U pip
+    pip install rpyc flare-capa lznt1
+
+  - |
+    # Install additional Python libraries using Python 3.9
+    /usr/bin/python3.9 -m pip install -U pip
+    /usr/bin/python3.9 -m pip install rpyc flare-capa lznt1
+
+  - |
+    # Install IDA
+    # Expected IDA 9 installer in the Desktop
+    cd /home/remnux/Desktop
+    sudo chmod +x ida-pro_*.run
+    ./ida-pro_*.run --mode unattended
+
+    # Add IDA to favourite apps on startup (/usr/local/share/remnux/gnome-config.sh replaces it on startup)
+    ida_app=$(basename /home/remnux/.local/share/applications/com.hex_rays.IDA.pro*.desktop)
+    favourite_apps=$(gsettings get org.gnome.shell favorite-apps | sed 's/.$//')
+    echo '' | sudo tee -a /usr/local/share/remnux/gnome-config.sh
+    echo "gsettings set org.gnome.shell favorite-apps \"$favourite_apps, '$ida_app']\"" | sudo tee -a /usr/local/share/remnux/gnome-config.sh
+
+    # Ensure files are written to persistent storage as the script shut down the VM abruptly
+    sync
+
+  - |
+    # Install Dash to Panel extension
+    # Expected a ZIP with a version for the GNOME shell 3.36 in the Desktop
+    cd /home/remnux/Desktop
+    gnome-extensions install dash-to-panel*.shell-extension.zip --force
+
+    # Enable Dash to Panel extension on startup as logout is needed after install
+    echo gnome-extensions enable dash-to-panel@jderose9.github.com | sudo tee -a /usr/local/share/remnux/gnome-config.sh
+
+    # Ensure files are written to persistent storage as the script shut down the VM abruptly
+    sync
+

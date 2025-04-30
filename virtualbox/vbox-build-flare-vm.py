@@ -15,7 +15,6 @@
 
 import argparse
 import os
-import re
 import sys
 import time
 from datetime import datetime
@@ -23,14 +22,14 @@ from datetime import datetime
 import yaml
 from vboxcommon import (
     LONG_WAIT,
+    control_guest,
     ensure_vm_running,
-    ensure_vm_shutdown,
     export_vm,
     get_vm_state,
     get_vm_uuid,
     restore_snapshot,
-    run_vboxmanage,
     set_network_to_hostonly,
+    take_snapshot,
 )
 
 DESCRIPTION = """
@@ -79,44 +78,20 @@ CMD_PATH = r"C:\Windows\System32\cmd.exe"
 CMD_CLEANUP_CMD = r"/C rmdir /s /q %UserProfile%\Desktop\PS_Transcripts && start timeout 3"
 
 
-def control_guest(vm_uuid, args, real_time=False):
-    """Run a 'VBoxManage guestcontrol' command providing the username and password.
+def run_command(vm_uuid, cmd, executable="PS"):
+    """Run a command in the guest of the specified VM, displaying the output in real time to the console.
+
     Args:
         vm_uuid: VM UUID
-        args: list of arguments starting with the guestcontrol sub-command
-        real_time: Boolean that determines if displaying the output in realtime or returning it.
+        cmd: The command string to execute in the guest.
+        executable: Specifies the executable to use for running the command, either `PS` (`powershell.exe) or `CMD` (`cmd.exe`).
     """
-    # VM must be running to control the guest
-    ensure_vm_running(vm_uuid)
-    cmd = ["guestcontrol", vm_uuid, f"--username={GUEST_USERNAME}", f"--password={GUEST_PASSWORD}"] + args
-    try:
-        return run_vboxmanage(cmd, real_time)
-    except RuntimeError:
-        # The guest additions take a bit to load after the user is logged in
-        # In slow environments this may cause the command to fail, wait a bit and re-try
-        time.sleep(120)  # Wait 2 minutes
-        return run_vboxmanage(cmd, real_time)
-
-
-def run_command(vm_uuid, cmd, executable="PS"):
-    """Run a command in the guest displaying the output in real time."""
     ensure_vm_running(vm_uuid)
 
     exe_path = POWERSHELL_PATH if executable == "PS" else CMD_PATH
 
     print(f"VM {vm_uuid} 🚧 {executable}: {cmd}")
-    control_guest(vm_uuid, ["run", exe_path, cmd], True)
-
-
-def take_snapshot(vm_uuid, snapshot_name, shutdown=False):
-    """Take a snapshot with the given name in the given VM, optionally shutting down the VM before."""
-    if shutdown:
-        ensure_vm_shutdown(vm_uuid)
-
-    # Take a base snapshot, ensuring there is no snapshot with the same name
-    rename_old_snapshot(vm_uuid, snapshot_name)
-    run_vboxmanage(["snapshot", vm_uuid, "take", snapshot_name])
-    print(f'VM {vm_uuid} 📷 took snapshot "{snapshot_name}"')
+    control_guest(vm_uuid, GUEST_USERNAME, GUEST_PASSWORD, ["run", exe_path, cmd], True)
 
 
 def create_log_folder():
@@ -152,7 +127,12 @@ def install_flare_vm(vm_uuid, snapshot_name, custom_config):
     while True:
         time.sleep(120)  # Wait 2 minutes
         try:
-            control_guest(vm_uuid, ["copyfrom", f"--target-directory={FAILED_PACKAGES_HOST}", FAILED_PACKAGES_GUEST])
+            control_guest(
+                vm_uuid,
+                GUEST_USERNAME,
+                GUEST_PASSWORD,
+                ["copyfrom", f"--target-directory={FAILED_PACKAGES_HOST}", FAILED_PACKAGES_GUEST],
+            )
             break
         except RuntimeError:
             index += 1
@@ -167,7 +147,9 @@ def install_flare_vm(vm_uuid, snapshot_name, custom_config):
 
     print(f"VM {vm_uuid} ✅ FLARE-VM installed!")
 
-    control_guest(vm_uuid, ["copyfrom", f"--target-directory={LOG_FILE_HOST}", LOG_FILE_GUEST])
+    control_guest(
+        vm_uuid, GUEST_USERNAME, GUEST_PASSWORD, ["copyfrom", f"--target-directory={LOG_FILE_HOST}", LOG_FILE_GUEST]
+    )
     print(f"VM {vm_uuid} 📁 Copied FLARE-VM log: {REQUIRED_FILES_DIR}")
 
     # Read failed packages from log file and print them
@@ -181,23 +163,32 @@ def install_flare_vm(vm_uuid, snapshot_name, custom_config):
         print(f"  ❌ Reading {FAILED_PACKAGES_HOST} failed")
 
 
-def rename_old_snapshot(vm_uuid, snapshot_name):
-    """Append 'OLD' to the name of the snapshots with the given name"""
-    # Example of 'VBoxManage snapshot VM_NAME list --machinereadable' output:
-    # SnapshotName="ROOT"
-    # SnapshotUUID="86b38fc9-9d68-4e4b-a033-4075002ab570"
-    # SnapshotName-1="Snapshot 1"
-    # SnapshotUUID-1="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
-    snapshots_info = run_vboxmanage(["snapshot", vm_uuid, "list", "--machinereadable"])
-
-    # Find how many snapshots have the given name and edit a snapshot with that name as many times
-    snapshots = re.findall(rf'^SnapshotName(-\d+)*="{snapshot_name}"\n', snapshots_info, flags=re.M)
-    for _ in range(len(snapshots)):
-        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD"])
-
-
 def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_install_flare_vm):
-    """"""
+    """
+    Build and export multiple FLARE-VM VMs as OVAs based on provided configurations.
+
+    This function first prepares a base FLARE-VM VM by restoring a BASE_SNAPSHOT,
+    copying necessary files, and installing the FLARE-VM software. A base snapshot
+    of this installation is then taken. Subsequently, for each configuration
+    specified in the `snapshots` list, the base snapshot is restored, customized
+    with specific commands and settings, and then exported as an OVA.
+
+    Args:
+        vm_name: The name of the VM.
+        exported_vm_name: The base name to use for naming the exported VMs and their snapshots.
+        snapshots: A list of dictionaries, where each dictionary defines the configuration for a specific exported VM.
+                   Each dictionary can contain the following keys:
+                     - cmd: A command to execute in the guest VM.
+                     - legal_notice: The filename of a legal notice to set on the VM.
+                     - protected_files: A string of files to exclude during the cleanup process.
+                     - protected_folders:: A string of folders to exclude during the cleanup process.
+                     - extension: An extension to add to the exported VM's filename.
+                     - description: A description to embed in the exported OVA.
+        date: A date string appended to the names of the base snapshot and exported OVAs.
+        custom_config: Custom configuration parameters passed to the FLARE-VM installation script.
+        do_not_install_flare_vm: If True, the FLARE-VM installation step is skipped and an existent base snapshot used.
+                                 It also does not copy the required files.
+    """
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
         print(f'❌ ERROR: "{vm_name}" not found')
@@ -211,13 +202,17 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
     if not do_not_install_flare_vm:
         restore_snapshot(vm_uuid, BASE_SNAPSHOT)
 
+        # Copy required files
         control_guest(
-            vm_uuid, ["copyto", "--recursive", f"--target-directory={REQUIRED_FILES_DEST}", REQUIRED_FILES_DIR]
+            vm_uuid,
+            GUEST_USERNAME,
+            GUEST_PASSWORD,
+            ["copyto", "--recursive", f"--target-directory={REQUIRED_FILES_DEST}", REQUIRED_FILES_DIR],
         )
         print(f"VM {vm_uuid} 📁 Copied required files in: {REQUIRED_FILES_DIR}")
 
         install_flare_vm(vm_uuid, exported_vm_name, custom_config)
-        take_snapshot(vm_uuid, base_snapshot_name)
+        take_snapshot(vm_uuid, base_snapshot_name, False, True)
 
     for snapshot in snapshots:
         restore_snapshot(vm_uuid, base_snapshot_name)
@@ -252,7 +247,7 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
         # Take snapshot turning the VM off
         extension = snapshot.get("extension", "")
         snapshot_name = f"{exported_vm_name}.{date}{extension}"
-        take_snapshot(vm_uuid, snapshot_name, True)
+        take_snapshot(vm_uuid, snapshot_name, True, True)
 
         # Export the snapshot with the configured description
         export_vm(vm_uuid, snapshot_name, snapshot.get("description", ""))
@@ -283,7 +278,7 @@ def main(argv=None):
         "--do-not-install-flare-vm",
         action="store_true",
         default=False,
-        help="flag to not install FLARE-VM and used an existent base snapshot.",
+        help="flag to not install FLARE-VM and used an existent base snapshot. It also does not copy the required files.",
     )
     args = parser.parse_args(args=argv)
 
