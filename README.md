@@ -85,7 +85,7 @@ Get full usage information by running `Get-Help .\install.ps1 -Detailed`.
 
 The Installer GUI is display after executing the validation checks and installing Boxstarter and Chocolatey (if they are not installed already).
 Using the installer GUI you may customize:
-* Package selection
+* Package selection from FLARE-VM and Chocolatey community
 * Environment variable paths
 
 ![Installer GUI](Images/installer-gui.png)
