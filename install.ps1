@@ -469,7 +469,6 @@ Start-Sleep 1
 $configXml = [xml](Get-Content $configPath)
 
 if (-not $noGui.IsPresent) {
-
     $errorColor = [System.Drawing.ColorTranslator]::FromHtml("#c80505")
     $successColor = [System.Drawing.ColorTranslator]::FromHtml("#417505")
 
@@ -542,10 +541,31 @@ if (-not $noGui.IsPresent) {
       return $packagesByCategory
     }
 
+    # Function that returns an array of all the packages that are displayed sorted by category from $packagesByCategory
+    function Get-AllPackages{
+        $listedPackages = $packagesByCategory.Values | ForEach-Object { $_ } | Select-Object -ExpandProperty PackageName
+        return $listedPackages
+    }
+
+    # Function that returns additional packages from the config that are not displayed in the textboxes
+    # which includes both Choco packages and packages from excluded categories
+    function Get-AdditionalPackages{
+       $additionalPackages=@()
+
+       # Packages from the config that are not displayed
+       $additionalPackages = $packagesToInstall | where-Object { $listedPackages -notcontains $_}
+       return $additionalPackages
+    }
+
     # Gather lists of packages
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
+    $excludedCategories=@('Command and Control','Credential Access','Exploitation','Forensic','Lateral Movement', 'Payload Development','Privilege Scalation','Reconnaissance','Wordlists','Web Application')
+    # Read packages to install from the config
+    $packagesToInstall = $configXml.config.packages.package.name
     $packagesByCategory = Get-Packages-Categories
+    $listedPackages = Get-AllPackages
+    $additionalPackages = Get-AdditionalPackages
 
     $formEnv                   = New-Object system.Windows.Forms.Form
     $formEnv.ClientSize        = New-Object System.Drawing.Point(750,350)
@@ -804,14 +824,15 @@ if (-not $noGui.IsPresent) {
     }
 
     # Function that adds a new package to the listBox of additional packages
+    # If the package already exists it returns $false
     function Add-NewPackage {
         param (
         [Parameter(Mandatory=$true)]
         [string]$packageName
         )
-
-        if ($packageName -notin $listedPackages)
-        {
+        #$packageName = $packageName.Trim()
+        $packageName = $packageName -replace '^\s+|\s+$', ''
+        if ($packageName -notin $additionalPackagesBox.Items){
            $additionalPackagesBox.Items.Add($packageName) | Out-Null
            return $true
         }
@@ -871,37 +892,38 @@ if (-not $noGui.IsPresent) {
 
     Add-Type -AssemblyName System.Windows.Forms
     [System.Windows.Forms.Application]::EnableVisualStyles()
-    $excludedCategories=@('Command and Control','Credential Access','Exploitation','Forensic','Lateral Movement', 'Payload Development','Privilege Scalation','Reconnaissance','Wordlists')
-    # Read packages to install from the config
-    $packagesToInstall = $configXml.config.packages.package.name
-    $packagesByCategory = Get-Packages-Categories
-    $listedPackages = Get-AllPackages
-    $additionalPackages = Get-AdditionalPackages
 
     $formCategories                            = New-Object system.Windows.Forms.Form
     $formCategories.ClientSize                 = New-Object System.Drawing.Point(1015,850)
-    $formCategories.text                       = "FLAREVM Package selection"
+    $formCategories.text                       = "FLARE-VM Package selection"
     $formCategories.StartPosition              = 'CenterScreen'
     $formCategories.TopMost                    = $true
 
     if ([string]::IsNullOrEmpty($customConfig)) {
-        $textLabel = "Select packages to install. The default configuration (recommended for reverse engineering) is pre-selected.`nClick on the reset button to restore the default configuration."
+        $textLabel = "The default configuration (recommended) is pre-selected. Click on the reset button to restore the default configuration."
     } else {
-	    $textLabel = "Select packages to install. The provided custom configuration is pre-selected.`nClick on the reset button to restore the custom configuration."
+	    $textLabel = "The provided custom configuration is pre-selected. Click on the reset button to restore the custom configuration."
     }
 
     $labelCategories                = New-Object system.Windows.Forms.Label
-    $labelCategories.text           = $textLabel
+    $labelCategories.text           = "Select packages to install"
     $labelCategories.AutoSize       = $true
     $labelCategories.width          = 25
     $labelCategories.height         = 10
     $labelCategories.location       = New-Object System.Drawing.Point(30,20)
-    $labelCategories.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $labelCategories.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+
+
+    $labelCategories2                = New-Object system.Windows.Forms.Label
+    $labelCategories2.text           = $textLabel
+    $labelCategories2.AutoSize       = $true
+    $labelCategories2.location       = New-Object System.Drawing.Point(30,40)
+    $labelCategories2.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $panelCategories                = New-Object system.Windows.Forms.Panel
-    $panelCategories.height         = 580
+    $panelCategories.height         = 530
     $panelCategories.width          = 970
-    $panelCategories.location       = New-Object System.Drawing.Point(30,30)
+    $panelCategories.location       = New-Object System.Drawing.Point(30,60)
     $panelCategories.AutoScroll     = $true
 
     $resetButton                 = New-Object system.Windows.Forms.Button
@@ -953,7 +975,7 @@ if (-not $noGui.IsPresent) {
     # Create checkboxes for each package
     $checkboxesPackages = New-Object System.Collections.Generic.List[System.Object]
     # Initial vertical position for checkboxes
-    $verticalPosition = 30
+    $verticalPosition = 25
     $numCheckBoxPackages = 1
     $packages = @()
     foreach ($category in $packagesByCategory.Keys |Sort-Object) {
@@ -999,20 +1021,20 @@ if (-not $noGui.IsPresent) {
     Set-InitialPackages
 
     $additionalPackagesLabel                          = New-Object system.Windows.Forms.Label
-    $additionalPackagesLabel.text                     = "Additional packages to install:"
+    $additionalPackagesLabel.text                     = "Additional packages to install"
     $additionalPackagesLabel.AutoSize                 = $true
     $additionalPackagesLabel.width                    = 25
     $additionalPackagesLabel.height                   = 10
-    $additionalPackagesLabel.location                 = New-Object System.Drawing.Point(50,615)
-    $additionalPackagesLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $additionalPackagesLabel.location                 = New-Object System.Drawing.Point(30,615)
+    $additionalPackagesLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
 
     $additionalPackagesBox                 = New-Object system.Windows.Forms.ListBox
     $additionalPackagesBox.text            = "listBox"
     $additionalPackagesBox.SelectionMode   = 'MultiSimple'
     $additionalPackagesBox.Sorted          = $true
     $additionalPackagesBox.width           = 130
-    $additionalPackagesBox.height          = 155
-    $additionalPackagesBox.location        = New-Object System.Drawing.Point(50,635)
+    $additionalPackagesBox.height          = 140
+    $additionalPackagesBox.location        = New-Object System.Drawing.Point(50,640)
 
     $deletePackageButton          = New-Object system.Windows.Forms.Button
     $deletePackageButton.text     = "-"
@@ -1023,40 +1045,45 @@ if (-not $noGui.IsPresent) {
     $deletePackageButton.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]::Bold)
     $deletePackageButton.Add_Click({Remove-SelectedPackages})
 
-
-    $groupAbout                = New-Object system.Windows.Forms.Groupbox
-    $groupAbout.height         = 85
-    $groupAbout.width          = 360
-    $groupAbout.location       = New-Object System.Drawing.Point(280,620)
-    $groupAbout.Text           = "About"
-
-
     $packageLabel                          = New-Object system.Windows.Forms.Label
-    $packageLabel.text                     = "FLARE-VM uses Chocolatey packages. You can add Community packages from"
-    $packageLabel.width                    = 230
+    $packageLabel.text                     = "FLARE-VM uses Chocolatey packages. You can add additional packages from:"
+    $packageLabel.width                    = 260
     $packageLabel.height                   = 35
-    $packageLabel.location                 = New-Object System.Drawing.Point(300,620)
-    $packageLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+    $packageLabel.AutoSize                 = $true
+    $packageLabel.location                 = New-Object System.Drawing.Point(300,640)
+    $packageLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
-    $packageUrlLabel                       = New-Object system.Windows.Forms.Label
-    $packageUrlLabel.text                  = "https://community.chocolatey.org/packages"
-    $packageUrlLabel.width                 = 250
-    $packageUrlLabel.height                = 21
-    $packageUrlLabel.location              = New-Object System.Drawing.Point(300,652)
-    $packageUrlLabel.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',9,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Underline))
+    $labelChoco                             = New-Object System.Windows.Forms.Label
+    $labelChoco.Location                    = New-Object System.Drawing.Point(300,660)
+    $labelChoco.Size                        = New-Object System.Drawing.Size(280,20)
+    $labelChoco.AutoSize                    = $true
+    $labelChoco.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $labelChoco.Text                        = "Community Packages"
 
-    $packageVMLabel                          = New-Object system.Windows.Forms.Label
-    $packageVMLabel.text                     = "and VM-Packages"
-    $packageVMLabel.width                    = 120
-    $packageVMLabel.height                   = 22
-    $packageVMLabel.location                 = New-Object System.Drawing.Point(548,652)
-    $packageVMLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+    $linkLabelChoco                             = New-Object System.Windows.Forms.linkLabel
+    $linkLabelChoco.Location                    = New-Object System.Drawing.Point(440,660)
+    $linkLabelChoco.AutoSize                    = $true
+    $linkLabelChoco.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $linkLabelChoco.LinkColor                   = "BLUE"
+    $linkLabelChoco.ActiveLinkColor             = "RED"
+    $linkLabelChoco.Text                        = "https://community.chocolatey.org/packages"
+    $linkLabelChoco.add_Click({[system.Diagnostics.Process]::start("https://community.chocolatey.org/packages")})
 
-    $packageUrl2Label                       = New-Object system.Windows.Forms.Label
-    $packageUrl2Label.text                  = "https://github.com/mandiant/VM-Packages/wiki/Packages"
-    $packageUrl2Label.AutoSize              = $true
-    $packageUrl2Label.location              = New-Object System.Drawing.Point(300,670)
-    $packageUrl2Label.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',9,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Underline))
+    $labelFlarevm                             = New-Object System.Windows.Forms.Label
+    $labelFlarevm.Location                    = New-Object System.Drawing.Point(300,680)
+    $labelFlarevm.Size                        = New-Object System.Drawing.Size(280,20)
+    $labelFlarevm.AutoSize                     = $true
+    $labelFlarevm.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $labelFlarevm.Text                        = "FLARE-VM Packages"
+
+    $linkLabelFlarevm                             = New-Object System.Windows.Forms.linkLabel
+    $linkLabelFlarevm.Location                    = New-Object System.Drawing.Point(440,680)
+    $linkLabelFlarevm.AutoSize                    = $true
+    $linkLabelFlarevm.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $linkLabelFlarevm.LinkColor                   = "BLUE"
+    $linkLabelFlarevm.ActiveLinkColor             = "RED"
+    $linkLabelFlarevm.Text                        = "https://github.com/mandiant/VM-Packages/wiki/Packages"
+    $linkLabelFlarevm.add_Click({[system.Diagnostics.Process]::start("https://github.com/mandiant/VM-Packages/wiki/Packages")})
 
     Set-AdditionalPackages
 
@@ -1065,15 +1092,20 @@ if (-not $noGui.IsPresent) {
     $chocoPackageLabel.AutoSize                 = $true
     $chocoPackageLabel.width                    = 25
     $chocoPackageLabel.height                   = 10
-    $chocoPackageLabel.location                 = New-Object System.Drawing.Point(300,705)
+    $chocoPackageLabel.location                 = New-Object System.Drawing.Point(300,715)
     $chocoPackageLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
     $packageTextBox                        = New-Object system.Windows.Forms.TextBox
     $packageTextBox.multiline              = $false
     $packageTextBox.width                  = 210
     $packageTextBox.height                 = 20
-    $packageTextBox.location               = New-Object System.Drawing.Point(300,725)
+    $packageTextBox.location               = New-Object System.Drawing.Point(300,735)
     $packageTextBox.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $packageTextBox.Add_TextChanged({
+              if ($addPackageButton.Enabled -eq $true){
+                  $addPackageButton.Enabled = $false
+              }
+    })
 
     $chocoPackageErrorLabel                          = New-Object system.Windows.Forms.Label
     $chocoPackageErrorLabel.text                     = ""
@@ -1081,7 +1113,7 @@ if (-not $noGui.IsPresent) {
     $chocoPackageErrorLabel.visible                  = $false
     $chocoPackageErrorLabel.width                    = 25
     $chocoPackageErrorLabel.height                   = 10
-    $chocoPackageErrorLabel.location                 = New-Object System.Drawing.Point(300,755)
+    $chocoPackageErrorLabel.location                 = New-Object System.Drawing.Point(300,765)
     $chocoPackageErrorLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
 
     $findPackageButton          = New-Object system.Windows.Forms.Button
@@ -1089,32 +1121,29 @@ if (-not $noGui.IsPresent) {
     $findPackageButton.width    = 118
     $findPackageButton.height   = 30
     $findPackageButton.enabled   = $true
-    $findPackageButton.location  = New-Object System.Drawing.Point(520,720)
+    $findPackageButton.location  = New-Object System.Drawing.Point(520,730)
     $findPackageButton.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $findPackageButton.Add_Click({
-        $chocoPackageErrorLabel.Visible = $false
-            $vmPackage = Get-VMPackage -PackageName $packageTextBox.Text
+        $chocoPackageErrorLabel.Visible = $true
+        $chocoPackageErrorLabel.text = "Finding package ..."
+            $vmPackage = Get-VMPackage -PackageName $packageTextBox.Text.Trim()
             if ($vmPackage){
                 $packageName = $vmPackage | Select-Object -ExpandProperty Name
                 $chocoPackageErrorLabel.text = "Found VM package"
                 $chocoPackageErrorLabel.ForeColor = $successColor
-                $chocoPackageErrorLabel.Visible = $true
                 $packageTextBox.Text = $packageName
                 $addPackageButton.enabled = $true
-        } else {
+            } else {
                 $chocoPackage = Get-ChocoPackage -PackageName $packageTextBox.Text
-            if ($chocoPackage) {
-            $chocoPackageErrorLabel.text = "Found Choco package"
-            $chocoPackageErrorLabel.ForeColor = $successColor
-            $chocoPackageErrorLabel.Visible = $true
-            $addPackageButton.enabled = $true
-            }else {
-                $chocoPackageErrorLabel.text = "package not found"
-                $chocoPackageErrorLabel.ForeColor = $errorColor
-                $chocoPackageErrorLabel.Visible = $true
-                $addPackageButton.enabled = $false
+                if ($chocoPackage) {
+                   $chocoPackageErrorLabel.text = "Found Choco package"
+                   $chocoPackageErrorLabel.ForeColor = $successColor
+                   $addPackageButton.enabled = $true
+                } else {
+                   $chocoPackageErrorLabel.text = "Package not found"
+                   $chocoPackageErrorLabel.ForeColor = $errorColor
+                   $addPackageButton.enabled = $false
             }
-
         }
     })
 
@@ -1123,23 +1152,21 @@ if (-not $noGui.IsPresent) {
     $addPackageButton.width    = 118
     $addPackageButton.height   = 30
     $addPackageButton.enabled   = $false
-    $addPackageButton.location  = New-Object System.Drawing.Point(400,775)
+    $addPackageButton.location  = New-Object System.Drawing.Point(650,730)
     $addPackageButton.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
     $addPackageButton.Add_Click({
-              If ($packageTextBox.Text -ne ""){
                   if (Add-NewPackage -PackageName $packageTextBox.Text){
                       $chocoPackageErrorLabel.ForeColor = $successColor
                       $chocoPackageErrorLabel.text = "Package added"
                   }else {
                       $chocoPackageErrorLabel.ForeColor = $errorColor
-                      $chocoPackageErrorLabel.text = "Error to add the package"
+                      $chocoPackageErrorLabel.text = "Error to add the package: duplicated"
                   }
-              }
-              $addPackageButton.enabled = $false
+                  $addPackageButton.enabled = $false
           })
 
-    $formCategories.controls.AddRange(@($additionalPackagesLabel,$packageLabel,$packageUrlLabel,$packageUrl2Label,$packageVMLabel,$additionalPackagesBox,$deletePackageButton,$chocoPackageButton,$chocoPackageLabel,$packageTextBox,$chocoPackageErrorLabel,$findPackageButton,$addPackageButton))
-    $formCategories.controls.AddRange(@($labelCategories,$panelCategories,$installButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton))
+    $formCategories.controls.AddRange(@($additionalPackagesLabel,$packageLabel,$labelChoco,$labelFlarevm,$linkLabelChoco,$linkLabelFlarevm,$linkLabelFlarevm,$additionalPackagesBox,$deletePackageButton,$chocoPackageButton,$chocoPackageLabel,$packageTextBox,$chocoPackageErrorLabel,$findPackageButton,$addPackageButton))
+    $formCategories.controls.AddRange(@($labelCategories,$labelCategories2,$panelCategories,$installButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton))
     $formCategories.Add_Shown({$formCategories.Activate()})
     $resultCategories = $formCategories.ShowDialog()
     if ($resultCategories -eq [System.Windows.Forms.DialogResult]::OK){
@@ -1149,9 +1176,6 @@ if (-not $noGui.IsPresent) {
         Start-Sleep 3
         exit 1
     }
-
-
-
 
     ################################################################################
     ## END GUI
