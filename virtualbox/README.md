@@ -5,7 +5,7 @@
 
 ## Clean up snapshots
 
-It is not possible to select and delete several snapshots in VirtualBox, making cleaning up your VM manually after having creating a lot snapshots time consuming and tedious (possible errors when deleting several snapshots simultaneously).
+It is not possible to select and delete several snapshots in VirtualBox, making cleaning up your virtual machine (VM) manually after having creating a lot snapshots time consuming and tedious (possible errors when deleting several snapshots simultaneously).
 
 [`vbox-clean-snapshots.py`](vbox-clean-snapshots.py) cleans a VirtualBox VM up by deleting a snapshot and its children recursively skipping snapshots with a substring in the name.
 
@@ -123,16 +123,16 @@ VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/None/FLARE-V
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/None/FLARE-VM.ova.sha256": 987eed68038ce7c5072e7dc219ba82d11745267d8ab2ea7f76158877c13e3aa9
 ```
 
-## Build FLARE-VM
+## Build FLARE-VM VM(s)
 
-[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) automates the creation and export of customized FLARE-VM virtual machines (VMs).
+[`vbox-build-flare-vm.py`](vbox-build-flare-vm.py) automates the creation and export of customized FLARE-VM VMs.
 The script begins by restoring a pre-existing `BUILD-READY` snapshot of a clean Windows installation.
 The script then copies the required installation files (such as the IDA Pro installer, FLARE-VM configuration, and legal notices) into the guest VM.
 After installing FLARE-VM, a `base` snapshot is taken.
 This snapshot serves as the foundation for generating subsequent snapshots and exporting OVA images, all based on the configuration provided in a YAML file.
 This configuration file specifies the VM name, the exported VM name, and details for each snapshot.
 Individual snapshot configurations can include custom commands to be executed within the guest, legal notices to be applied, and file/folder exclusions for the automated cleanup process.
-See configuration example files in the [`configs`](configs/) directory.
+See the configuration example file [`configs/win10_flare-vm.yaml`](configs/win10_flare-vm.yaml).
 
 The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled
 To disable UAC execute in a cmd console with admin rights and restart the VM for the change to take effect:
@@ -140,3 +140,11 @@ To disable UAC execute in a cmd console with admin rights and restart the VM for
 %windir%\System32\reg.exe ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f
 ```
 
+## Build REMnux VM
+
+Similarly to [`vbox-build-flare-vm.py`](vbox-build-flare-vm.py), [`vbox-build-remnux.py`](vbox-build-remnux.py) automates the creation and export of customized REMnux virtual machines (VMs).
+The script begins by restoring a pre-existing "BUILD-READY" snapshot of a clean REMnux OVA.
+Required installation files (such as the IDA Pro installer and ZIPs with GNOME extensions) are then copied into the guest VM.
+The configuration file specifies the VM name, the exported VM name, and details for each snapshot.
+Individual snapshot configurations include the extension, description, and custom commands to be executed within the guest.
+See the configuration example file [`configs/remnux.yaml`](configs/remnux.yaml).

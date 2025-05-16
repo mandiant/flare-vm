@@ -90,6 +90,25 @@ def run_vboxmanage(cmd, real_time=False):
     return result.stdout
 
 
+def control_guest(vm_uuid, user, password, args, real_time=False):
+    """Run a 'VBoxManage guestcontrol' command providing the username and password.
+    Args:
+        vm_uuid: VM UUID
+        args: list of arguments starting with the guestcontrol sub-command
+        real_time: Boolean that determines if displaying the output in realtime or returning it.
+    """
+    # VM must be running to control the guest
+    ensure_vm_running(vm_uuid)
+    cmd = ["guestcontrol", vm_uuid, f"--username={user}", f"--password={password}"] + args
+    try:
+        return run_vboxmanage(cmd, real_time)
+    except RuntimeError:
+        # The guest additions take a bit to load after the user is logged in
+        # In slow environments this may cause the command to fail, wait a bit and re-try
+        time.sleep(120)  # Wait 2 minutes
+        return run_vboxmanage(cmd, real_time)
+
+
 def get_hostonlyif_name():
     """Get the name of the host-only interface. Return None if there is no host-only interface"""
     # Example of `VBoxManage list hostonlyifs` relevant output:
@@ -280,9 +299,9 @@ def ensure_vm_shutdown(vm_uuid):
     if vm_state == "poweroff":
         return
 
-    # If the state is aborted-saved, the VM is not running and can't be turned off
+    # If the state is aborted, the VM is not running and can't be turned off
     # Log the state and return
-    if vm_state == "aborted-saved":
+    if vm_state in ("aborted-saved", "aborted"):
         print(f"VM {vm_uuid} state: {vm_state}")
         return
 
@@ -304,3 +323,43 @@ def restore_snapshot(vm_uuid, snapshot_name):
 
     run_vboxmanage(["snapshot", vm_uuid, "restore", snapshot_name])
     print(f'VM {vm_uuid} ✨ restored snapshot "{snapshot_name}"')
+
+
+def rename_old_snapshot(vm_uuid, snapshot_name):
+    """Append 'OLD' to the name of all snapshots with the given name within the specified VM.
+
+    Args:
+        vm_uuid: VM UUID
+        snapshot_name: The current name of the snapshot(s) to rename.
+    """
+    # Example of 'VBoxManage snapshot VM_NAME list --machinereadable' output:
+    # SnapshotName="ROOT"
+    # SnapshotUUID="86b38fc9-9d68-4e4b-a033-4075002ab570"
+    # SnapshotName-1="Snapshot 1"
+    # SnapshotUUID-1="e383e702-fee3-4e0b-b1e0-f3b869dbcaea"
+    snapshots_info = run_vboxmanage(["snapshot", vm_uuid, "list", "--machinereadable"])
+
+    # Find how many snapshots have the given name and edit a snapshot with that name as many times
+    snapshots = re.findall(rf'^SnapshotName(-\d+)*="{snapshot_name}"\n', snapshots_info, flags=re.M)
+    for _ in range(len(snapshots)):
+        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD"])
+
+
+def take_snapshot(vm_uuid, snapshot_name, shutdown=False, rename=False):
+    """Take a snapshot of the specified VM with the given name, optionally shutting down first and renaming duplicates.
+
+    Args:
+        vm_uuid: VM UUID
+        snapshot_name: The name for the new snapshot.
+        shutdown: If True, shut down the VM before taking the snapshot.
+        rename: If True, renames any existing snapshots with the same `snapshot_name`
+                by appending ' OLD' to their names before taking the new snapshot.
+    """
+    if shutdown:
+        ensure_vm_shutdown(vm_uuid)
+
+    if rename:
+        rename_old_snapshot(vm_uuid, snapshot_name)
+
+    run_vboxmanage(["snapshot", vm_uuid, "take", snapshot_name])
+    print(f'VM {vm_uuid} 📷 took snapshot "{snapshot_name}"')
