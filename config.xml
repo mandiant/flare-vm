@@ -28,6 +28,7 @@
         <package name="apktool.vm"/>
         <package name="asar.vm"/>
         <package name="autoit-ripper.vm"/>
+        <package name="binaryninja.vm"/>
         <package name="bindiff.vm"/>
         <package name="blobrunner.vm"/>
         <package name="blobrunner64.vm"/>
@@ -51,6 +52,7 @@
         <package name="dnspyex.vm"/>
         <package name="dotdumper.vm"/>
         <package name="dotnet3.5"/> <!-- To run old .NET binaries -->
+        <package name="exeinfope.vm"/>
         <package name="explorersuite.vm"/>
         <package name="extreme_dumper.vm"/>
         <package name="ezviewer.vm"/>
