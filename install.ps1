@@ -560,7 +560,7 @@ if (-not $noGui.IsPresent) {
     # Gather lists of packages
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
-    $excludedCategories=@('Command and Control','Credential Access','Exploitation','Forensic','Lateral Movement', 'Payload Development','Privilege Scalation','Reconnaissance','Wordlists','Web Application')
+    $excludedCategories=@('Command and Control','Credential Access','Exploitation','Forensic','Lateral Movement', 'Payload Development','Privilege Escalation','Reconnaissance','Wordlists','Web Application')
     # Read packages to install from the config
     $packagesToInstall = $configXml.config.packages.package.name
     $packagesByCategory = Get-Packages-Categories
