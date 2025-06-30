@@ -474,6 +474,7 @@ if (-not $noGui.IsPresent) {
     ## BEGIN GUI
     ################################################################################
     Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -Assembly System.Drawing
 
 
     function Get-Folder($textBox, $envVar) {
