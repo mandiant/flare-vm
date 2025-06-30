@@ -1,6 +1,7 @@
 # VirtualBox scripts
 
 **This folder contains several scripts related to enhance building, exporting, and using FLARE-VM in VirtualBox.**
+The scripts have been tested in Debian 12 with GNOME 44.9.
 
 
 ## Clean up snapshots
@@ -12,7 +13,7 @@ It is not possible to select and delete several snapshots in VirtualBox, making 
 ### Example
 
 ```
-$ ./vbox-remove-snapshots.py FLARE-VM.20240604
+$ ./vbox-remove-snapshots.py FLARE-VM.20240604 --protected empty,clean,done,important
 
 Snapshots with the following strings in the name (case insensitive) won't be deleted:
   clean
@@ -65,31 +66,20 @@ See you next time you need to clean up your VMs! ✨
 ## Check internet adapter status
 
 [`vbox-adapter-check.py`](vbox-adapter-check.py) prints the status of all internet adapters of all VMs in VirtualBox.
-The script also notifies if any dynamic analysis VM (with `.dynamic` in the name) has an adapter whose type is not allowed (internet access is undesirable for dynamic malware analysis).
-Unless the argument `--do_not_modify` is provided, the script changes the type of the adapters with non-allowed type to Host-Only.
-Unless the argument `--skip_disabled` is provided, the script also explores the disabled adapters, printing their status and possibly changing their type.
-The script has been tested in Debian 12 with GNOME 44.9.
+If the argument `--dynamic_only` is provided, the script only print the status of the dynamic analysis VM (with `.dynamic` in the name).
+Unless the argument `--do_not_modify` is provided, if internet is detected in any dynamic analysis VM, the script sends a notification and changes the adapters type to Host-Only.
+The script is useful to detect internet access, which is undesirable for dynamic malware analysis.
 
 ### Example
 
 ```
-$ ./vbox-adapter-check.py
-windows10 1: Enabled  HostOnly
-windows10 2: Disabled Null
-windows10 3: Disabled Null
-windows10 4: Disabled Null
-windows10 5: Disabled Null
-windows10 6: Disabled Null
-windows10 7: Disabled Null
-windows10 8: Disabled Null
-FLARE-VM.20240808.dynamic 1: Enabled  NAT
-FLARE-VM.20240808.dynamic 2: Disabled NAT
-FLARE-VM.20240808.dynamic 3: Disabled Bridged
-FLARE-VM.20240808.dynamic 4: Enabled  Internal
-FLARE-VM.20240808.dynamic 5: Disabled Null
-FLARE-VM.20240808.dynamic 6: Disabled Null
-FLARE-VM.20240808.dynamic 7: Disabled Null
-FLARE-VM.20240808.dynamic 8: Disabled Null
+$ ~/github/flare-vm/virtualbox/vbox-adapter-check.py
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ⚠️  FLARE-VM.testing is connected to the internet on adapter(s): 1
+VM {a23c0c37-2062-4cf0-882b-9e9747dd33b6} ✅ REMnux.20241217.dynamic network configuration is ok
+VM {fa0b3733-50cb-43fd-8428-745d0e9159cb} ✅ FLARE-VM.Win10.20250211.dynamic network configuration is ok
+VM {e5f509ed-cbc8-4abc-b052-664246207e89} ⚠️  FLARE-VM.Win10.20250211.full.dynamic is connected to the internet on adapter(s): 1, 2
+VM {e5f509ed-cbc8-4abc-b052-664246207e89} ⚙️  FLARE-VM.Win10.20250211.full.dynamic set adapter 1 to hostonly
+VM {e5f509ed-cbc8-4abc-b052-664246207e89} ⚙️  FLARE-VM.Win10.20250211.full.dynamic set adapter 2 to hostonly
 ```
 
 #### Notification
@@ -134,7 +124,7 @@ This configuration file specifies the VM name, the exported VM name, and details
 Individual snapshot configurations can include custom commands to be executed within the guest, legal notices to be applied, and file/folder exclusions for the automated cleanup process.
 See the configuration example file [`configs/win10_flare-vm.yaml`](configs/win10_flare-vm.yaml).
 
-The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled
+The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled.
 To disable UAC execute in a cmd console with admin rights and restart the VM for the change to take effect:
 ```
 %windir%\System32\reg.exe ADD HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f
