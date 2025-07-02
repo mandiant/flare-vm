@@ -469,8 +469,6 @@ Start-Sleep 1
 $configXml = [xml](Get-Content $configPath)
 
 if (-not $noGui.IsPresent) {
-    $errorColor = [System.Drawing.ColorTranslator]::FromHtml("#c80505")
-    $successColor = [System.Drawing.ColorTranslator]::FromHtml("#417505")
 
     Write-Host "[+] Starting GUI to allow user to edit configuration file..."
     ################################################################################
@@ -478,6 +476,9 @@ if (-not $noGui.IsPresent) {
     ################################################################################
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -Assembly System.Drawing
+
+    $errorColor = [System.Drawing.ColorTranslator]::FromHtml("#c80505")
+    $successColor = [System.Drawing.ColorTranslator]::FromHtml("#417505")
 
 
     function Get-Folder($textBox, $envVar) {
