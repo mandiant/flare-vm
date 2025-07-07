@@ -9,12 +9,12 @@ Welcome to FLARE-VM - a collection of software installations scripts for Windows
 **FLARE-VM should ONLY be installed on a virtual machine**.
 The VM should satisfy the following requirements:
 
-* Windows >= 10
-* PowerShell >= 5
+* Windows ≥ 10
+* PowerShell ≥ 5
 * Disk capacity of at least 60 GB and memory of at least 2GB
 * Usernames without spaces or other special characters
 * Internet connection
-* Tamper Protection and any Anti-Malware solution (e.g., Windows Defender) Windows Defender disabled, preferably via Group Policy
+* Tamper Protection and any Anti-Malware solution (e.g., Windows Defender) disabled, preferably via Group Policy
 * Windows Updates Disabled
 
 ## Installation instruction
@@ -30,7 +30,7 @@ This section documents the steps to install FLARE-VM. You may also find useful t
       * GPO: [https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo](https://superuser.com/a/1757341)
       * Non-GPO - Manual: [https://www.maketecheasier.com/permanently-disable-windows-defender-windows-10/](https://www.maketecheasier.com/permanently-disable-windows-defender-windows-10)
       * Non-GPO - Automated: [https://github.com/ionuttbara/windows-defender-remover](https://github.com/ionuttbara/windows-defender-remover)
-      * Non-GPO - Semi-Automated (User needs to toggle off Tamper Protection): [https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1] (https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1)
+      * Non-GPO - Semi-Automated (User needs to toggle off Tamper Protection): [https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1](https://github.com/AveYo/LeanAndMean/blob/main/ToggleDefender.ps1)
 * Take a VM snapshot so you can always revert to a state before the FLARE-VM installation
 
 ### FLARE-VM installation
@@ -92,14 +92,14 @@ Using the installer GUI you may customize:
 
 #### Configuration
 
-The installer will download [config.xml](https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml) from the FLARE-VM repository. This file contains the default configuration, including the list of packages to install and the environment variable paths. You may use your own configuration by specifying the CLI-argument `-customConfig` and providing either a local file path or URL to your `config.xml` file. For example:
+The installer will download [`config.xml`](https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml) from the FLARE-VM repository. This file contains the default configuration, including the list of packages to install and the environment variable paths. You may use your own configuration by specifying the CLI-argument `-customConfig` and providing either a local file path or URL to your `config.xml` file. For example:
 
 ```
 .\install.ps1 -customConfig "https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml"
 ```
 
 #### Taskbar Layout
-The installer will use [CustomStartLayout.xml](https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml) from the FLARE-VM repository. This file contains the default taskbar layout. You may use your own configuration by specifying the CLI-argument `-customLayout` and providing a local file path or URL to your `CustomStartLayout.xml` file. For example:
+The installer will use [`CustomStartLayout.xml`](https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml) from the FLARE-VM repository. This file contains the default taskbar layout. You may use your own configuration by specifying the CLI-argument `-customLayout` and providing a local file path or URL to your `CustomStartLayout.xml` file. For example:
 
 ```
 .\install.ps1 -customLayout "https://raw.githubusercontent.com/mandiant/flare-vm/main/CustomStartLayout.xml"
@@ -123,7 +123,7 @@ For example:
     </registry-items>
 ```
 
-For more examples, check the default configuration file: [config.xml](https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml).
+For more examples, check the default configuration file: [`config.xml`](https://raw.githubusercontent.com/mandiant/flare-vm/main/config.xml).
 
 
 ## Contributing
