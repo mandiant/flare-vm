@@ -115,39 +115,6 @@ function Save-FileFromUrl {
     }
 }
 
-# Function to test the network stack. Ping/GET requests to the resource to ensure that network stack looks good for installation
-function Test-WebConnection {
-    param (
-        [string]$url
-    )
-
-    Write-Host "[+] Checking for Internet connectivity ($url)..."
-
-    if (-not (Test-Connection $url -Quiet)) {
-        Write-Host "`t[!] It looks like you cannot ping $url. Check your network settings." -ForegroundColor Red
-        Start-Sleep 3
-        exit 1
-    }
-
-    $response = $null
-    try {
-        $response = Invoke-WebRequest -Uri "https://$url" -UseBasicParsing -DisableKeepAlive
-    }
-    catch {
-        Write-Host "`t[!] Error accessing $url. Exception: $($_.Exception.Message)`n`t[!] Check your network settings." -ForegroundColor Red
-        Start-Sleep 3
-        exit 1
-    }
-
-    if ($response -and $response.StatusCode -ne 200) {
-        Write-Host "`t[!] Unable to access $url. Status code: $($response.StatusCode)`n`t[!] Check your network settings." -ForegroundColor Red
-        Start-Sleep 3
-        exit 1
-    }
-
-    Write-Host "`t[+] Internet connectivity check for $url passed" -ForegroundColor Green
-}
-
 # Function used for getting configuration files (such as config.xml and LayoutModification.xml)
 function Get-ConfigFile {
     param (
@@ -169,77 +136,92 @@ function Get-ConfigFile {
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 Set-Location -Path $desktopPath -PassThru | Out-Null
 
-if (-not $noChecks.IsPresent) {
-    # Check PowerShell version
-    Write-Host "[+] Checking if PowerShell version is compatible..."
-    $psVersion = $PSVersionTable.PSVersion
+# Setting global variables
+$global:checksPassed = $true
+$global:mandatoryChecksPassed = $true
+
+################################# Functions that conduct Pre-Install Checks #################################
+# Function to test the network stack. Ping/GET requests to the resource to ensure that network stack looks good for installation
+function Test-WebConnection {
+    param (
+        [string]$url
+    )
+
+    Write-Host "[+] Checking for Internet connectivity ($url)..."
+
+    if (-not (Test-Connection $url -Quiet)) {
+        Write-Host "`t[!] It looks like you cannot ping $url. Check your network settings." -ForegroundColor Red
+		$global:mandatoryChecksPassed = $false
+    }
+
+    $response = $null
+    try {
+        $response = Invoke-WebRequest -Uri "https://$url" -UseBasicParsing -DisableKeepAlive
+    }
+    catch {
+        Write-Host "`t[!] Error accessing $url. Exception: $($_.Exception.Message)`n`t[!] Check your network settings." -ForegroundColor Red
+        $global:mandatoryChecksPassed = $false
+    }
+
+    if ($response -and $response.StatusCode -ne 200) {
+        Write-Host "`t[!] Unable to access $url. Status code: $($response.StatusCode)`n`t[!] Check your network settings." -ForegroundColor Red
+		$global:mandatoryChecksPassed = $false
+    }
+
+    Write-Host "`t[+] Internet connectivity check for $url passed" -ForegroundColor Green
+}
+
+function CheckWebConnectionGoogle {
+	$response = $null
+    try {
+        $response = Invoke-WebRequest -Uri "https://google.com" -UseBasicParsing -DisableKeepAlive
+    }
+    catch {
+        return $false
+    }
+
+    if ($response -and $response.StatusCode -ne 200) {
+        return $false
+    }else {
+		return $true
+	}
+}
+
+function Check-PSVersion{
+	$psVersion = $PSVersionTable.PSVersion
     if ($psVersion -lt [System.Version]"5.0.0") {
-        Write-Host "`t[!] You are using PowerShell version $psVersion. This is an old version and it is not supported" -ForegroundColor Red
-        Read-Host "Press any key to exit..."
-        exit 1
+        return $false
     } else {
-        Write-Host "`t[+] Installing with PowerShell version $psVersion" -ForegroundColor Green
+        return $true
     }
+}
 
-    # Ensure script is ran as administrator
-    Write-Host "[+] Checking if script is running as administrator..."
+function Check-Admin {
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    if (-Not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Write-Host "`t[!] Please run this script as administrator" -ForegroundColor Red
-        Read-Host "Press any key to exit..."
-        exit 1
-    } else {
-        Write-Host "`t[+] Running as administrator" -ForegroundColor Green
-        Start-Sleep -Milliseconds 500
-    }
-
-    # Ensure execution policy is unrestricted
-    Write-Host "[+] Checking if execution policy is unrestricted..."
-    if ((Get-ExecutionPolicy).ToString() -ne "Unrestricted") {
-        Write-Host "`t[!] Please run this script after updating your execution policy to unrestricted" -ForegroundColor Red
-        Write-Host "`t[-] Hint: Set-ExecutionPolicy Unrestricted" -ForegroundColor Yellow
-        Read-Host "Press any key to exit..."
-        exit 1
-    } else {
-        Write-Host "`t[+] Execution policy is unrestricted" -ForegroundColor Green
-        Start-Sleep -Milliseconds 500
-    }
-
-    # Check if Windows < 10
-    $os = Get-CimInstance -Class Win32_OperatingSystem
-    $osMajorVersion = $os.Version.Split('.')[0] # Version examples: "6.1.7601", "10.0.19045"
-    Write-Host "[+] Checking Operating System version compatibility..."
-    if ($osMajorVersion -lt 10) {
-        Write-Host "`t[!] Only Windows >= 10 is supported" -ForegroundColor Yellow
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
+    return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+function Check-ExecutionPolicy {
+    return (Get-ExecutionPolicy).ToString() -eq "Unrestricted"
+}
+function Check-DefenderAndTamperProtection {
+    $defender = Get-WmiObject -Namespace "root\Microsoft\Windows\Defender" -Class MSFT_MpPreference
+    if ($defender.DisableRealtimeMonitoring) {
+        if (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection" -ea 0) {
+            return (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection").TamperProtection -ne 5
         }
     }
+    return $false
+}
 
-    # Check if host has been tested
-    # 17763: the version used by windows-2019 in GH actions
-    # 19045: https://www.microsoft.com/en-us/software-download/windows10ISO downloaded on April 25 2023.
-    # 20348: the version used by windows-2022 in GH actions
-    $testedVersions = @(17763, 19045, 20348)
-    if ($os.BuildNumber -notin $testedVersions) {
-        Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
-        Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    } else {
-        Write-Host "`t[+] Installing on Windows version $osVersion" -ForegroundColor Green
-    }
-
-    # Check if system is a virtual machine
+function Check-SupportedOS {
+    $osVersion = (Get-WmiObject -class Win32_OperatingSystem).BuildNumber
+    return $osVersion -in $testedVersions
+}
+function Check-VM {
     $virtualModels = @('VirtualBox', 'VMware', 'Virtual Machine', 'Hyper-V')
-    $computerSystemModel = (Get-CimInstance -Class Win32_ComputerSystem).Model
+    $computerSystemModel = (Get-WmiObject win32_computersystem).model
     $isVirtualModel = $false
-
+    
     foreach ($model in $virtualModels) {
         if ($computerSystemModel.Contains($model)) {
             $isVirtualModel = $true
@@ -248,114 +230,166 @@ if (-not $noChecks.IsPresent) {
     }
 
     if (!$isVirtualModel) {
-        Write-Host "`t[!] You are not on a virual machine or have hardened your machine to not appear as a virtual machine" -ForegroundColor Red
-        Write-Host "`t[!] Please do NOT install this on your host system as it can't be uninstalled completely" -ForegroundColor Red
-        Write-Host "`t[!] ** Please only install on a virtual machine **" -ForegroundColor Red
-        Write-Host "`t[!] ** Only continue if you know what you are doing! **" -ForegroundColor Red
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
-    }
-
-    # Check for spaces in the username, exit if identified
-    Write-Host "[+] Checking for spaces in the username..."
-    if (${Env:UserName} -match '\s') {
-        Write-Host "`t[!] Username '${Env:UserName}' contains a space and will break installation." -ForegroundColor Red
-        Write-Host "`t[!] Exiting..." -ForegroundColor Red
-        Start-Sleep 3
-        exit 1
+        return $false
     } else {
-        Write-Host "`t[+] Username '${Env:UserName}' does not contain any spaces." -ForegroundColor Green
+        return $true
     }
+}
 
-    # Check if host has enough disk space
-    Write-Host "[+] Checking if host has enough disk space..."
+function Check-SpaceUserName {
+	if (${Env:UserName} -match '\s') {
+	    return $false
+	}else {
+		return $true
+	}	
+}
+function Check-Storage {
     $disk = Get-PSDrive (Get-Location).Drive.Name
     Start-Sleep -Seconds 1
-    if (-Not (($disk.used + $disk.free)/1GB -gt 58.8)) {
-        Write-Host "`t[!] A minimum of 60 GB hard drive space is preferred. Please increase hard drive space of the VM, reboot, and retry install" -ForegroundColor Red
-        Write-Host "`t[+] If you have multiple drives, you may change the tool installation location via the envrionment variable %RAW_TOOLS_DIR% in config.xml or GUI" -ForegroundColor Yellow
-        Write-Host "`t[+] However, packages provided from the Chocolatey community repository will install to their default location" -ForegroundColor Yellow
-        Write-Host "`t[+] See: https://stackoverflow.com/questions/19752533/how-do-i-set-chocolatey-to-install-applications-onto-another-drive" -ForegroundColor Yellow
-        Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
-            exit 1
-        }
+    if (($disk.used + $disk.free)/1GB -gt 58.8) {
+        return $true
     } else {
-        Write-Host "`t[+] Disk is larger than 60 GB" -ForegroundColor Green
+        return $false
     }
+}
 
-    # Internet connectivity checks
-    Test-WebConnection 'google.com'
-    Test-WebConnection 'github.com'
-    Test-WebConnection 'raw.githubusercontent.com'
 
-    Write-Host "`t[+] Network connectivity looks good" -ForegroundColor Green
 
-    # Check if Tamper Protection is disabled
-    Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
-    try {
-        $tpEnabled = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features" -Name "TamperProtection" -ErrorAction Stop
-        if ($tpEnabled.TamperProtection -eq 5) {
-            Write-Host "`t[!] Please disable Tamper Protection, reboot, and rerun installer" -ForegroundColor Red
-            Write-Host "`t[+] Hint: https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87" -ForegroundColor Yellow
-            Write-Host "`t[+] Hint: https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html" -ForegroundColor Yellow
-            Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
-            Write-Host "`t[+] Hint: https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/" -ForegroundColor Yellow
-            Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
-            Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-            $response = Read-Host
-            if ($response -notin @("y","Y")) {
-                exit 1
-            }
-        } else {
-            Write-Host "`t[+] Tamper Protection is disabled" -ForegroundColor Green
-            Start-Sleep -Milliseconds 500
-        }
-    } catch {
-        Write-Host "`t[+] Tamper Protection is either not enabled or not detected" -ForegroundColor Yellow
-        Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-        $response = Read-Host
-        if ($response -notin @("y","Y")) {
+if ($noGui.IsPresent) {
+	if (-not $noChecks.IsPresent) {
+		# Check PowerShell version
+		Write-Host "[+] Checking if PowerShell version is compatible..."
+		if (-not (Check-PSVersion)){
+			Write-Host "`t[!] You are using PowerShell version $psVersion. This is an old version and it is not supported" -ForegroundColor Red
+			$global:mandatoryChecksPassed = $false
+		} else {
+			Write-Host "`t[+] Installing with PowerShell version $psVersion" -ForegroundColor Green
+		}
+
+		# Ensure script is ran as administrator
+		Write-Host "[+] Checking if script is running as administrator..."
+		if (-not (Check-Admin)) {
+			Write-Host "`t[!] Please run this script as administrator" -ForegroundColor Red
+			$global:mandatoryChecksPassed = $false
+		} else {
+			Write-Host "`t[+] Running as administrator" -ForegroundColor Green
+			Start-Sleep -Milliseconds 500
+		}
+
+		# Ensure execution policy is unrestricted
+		Write-Host "[+] Checking if execution policy is unrestricted..."
+		if (Check-ExecutionPolicy) {
+			Write-Host "`t[!] Please run this script after updating your execution policy to unrestricted" -ForegroundColor Red
+			Write-Host "`t[-] Hint: Set-ExecutionPolicy Unrestricted" -ForegroundColor Yellow
+			$global:mandatoryChecksPassed = $false
+		} else {
+			Write-Host "`t[+] Execution policy is unrestricted" -ForegroundColor Green
+			Start-Sleep -Milliseconds 500
+		}
+
+		# Check if Windows < 10
+		$os = Get-CimInstance -Class Win32_OperatingSystem
+		$osMajorVersion = $os.Version.Split('.')[0] # Version examples: "6.1.7601", "10.0.19045"
+		Write-Host "[+] Checking Operating System version compatibility..."
+		if ($osMajorVersion -lt 10) {
+			Write-Host "`t[!] Only Windows >= 10 is supported" -ForegroundColor Yellow
+			$global:checksPassed = $false
+		}
+
+		# Check if host has been tested
+		# 17763: the version used by windows-2019 in GH actions
+		# 19045: https://www.microsoft.com/en-us/software-download/windows10ISO downloaded on April 25 2023.
+		# 20348: the version used by windows-2022 in GH actions
+		$testedVersions = @(17763, 19045, 20348)
+		if (-not (Check-SupportedOS)) {
+			Write-Host "`t[!] Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')" -ForegroundColor Yellow
+			Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
+			$global:checksPassed = $false
+		} else {
+			Write-Host "`t[+] Installing on Windows version $osVersion" -ForegroundColor Green
+		}
+
+		# Check if system is a virtual machine
+	   
+		if (-not (Check-VM)) {
+			Write-Host "`t[!] You are not on a virual machine or have hardened your machine to not appear as a virtual machine" -ForegroundColor Red
+			Write-Host "`t[!] Please do NOT install this on your host system as it can't be uninstalled completely" -ForegroundColor Red
+			Write-Host "`t[!] ** Please only install on a virtual machine **" -ForegroundColor Red
+			$global:checksPassed = $false
+		}
+
+		# Check for spaces in the username, exit if identified
+		Write-Host "[+] Checking for spaces in the username..."
+		if (-not (Check-SpaceUserName)) {
+			Write-Host "`t[!] Username '${Env:UserName}' contains a space and will break installation." -ForegroundColor Red
+			Write-Host "`t[!] Exiting..." -ForegroundColor Red
+			$global:mandatoryChecksPassed = $false
+		} else {
+			Write-Host "`t[+] Username '${Env:UserName}' does not contain any spaces." -ForegroundColor Green
+		}
+
+		# Check if host has enough disk space
+		Write-Host "[+] Checking if host has enough disk space..."
+		if (-Not (Check-Storage)) {
+			Write-Host "`t[!] A minimum of 60 GB hard drive space is preferred. Please increase hard drive space of the VM, reboot, and retry install" -ForegroundColor Red
+			Write-Host "`t[+] If you have multiple drives, you may change the tool installation location via the envrionment variable %RAW_TOOLS_DIR% in config.xml or GUI" -ForegroundColor Yellow
+			Write-Host "`t[+] However, packages provided from the Chocolatey community repository will install to their default location" -ForegroundColor Yellow
+			Write-Host "`t[+] See: https://stackoverflow.com/questions/19752533/how-do-i-set-chocolatey-to-install-applications-onto-another-drive" -ForegroundColor Yellow
+			$global:checksPassed = $false
+		} else {
+			Write-Host "`t[+] Disk is larger than 60 GB" -ForegroundColor Green
+		}
+
+		# Internet connectivity checks
+		Test-WebConnection 'google.com'
+		Test-WebConnection 'github.com'
+		Test-WebConnection 'raw.githubusercontent.com'
+
+		Write-Host "`t[+] Network connectivity looks good" -ForegroundColor Green
+
+		# Check if Tamper Protection is disabled
+		Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
+		if (-not (Check-DefenderAndTamperProtection)) {
+			Write-Host "`t[!] Windows Defender and Tamper Protection are enabled" -ForegroundColor Red
+			Write-Host "`t[!] Please disable Tamper Protection, reboot, and rerun installer" -ForegroundColor Red
+			Write-Host "`t[+] Hint: https://support.microsoft.com/en-us/windows/prevent-changes-to-security-settings-with-tamper-protection-31d51aaa-645d-408e-6ce7-8d7f8e593f87" -ForegroundColor Yellow
+			Write-Host "`t[+] Hint: https://www.tenforums.com/tutorials/123792-turn-off-tamper-protection-windows-defender-antivirus.html" -ForegroundColor Yellow
+			Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
+			Write-Host "`t[+] Hint: https://lazyadmin.nl/win-11/turn-off-windows-defender-windows-11-permanently/" -ForegroundColor Yellow
+			Write-Host "`t[!] Please disable Windows Defender through Group Policy, reboot, and rerun installer" -ForegroundColor Red
+			Write-Host "`t[+] Hint: https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo" -ForegroundColor Yellow
+			Write-Host "`t[+] Hint: https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10" -ForegroundColor Yellow
+			$global:checksPassed = $false
+			
+		} else {
+				Write-Host "`t[+] Windows Defender and Tamper Protection are disabled" -ForegroundColor Green
+				Start-Sleep -Milliseconds 500
+		}
+		
+		if (-not $global:mandatoryChecksPassed){
+			Write-Host "`t[!] Mandatory checks are not fulfilled to continue with the installaction"
+			Start-Sleep 3
             exit 1
-        }
-        Start-Sleep -Milliseconds 500
-    }
+		}
+		
+		if (-not $global:ChecksPassed){
+			Write-Host "[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
+			$response = Read-Host
+			if ($response -notin @("y","Y")) {
+				exit 1
+		}
 
-    # Check if Defender is disabled
-    Write-Host "[+] Checking if Windows Defender service is disabled..."
-    $defender = Get-Service -Name WinDefend -ea 0
-    if ($null -ne $defender) {
-        if ($defender.Status -eq "Running") {
-            Write-Host "`t[!] Please disable Windows Defender through Group Policy, reboot, and rerun installer" -ForegroundColor Red
-            Write-Host "`t[+] Hint: https://stackoverflow.com/questions/62174426/how-to-permanently-disable-windows-defender-real-time-protection-with-gpo" -ForegroundColor Yellow
-            Write-Host "`t[+] Hint: https://www.windowscentral.com/how-permanently-disable-windows-defender-windows-10" -ForegroundColor Yellow
-            Write-Host "`t[+] Hint: https://github.com/jeremybeaume/tools/blob/master/disable-defender.ps1" -ForegroundColor Yellow
-            Write-Host "`t[+] You are welcome to continue, but may experience errors downloading or installing packages" -ForegroundColor Yellow
-            Write-Host "`t[-] Do you still wish to proceed? (Y/N): " -ForegroundColor Yellow -NoNewline
-            $response = Read-Host
-            if ($response -notin @("y","Y")) {
-                exit 1
-            }
-        } else {
-            Write-Host "`t[+] Defender is disabled" -ForegroundColor Green
-            Start-Sleep -Milliseconds 500
-        }
-    }
+		Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
+		$UserNoPasswd = Get-CimInstance Win32_UserAccount -Filter "Name='${Env:UserName}'"
+		$UserNoPasswd | Set-CimInstance -Property @{ PasswordExpires = $false }
 
-    Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
-    $UserNoPasswd = Get-CimInstance Win32_UserAccount -Filter "Name='${Env:UserName}'"
-    $UserNoPasswd | Set-CimInstance -Property @{ PasswordExpires = $false }
-
-    # Prompt user to remind them to take a snapshot
-    Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
-    $response = Read-Host
-    if ($response -notin @("y","Y")) {
-        exit 1
-    }
+		# Prompt user to remind them to take a snapshot
+		Write-Host "[-] Have you taken a VM snapshot to ensure you can revert to pre-installation state? (Y/N): " -ForegroundColor Yellow -NoNewline
+		$response = Read-Host
+		if ($response -notin @("y","Y")) {
+			exit 1
+		}
+	}
 }
 
 if (-not $noPassword.IsPresent) {
@@ -410,7 +444,7 @@ $Boxstarter.RebootOk = (-not $noReboots.IsPresent)
 $Boxstarter.NoPassword = $noPassword.IsPresent
 $Boxstarter.AutoLogin = $true
 $Boxstarter.SuppressLogging = $True
-$global:VerbosePreference = "SilentlyContinue"
+#$global:VerbosePreference = "SilentlyContinue"
 Set-BoxstarterConfig -NugetSources "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2;https://chocolatey.org/api/v2"
 Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -EnableShowProtectedOSFiles -EnableShowFileExtensions -EnableShowFullPathInTitleBar
 
@@ -468,6 +502,99 @@ if (-Not (Test-Path $configPath)) {
 Start-Sleep 1
 $configXml = [xml](Get-Content $configPath)
 
+
+
+#########################################################################
+# GUI Functions
+#########################################################################
+
+function Get-Folder($textBox, $envVar) {
+	$folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
+	$folderBrowserDialog.RootFolder = 'MyComputer'
+	if ($folderBrowserDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+		$textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs[$envVar] -Leaf))
+	}
+}
+
+# Function that accesses MyGet vm-packages API URL to process packages that are the latest version and have a category
+# Saves vm-packages.xml into disk and follows the link after the </entry> tag to retrieve a new version of the XML file
+# Returns $packagesByCategory, a hashtable of arrays, where each entry is a PSCustomObject
+function Get-Packages-Categories {
+   # MyGet API URL that contains a filter to display only the latest packages
+   # This URL displays the last two versions of a package
+   # Minimize the number of HTTP requests to display all the packages due to the number of versions a package might have
+   $vmPackagesUrl = "https://www.myget.org/F/vm-packages/api/v2/Packages?$filter=IsLatestVersion%20eq%20true"
+   $vmPackagesFile = "${Env:VM_COMMON_DIR}\vm-packages.xml"
+   $packagesByCategory=@{}
+   do {
+	  # Download the XML from MyGet API
+	  Save-FileFromUrl -fileSource $vmPackagesUrl -fileDestination $vmPackagesFile --exitOnError
+
+	  # Load the XML content
+	  [xml]$vm_packages = Get-Content $vmPackagesFile
+
+	  # Define the namespaces defined in vm-packages.xml to access nodes
+  # Each package resides in the entry node that is defined in the dataservices namespace
+	  # Each node has properties that are defined in the metadata namespace
+	  $ns = New-Object System.Xml.XmlNamespaceManager($vm_packages.NameTable)
+	  $ns.AddNamespace("atom", "http://www.w3.org/2005/Atom")
+	  $ns.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices")
+	  $ns.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata")
+
+	  # Extract package information from the XML
+	  $vm_packages.feed.entry | ForEach-Object {
+		 $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
+		 $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
+		 # Select only packages that have the latest version, contain a category and the category is not excluded
+		 if (($isLatestVersion -eq "true") -and ($category -ne "") -and ($excludedCategories -notcontains $category)) {
+			  $packageName = $_.properties.Id
+			  $description = $_.properties.Description
+
+			  # Initialize category as an empty array
+			  if (-not ($packagesByCategory.ContainsKey($category))) {
+				 $packagesByCategory[$category] = @()
+			  }
+	  # Add the PackageName and PackageDesccription to each entry in the array
+			  $packagesByCategory[$category] += [PSCustomObject]@{
+				 PackageName = $packageName
+				 PackageDescription = $description
+			  }
+		   }
+	  }
+	  # Check if there is a next link in the XML and set the API URL to that link if it exists
+	  $nextLink = $vm_packages.SelectSingleNode("//atom:link[@rel='next']/@href", $ns)
+	  $vmPackagesUrl = $nextLink."#text"
+
+   } while ($vmPackagesUrl)
+
+  return $packagesByCategory
+}
+
+# Function that returns an array of all the packages that are displayed sorted by category from $packagesByCategory
+function Get-AllPackages{
+	$listedPackages = $packagesByCategory.Values | ForEach-Object { $_ } | Select-Object -ExpandProperty PackageName
+	return $listedPackages
+}
+
+# Function that returns additional packages from the config that are not displayed in the textboxes
+# which includes both Choco packages and packages from excluded categories
+function Get-AdditionalPackages{
+   $additionalPackages=@()
+
+   # Packages from the config that are not displayed
+   $additionalPackages = $packagesToInstall | where-Object { $listedPackages -notcontains $_}
+   return $additionalPackages
+}
+
+
+
+
+function Open-CheckManager {
+	if ($formChecksManager.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
+		exit
+	}
+}
+
 if (-not $noGui.IsPresent) {
 
     Write-Host "[+] Starting GUI to allow user to edit configuration file..."
@@ -479,85 +606,330 @@ if (-not $noGui.IsPresent) {
 
     $errorColor = [System.Drawing.ColorTranslator]::FromHtml("#c80505")
     $successColor = [System.Drawing.ColorTranslator]::FromHtml("#417505")
+    $grayedColor = [System.Drawing.ColorTranslator]::FromHtml("#959393")
+    $skippedColor = [System.Drawing.ColorTranslator]::FromHtml("#f59f00")
+    $skippedColor = [System.Drawing.ColorTranslator]::FromHtml("#f59f00")
 
 
-    function Get-Folder($textBox, $envVar) {
-        $folderBrowserDialog = New-Object System.Windows.Forms.FolderBrowserDialog
-        $folderBrowserDialog.RootFolder = 'MyComputer'
-        if ($folderBrowserDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-            $textbox.text = (Join-Path $folderBrowserDialog.SelectedPath (Split-Path $envs[$envVar] -Leaf))
+    if (-not $noChecks.IsPresent) {
+		
+    #################################################################################################
+    ################################ Installer Checks Form Controls #################################
+    #################################################################################################
+
+		$formChecksManager           = New-Object system.Windows.Forms.Form
+		$formChecksManager.ClientSize  = New-Object System.Drawing.Point(530,420)
+		$formChecksManager.text      = "FLAREVM Pre-Install Checks"
+		$formChecksManager.TopMost   = $true
+		$formChecksManager.StartPosition = 'CenterScreen'
+		
+		$ChecksPanel                     = New-Object system.Windows.Forms.Panel
+		$ChecksPanel.height              = 330
+		$ChecksPanel.width               = 89
+		$ChecksPanel.location            = New-Object System.Drawing.Point(365,8)
+		
+		$InstallChecksGroup              = New-Object system.Windows.Forms.Groupbox
+		$InstallChecksGroup.height       = 340
+		$InstallChecksGroup.width        = 462
+		$InstallChecksGroup.text         = "Installation Checks"
+		$InstallChecksGroup.location     = New-Object System.Drawing.Point(23,14)
+		
+		################################# Check Labels #################################
+
+		$RunningAsAdminLabel             = New-Object system.Windows.Forms.Label
+		$RunningAsAdminLabel.text        = "Running as Administrator"
+		$RunningAsAdminLabel.AutoSize    = $true
+		$RunningAsAdminLabel.width       = 25
+		$RunningAsAdminLabel.height      = 10
+		$RunningAsAdminLabel.location    = New-Object System.Drawing.Point(15,18)
+		$RunningAsAdminLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$ExecutionPolicyLabel            = New-Object system.Windows.Forms.Label
+		$ExecutionPolicyLabel.text       = "Execution Policy Unrestricted"
+		$ExecutionPolicyLabel.AutoSize   = $true
+		$ExecutionPolicyLabel.width      = 25
+		$ExecutionPolicyLabel.height     = 10
+		$ExecutionPolicyLabel.location   = New-Object System.Drawing.Point(15,59)
+		$ExecutionPolicyLabel.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$WindowsDefenderLabel           = New-Object system.Windows.Forms.Label
+		$WindowsDefenderLabel.text      = "Windows Defender Disabled"
+		$WindowsDefenderLabel.AutoSize  = $true
+		$WindowsDefenderLabel.width     = 25
+		$WindowsDefenderLabel.height    = 10
+		$WindowsDefenderLabel.location  = New-Object System.Drawing.Point(15,104)
+		$WindowsDefenderLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$WindowsReleaseLabel             = New-Object system.Windows.Forms.Label
+		$WindowsReleaseLabel.text        = "Compatible Windows Release"
+		$WindowsReleaseLabel.AutoSize    = $true
+		$WindowsReleaseLabel.width       = 25
+		$WindowsReleaseLabel.height      = 10
+		$WindowsReleaseLabel.location    = New-Object System.Drawing.Point(15,149)
+		$WindowsReleaseLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$RunningVMLabel                  = New-Object system.Windows.Forms.Label
+		$RunningVMLabel.text             = "Running in a Virtual Machine"
+		$RunningVMLabel.AutoSize         = $true
+		$RunningVMLabel.width            = 25
+		$RunningVMLabel.height           = 10
+		$RunningVMLabel.location         = New-Object System.Drawing.Point(15,193)
+		$RunningVMLabel.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$EnoughHardStorageLabel          = New-Object system.Windows.Forms.Label
+		$EnoughHardStorageLabel.text     = "Enough Hard Drive Space"
+		$EnoughHardStorageLabel.AutoSize  = $true
+		$EnoughHardStorageLabel.width    = 25
+		$EnoughHardStorageLabel.height   = 10
+		$EnoughHardStorageLabel.location  = New-Object System.Drawing.Point(15,239)
+		$EnoughHardStorageLabel.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+
+        $PSVersionLabel          = New-Object system.Windows.Forms.Label
+		$PSVersionLabel.text     = "Valid Powershell version"
+		$PSVersionLabel.AutoSize  = $true
+		$PSVersionLabel.width    = 25
+		$PSVersionLabel.height   = 10
+		$PSVersionLabel.location  = New-Object System.Drawing.Point(15,285)
+		$PSVersionLabel.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		################################# Check Boolean Controls #################################
+		
+		$RunningAsAdmin                  = New-Object system.Windows.Forms.Label
+		$RunningAsAdmin.text             = "False"
+		$RunningAsAdmin.AutoSize         = $true
+		$RunningAsAdmin.width            = 25
+		$RunningAsAdmin.height           = 10
+		$RunningAsAdmin.location         = New-Object System.Drawing.Point(24,18)
+		$RunningAsAdmin.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$RunningAsAdmin.ForeColor        = $errorColor
+		
+		$ExecutionPolicy                 = New-Object system.Windows.Forms.Label
+		$ExecutionPolicy.text            = "False"
+		$ExecutionPolicy.AutoSize        = $true
+		$ExecutionPolicy.width           = 25
+		$ExecutionPolicy.height          = 10
+		$ExecutionPolicy.location        = New-Object System.Drawing.Point(24,63)
+		$ExecutionPolicy.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$ExecutionPolicy.ForeColor       = $errorColor
+		
+		$WindowsDefender                = New-Object system.Windows.Forms.Label
+		$WindowsDefender.text           = "False"
+		$WindowsDefender.AutoSize       = $true
+		$WindowsDefender.width          = 25
+		$WindowsDefender.height         = 10
+		$WindowsDefender.location       = New-Object System.Drawing.Point(24,108)
+		$WindowsDefender.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$WindowsDefender.ForeColor      = $errorColor
+		
+		$WindowsRelease                  = New-Object system.Windows.Forms.Label
+		$WindowsRelease.text             = "False"
+		$WindowsRelease.AutoSize         = $true
+		$WindowsRelease.width            = 25
+		$WindowsRelease.height           = 10
+		$WindowsRelease.location         = New-Object System.Drawing.Point(24,150)
+		$WindowsRelease.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$WindowsRelease.ForeColor        = $errorColor
+		
+		$RunningVM                       = New-Object system.Windows.Forms.Label
+		$RunningVM.text                  = "False"
+		$RunningVM.AutoSize              = $true
+		$RunningVM.width                 = 25
+		$RunningVM.height                = 10
+		$RunningVM.location              = New-Object System.Drawing.Point(24,195)
+		$RunningVM.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$RunningVM.ForeColor             = $errorColor
+		
+		$EnoughHardStorage               = New-Object system.Windows.Forms.Label
+		$EnoughHardStorage.text          = "False"
+		$EnoughHardStorage.AutoSize      = $true
+		$EnoughHardStorage.width         = 25
+		$EnoughHardStorage.height        = 10
+		$EnoughHardStorage.location      = New-Object System.Drawing.Point(24,241)
+		$EnoughHardStorage.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$EnoughHardStorage.ForeColor     = $errorColor
+		
+		$PSVersion						 = New-Object system.Windows.Forms.Label
+		$PSVersion.text                  = "False"
+		$PSVersion.AutoSize              = $true
+		$PSVersion.width                 = 25
+		$PSVersion.height                = 10
+		$PSVersion.location              = New-Object System.Drawing.Point(24,287)
+		$PSVersion.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$PSVersion.ForeColor             = $errorColor
+		
+		################################# Check Tooltip Controls #################################
+
+		$RunningVMTooltip                = New-Object system.Windows.Forms.Label
+		$RunningVMTooltip.text           = "Only run this script inside a Virtual Machine"
+		$RunningVMTooltip.AutoSize       = $true
+		$RunningVMTooltip.width          = 25
+		$RunningVMTooltip.height         = 10
+		$RunningVMTooltip.location       = New-Object System.Drawing.Point(15,219)
+		$RunningVMTooltip.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$RunningVMTooltip.ForeColor      = $grayedColor
+		
+		$WindowsReleaseTooltip           = New-Object system.Windows.Forms.Label
+		$WindowsReleaseTooltip.text      = "Ensure your Windows version is supported"
+		$WindowsReleaseTooltip.AutoSize  = $true
+		$WindowsReleaseTooltip.width     = 25
+		$WindowsReleaseTooltip.height    = 10
+		$WindowsReleaseTooltip.location  = New-Object System.Drawing.Point(15,175)
+		$WindowsReleaseTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$WindowsReleaseTooltip.ForeColor  = $grayedColor
+		
+		$WindowsDefenderTooltip            = New-Object system.Windows.Forms.Label
+		$WindowsDefenderTooltip.text       = "Disable Windows Defender and Tamper Protection"
+		$WindowsDefenderTooltip.AutoSize   = $true
+		$WindowsDefenderTooltip.width      = 25
+		$WindowsDefenderTooltip.height     = 10
+		$WindowsDefenderTooltip.location   = New-Object System.Drawing.Point(15,130)
+		$WindowsDefenderTooltip.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$WindowsDefenderTooltip.ForeColor  = $grayedColor
+		
+		$ExecutionPolicyTooltip             = New-Object system.Windows.Forms.Label
+		$ExecutionPolicyTooltip.text        = "PowerShell: Set-ExecutionPolicy Unrestricted"
+		$ExecutionPolicyTooltip.AutoSize    = $true
+		$ExecutionPolicyTooltip.width       = 25
+		$ExecutionPolicyTooltip.height      = 10
+		$ExecutionPolicyTooltip.location    = New-Object System.Drawing.Point(15,85)
+		$ExecutionPolicyTooltip.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$ExecutionPolicyTooltip.ForeColor   = $grayedColor
+		
+		$RunningAsAdminTooltip              = New-Object system.Windows.Forms.Label
+		$RunningAsAdminTooltip.text         = "Please run this script as Administrator"
+		$RunningAsAdminTooltip.AutoSize     = $true
+		$RunningAsAdminTooltip.width        = 25
+		$RunningAsAdminTooltip.height       = 10
+		$RunningAsAdminTooltip.location     = New-Object System.Drawing.Point(15,41)
+		$RunningAsAdminTooltip.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$RunningAsAdminTooltip.ForeColor    = $grayedColor
+		
+		$EnoughHardStorageTooltip           = New-Object system.Windows.Forms.Label
+		$EnoughHardStorageTooltip.text      = "Have at least 70GB of available storage"
+		$EnoughHardStorageTooltip.AutoSize  = $true
+		$EnoughHardStorageTooltip.width     = 25
+		$EnoughHardStorageTooltip.height    = 10
+		$EnoughHardStorageTooltip.location  = New-Object System.Drawing.Point(15,266)
+		$EnoughHardStorageTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$EnoughHardStorageTooltip.ForeColor = $grayedColor
+		
+		$PSVersionTooltip           = New-Object system.Windows.Forms.Label
+		$PSVersionTooltip.text      = "Minimum Powershell version 5"
+		$PSVersionTooltip.AutoSize  = $true
+		$PSVersionTooltip.width     = 25
+		$PSVersionTooltip.height    = 10
+		$PSVersionTooltip.location  = New-Object System.Drawing.Point(15,312)
+		$PSVersionTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$PSVersionTooltip.ForeColor = $grayedColor
+
+		################################# Check Completion Controls #################################
+
+		$BreakMyInstallCheckbox          = New-Object system.Windows.Forms.CheckBox
+		$BreakMyInstallCheckbox.text     = "I understand that continuing without satisfying all"
+		$BreakMyInstallCheckbox.AutoSize = $false
+		$BreakMyInstallCheckbox.width    = 324
+		$BreakMyInstallCheckbox.height   = 21
+		$BreakMyInstallCheckbox.location = New-Object System.Drawing.Point(30,358)
+		$BreakMyInstallCheckbox.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$BreakMyInstallCheckbox.Add_CheckStateChanged({
+			if ($BreakMyInstallCheckbox.Checked) {
+				$ChecksCompleteButton.enabled = $true
+			} else {
+				$ChecksCompleteButton.enabled = $false
+			}
+		})
+
+		$BreakMyInstallLabel             = New-Object system.Windows.Forms.Label
+		$BreakMyInstallLabel.text        = "pre-install checks might cause install issues"
+		$BreakMyInstallLabel.AutoSize    = $true
+		$BreakMyInstallLabel.width       = 25
+		$BreakMyInstallLabel.height      = 10
+		$BreakMyInstallLabel.location    = New-Object System.Drawing.Point(30,378)
+		$BreakMyInstallLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+
+		$ChecksCompleteButton            = New-Object system.Windows.Forms.Button
+		$ChecksCompleteButton.text       = "Continue"
+		$ChecksCompleteButton.width      = 97
+		$ChecksCompleteButton.height     = 37
+		$ChecksCompleteButton.enabled    = $false
+		$ChecksCompleteButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
+		$ChecksCompleteButton.location   = New-Object System.Drawing.Point(387,360)
+		$ChecksCompleteButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		$ChecksCompleteButton.Add_Click({
+			$global:checksPassed = $true
+			[void]$formChecksManager.Close()
+		})
+
+		$InstallChecksGroup.controls.AddRange(@($ChecksPanel,$RunningAsAdminLabel,$ExecutionPolicyLabel,$WindowsDefenderLabel,$WindowsReleaseLabel,$RunningVMLabel,$PSVersionLabel,$RunningAsAdminTooltip,$ExecutionPolicyTooltip,$WindowsDefenderTooltip,$WindowsReleaseTooltip,$RunningVMTooltip,$EnoughHardStorageLabel, $EnoughHardStorageTooltip,$PSVersionTooltip,$RunningAsAdmin,$EnoughHardStorage))
+		$formChecksManager.controls.AddRange(@($InstallChecksGroup,$ChecksCompleteButton,$BreakMyInstallCheckbox,$BreakMyInstallLabel))
+		$ChecksPanel.controls.AddRange(@($RunningAsAdmin, $ExecutionPolicy,$WindowsDefender,$WindowsRelease,$RunningVM, $EnoughHardStorage, $PSVersion))
+					
+	    # Make sure that the user completed all pre-install steps
+        if (Check-Admin) {
+            $RunningAsAdmin.Text = "True"
+            $RunningAsAdmin.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
         }
-    }
 
-    # Function that accesses MyGet vm-packages API URL to process packages that are the latest version and have a category
-    # Saves vm-packages.xml into disk and follows the link after the </entry> tag to retrieve a new version of the XML file
-    # Returns $packagesByCategory, a hashtable of arrays, where each entry is a PSCustomObject
-    function Get-Packages-Categories {
-       # MyGet API URL that contains a filter to display only the latest packages
-       # This URL displays the last two versions of a package
-       # Minimize the number of HTTP requests to display all the packages due to the number of versions a package might have
-       $vmPackagesUrl = "https://www.myget.org/F/vm-packages/api/v2/Packages?$filter=IsLatestVersion%20eq%20true"
-       $vmPackagesFile = "${Env:VM_COMMON_DIR}\vm-packages.xml"
-       $packagesByCategory=@{}
-       do {
-          # Download the XML from MyGet API
-          Save-FileFromUrl -fileSource $vmPackagesUrl -fileDestination $vmPackagesFile --exitOnError
+        if (Check-ExecutionPolicy) {
+            $ExecutionPolicy.Text = "True"
+            $ExecutionPolicy.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
 
-          # Load the XML content
-          [xml]$vm_packages = Get-Content $vmPackagesFile
 
-          # Define the namespaces defined in vm-packages.xml to access nodes
-  	  # Each package resides in the entry node that is defined in the dataservices namespace
-          # Each node has properties that are defined in the metadata namespace
-          $ns = New-Object System.Xml.XmlNamespaceManager($vm_packages.NameTable)
-          $ns.AddNamespace("atom", "http://www.w3.org/2005/Atom")
-          $ns.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices")
-          $ns.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata")
+        if (Check-DefenderAndTamperProtection) {
+                $WindowsDefender.Text = "True"
+                $WindowsDefender.ForeColor = $successColor
+        } else {
+            $WindowsDefender.Text = "Skip"
+            $WindowsDefender.ForeColor = $skippedColor
+            $global:selectedProfile = "Victim"
+        }
 
-          # Extract package information from the XML
-          $vm_packages.feed.entry | ForEach-Object {
-             $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
-             $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
-             # Select only packages that have the latest version, contain a category and the category is not excluded
-             if (($isLatestVersion -eq "true") -and ($category -ne "") -and ($excludedCategories -notcontains $category)) {
-                  $packageName = $_.properties.Id
-                  $description = $_.properties.Description
+        if (Check-SupportedOS) {
+            $WindowsRelease.Text = "True"
+            $WindowsRelease.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
 
-                  # Initialize category as an empty array
-                  if (-not ($packagesByCategory.ContainsKey($category))) {
-                     $packagesByCategory[$category] = @()
-                  }
-		  # Add the PackageName and PackageDesccription to each entry in the array
-                  $packagesByCategory[$category] += [PSCustomObject]@{
-                     PackageName = $packageName
-                     PackageDescription = $description
-                  }
-               }
-          }
-          # Check if there is a next link in the XML and set the API URL to that link if it exists
-          $nextLink = $vm_packages.SelectSingleNode("//atom:link[@rel='next']/@href", $ns)
-          $vmPackagesUrl = $nextLink."#text"
+        if (Check-VM) {
+            $RunningVM.Text = "True"
+            $RunningVM.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
 
-       } while ($vmPackagesUrl)
+        if (Check-Storage) {
+            $EnoughHardStorage.Text = "True"
+            $EnoughHardStorage.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
+		
+		if (Check-PSVersion){
+			$PSVersion.Text = "True"
+			$PSVersion.ForeColor = $successColor
+		} else {
+            $global:checksPassed = $false
+        }
 
-      return $packagesByCategory
-    }
+        if ($global:checksPassed) {
+            $ChecksCompleteButton.enabled = $true
+        }
 
-    # Function that returns an array of all the packages that are displayed sorted by category from $packagesByCategory
-    function Get-AllPackages{
-        $listedPackages = $packagesByCategory.Values | ForEach-Object { $_ } | Select-Object -ExpandProperty PackageName
-        return $listedPackages
-    }
+        Open-CheckManager
+		
+	
+	}
+	
+	if ($global:checksPassed -or $noChecks.IsPresent) {
 
-    # Function that returns additional packages from the config that are not displayed in the textboxes
-    # which includes both Choco packages and packages from excluded categories
-    function Get-AdditionalPackages{
-       $additionalPackages=@()
+        Write-Host "[+] Beginning graphical install"
 
-       # Packages from the config that are not displayed
-       $additionalPackages = $packagesToInstall | where-Object { $listedPackages -notcontains $_}
-       return $additionalPackages
-    }
 
     # Gather lists of packages
     $envs = [ordered]@{}
@@ -741,7 +1113,7 @@ if (-not $noGui.IsPresent) {
         Start-Sleep 3
         exit 1
     }
-
+	
     ################################################################################
     ## PACKAGE SELECTION BY CATEGORY
     ################################################################################
@@ -1178,7 +1550,7 @@ if (-not $noGui.IsPresent) {
         Start-Sleep 3
         exit 1
     }
-
+	}
     ################################################################################
     ## END GUI
     ################################################################################
