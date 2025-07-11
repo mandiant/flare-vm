@@ -278,7 +278,7 @@ if ($noGui.IsPresent) {
 
 		# Ensure execution policy is unrestricted
 		Write-Host "[+] Checking if execution policy is unrestricted..."
-		if (Check-ExecutionPolicy) {
+		if (-not (Check-ExecutionPolicy)) {
 			Write-Host "`t[!] Please run this script after updating your execution policy to unrestricted" -ForegroundColor Red
 			Write-Host "`t[-] Hint: Set-ExecutionPolicy Unrestricted" -ForegroundColor Yellow
 			$global:mandatoryChecksPassed = $false
@@ -367,7 +367,7 @@ if ($noGui.IsPresent) {
 		}
 		
 		if (-not $global:mandatoryChecksPassed){
-			Write-Host "`t[!] Mandatory checks are not fulfilled to continue with the installaction"
+			Write-Host "[!] Mandatory checks are not fulfilled to continue with the installaction" -ForegroundColor Red
 			Start-Sleep 3
             exit 1
 		}
@@ -377,6 +377,7 @@ if ($noGui.IsPresent) {
 			$response = Read-Host
 			if ($response -notin @("y","Y")) {
 				exit 1
+			}
 		}
 
 		Write-Host "[+] Setting password to never expire to avoid that a password expiration blocks the installation..."
@@ -390,8 +391,346 @@ if ($noGui.IsPresent) {
 			exit 1
 		}
 	}
+
 }
 
+function Open-CheckManager {
+	if ($formChecksManager.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
+		exit
+	}
+}
+# Init Window Install checks 
+if (-not $noGui.IsPresent) {
+
+    Write-Host "[+] Starting GUI to allow user to edit configuration file..."
+    ################################################################################
+    ## BEGIN GUI
+    ################################################################################
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -Assembly System.Drawing
+
+    $errorColor = [System.Drawing.ColorTranslator]::FromHtml("#c80505")
+    $successColor = [System.Drawing.ColorTranslator]::FromHtml("#417505")
+    $grayedColor = [System.Drawing.ColorTranslator]::FromHtml("#959393")
+
+    if (-not $noChecks.IsPresent) {
+		
+    #################################################################################################
+    ################################ Installer Checks Form Controls #################################
+    #################################################################################################
+
+		$formChecksManager           = New-Object system.Windows.Forms.Form
+		$formChecksManager.ClientSize  = New-Object System.Drawing.Point(530,420)
+		$formChecksManager.text      = "FLAREVM Pre-Install Checks"
+		$formChecksManager.TopMost   = $true
+		$formChecksManager.StartPosition = 'CenterScreen'
+		
+		$ChecksPanel                     = New-Object system.Windows.Forms.Panel
+		$ChecksPanel.height              = 330
+		$ChecksPanel.width               = 89
+		$ChecksPanel.location            = New-Object System.Drawing.Point(365,8)
+		
+		$InstallChecksGroup              = New-Object system.Windows.Forms.Groupbox
+		$InstallChecksGroup.height       = 340
+		$InstallChecksGroup.width        = 462
+		$InstallChecksGroup.text         = "Installation Checks"
+		$InstallChecksGroup.location     = New-Object System.Drawing.Point(23,14)
+		
+		################################# Check Labels #################################
+
+		$RunningAsAdminLabel             = New-Object system.Windows.Forms.Label
+		$RunningAsAdminLabel.text        = "Running as Administrator"
+		$RunningAsAdminLabel.AutoSize    = $true
+		$RunningAsAdminLabel.width       = 25
+		$RunningAsAdminLabel.height      = 10
+		$RunningAsAdminLabel.location    = New-Object System.Drawing.Point(15,18)
+		$RunningAsAdminLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$ExecutionPolicyLabel            = New-Object system.Windows.Forms.Label
+		$ExecutionPolicyLabel.text       = "Execution Policy Unrestricted"
+		$ExecutionPolicyLabel.AutoSize   = $true
+		$ExecutionPolicyLabel.width      = 25
+		$ExecutionPolicyLabel.height     = 10
+		$ExecutionPolicyLabel.location   = New-Object System.Drawing.Point(15,59)
+		$ExecutionPolicyLabel.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$WindowsDefenderLabel           = New-Object system.Windows.Forms.Label
+		$WindowsDefenderLabel.text      = "Windows Defender Disabled"
+		$WindowsDefenderLabel.AutoSize  = $true
+		$WindowsDefenderLabel.width     = 25
+		$WindowsDefenderLabel.height    = 10
+		$WindowsDefenderLabel.location  = New-Object System.Drawing.Point(15,104)
+		$WindowsDefenderLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$WindowsReleaseLabel             = New-Object system.Windows.Forms.Label
+		$WindowsReleaseLabel.text        = "Compatible Windows Release"
+		$WindowsReleaseLabel.AutoSize    = $true
+		$WindowsReleaseLabel.width       = 25
+		$WindowsReleaseLabel.height      = 10
+		$WindowsReleaseLabel.location    = New-Object System.Drawing.Point(15,149)
+		$WindowsReleaseLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$RunningVMLabel                  = New-Object system.Windows.Forms.Label
+		$RunningVMLabel.text             = "Running in a Virtual Machine"
+		$RunningVMLabel.AutoSize         = $true
+		$RunningVMLabel.width            = 25
+		$RunningVMLabel.height           = 10
+		$RunningVMLabel.location         = New-Object System.Drawing.Point(15,193)
+		$RunningVMLabel.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		$EnoughHardStorageLabel          = New-Object system.Windows.Forms.Label
+		$EnoughHardStorageLabel.text     = "Enough Hard Drive Space"
+		$EnoughHardStorageLabel.AutoSize  = $true
+		$EnoughHardStorageLabel.width    = 25
+		$EnoughHardStorageLabel.height   = 10
+		$EnoughHardStorageLabel.location  = New-Object System.Drawing.Point(15,239)
+		$EnoughHardStorageLabel.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+
+        $PSVersionLabel          = New-Object system.Windows.Forms.Label
+		$PSVersionLabel.text     = "Valid Powershell version"
+		$PSVersionLabel.AutoSize  = $true
+		$PSVersionLabel.width    = 25
+		$PSVersionLabel.height   = 10
+		$PSVersionLabel.location  = New-Object System.Drawing.Point(15,285)
+		$PSVersionLabel.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		
+		################################# Check Boolean Controls #################################
+		
+		$RunningAsAdmin                  = New-Object system.Windows.Forms.Label
+		$RunningAsAdmin.text             = "False"
+		$RunningAsAdmin.AutoSize         = $true
+		$RunningAsAdmin.width            = 25
+		$RunningAsAdmin.height           = 10
+		$RunningAsAdmin.location         = New-Object System.Drawing.Point(24,18)
+		$RunningAsAdmin.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$RunningAsAdmin.ForeColor        = $errorColor
+		
+		$ExecutionPolicy                 = New-Object system.Windows.Forms.Label
+		$ExecutionPolicy.text            = "False"
+		$ExecutionPolicy.AutoSize        = $true
+		$ExecutionPolicy.width           = 25
+		$ExecutionPolicy.height          = 10
+		$ExecutionPolicy.location        = New-Object System.Drawing.Point(24,63)
+		$ExecutionPolicy.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$ExecutionPolicy.ForeColor       = $errorColor
+		
+		$WindowsDefender                = New-Object system.Windows.Forms.Label
+		$WindowsDefender.text           = "False"
+		$WindowsDefender.AutoSize       = $true
+		$WindowsDefender.width          = 25
+		$WindowsDefender.height         = 10
+		$WindowsDefender.location       = New-Object System.Drawing.Point(24,108)
+		$WindowsDefender.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$WindowsDefender.ForeColor      = $errorColor
+		
+		$WindowsRelease                  = New-Object system.Windows.Forms.Label
+		$WindowsRelease.text             = "False"
+		$WindowsRelease.AutoSize         = $true
+		$WindowsRelease.width            = 25
+		$WindowsRelease.height           = 10
+		$WindowsRelease.location         = New-Object System.Drawing.Point(24,150)
+		$WindowsRelease.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$WindowsRelease.ForeColor        = $errorColor
+		
+		$RunningVM                       = New-Object system.Windows.Forms.Label
+		$RunningVM.text                  = "False"
+		$RunningVM.AutoSize              = $true
+		$RunningVM.width                 = 25
+		$RunningVM.height                = 10
+		$RunningVM.location              = New-Object System.Drawing.Point(24,195)
+		$RunningVM.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$RunningVM.ForeColor             = $errorColor
+		
+		$EnoughHardStorage               = New-Object system.Windows.Forms.Label
+		$EnoughHardStorage.text          = "False"
+		$EnoughHardStorage.AutoSize      = $true
+		$EnoughHardStorage.width         = 25
+		$EnoughHardStorage.height        = 10
+		$EnoughHardStorage.location      = New-Object System.Drawing.Point(24,241)
+		$EnoughHardStorage.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$EnoughHardStorage.ForeColor     = $errorColor
+		
+		$PSVersion						 = New-Object system.Windows.Forms.Label
+		$PSVersion.text                  = "False"
+		$PSVersion.AutoSize              = $true
+		$PSVersion.width                 = 25
+		$PSVersion.height                = 10
+		$PSVersion.location              = New-Object System.Drawing.Point(24,287)
+		$PSVersion.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$PSVersion.ForeColor             = $errorColor
+		
+		################################# Check Tooltip Controls #################################
+
+		$RunningVMTooltip                = New-Object system.Windows.Forms.Label
+		$RunningVMTooltip.text           = "Only run this script inside a Virtual Machine"
+		$RunningVMTooltip.AutoSize       = $true
+		$RunningVMTooltip.width          = 25
+		$RunningVMTooltip.height         = 10
+		$RunningVMTooltip.location       = New-Object System.Drawing.Point(15,219)
+		$RunningVMTooltip.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$RunningVMTooltip.ForeColor      = $grayedColor
+		
+		$WindowsReleaseTooltip           = New-Object system.Windows.Forms.Label
+		$WindowsReleaseTooltip.text      = "Ensure your Windows version is supported"
+		$WindowsReleaseTooltip.AutoSize  = $true
+		$WindowsReleaseTooltip.width     = 25
+		$WindowsReleaseTooltip.height    = 10
+		$WindowsReleaseTooltip.location  = New-Object System.Drawing.Point(15,175)
+		$WindowsReleaseTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$WindowsReleaseTooltip.ForeColor  = $grayedColor
+		
+		$WindowsDefenderTooltip            = New-Object system.Windows.Forms.Label
+		$WindowsDefenderTooltip.text       = "Disable Windows Defender and Tamper Protection"
+		$WindowsDefenderTooltip.AutoSize   = $true
+		$WindowsDefenderTooltip.width      = 25
+		$WindowsDefenderTooltip.height     = 10
+		$WindowsDefenderTooltip.location   = New-Object System.Drawing.Point(15,130)
+		$WindowsDefenderTooltip.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$WindowsDefenderTooltip.ForeColor  = $grayedColor
+		
+		$ExecutionPolicyTooltip             = New-Object system.Windows.Forms.Label
+		$ExecutionPolicyTooltip.text        = "PowerShell: Set-ExecutionPolicy Unrestricted (mandatory)"
+		$ExecutionPolicyTooltip.AutoSize    = $true
+		$ExecutionPolicyTooltip.width       = 25
+		$ExecutionPolicyTooltip.height      = 10
+		$ExecutionPolicyTooltip.location    = New-Object System.Drawing.Point(15,85)
+		$ExecutionPolicyTooltip.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$ExecutionPolicyTooltip.ForeColor   = $grayedColor
+		
+		$RunningAsAdminTooltip              = New-Object system.Windows.Forms.Label
+		$RunningAsAdminTooltip.text         = "Please run this script as Administrator (mandatory)"
+		$RunningAsAdminTooltip.AutoSize     = $true
+		$RunningAsAdminTooltip.width        = 25
+		$RunningAsAdminTooltip.height       = 10
+		$RunningAsAdminTooltip.location     = New-Object System.Drawing.Point(15,41)
+		$RunningAsAdminTooltip.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$RunningAsAdminTooltip.ForeColor    = $grayedColor
+		
+		$EnoughHardStorageTooltip           = New-Object system.Windows.Forms.Label
+		$EnoughHardStorageTooltip.text      = "Have at least 60GB of available storage"
+		$EnoughHardStorageTooltip.AutoSize  = $true
+		$EnoughHardStorageTooltip.width     = 25
+		$EnoughHardStorageTooltip.height    = 10
+		$EnoughHardStorageTooltip.location  = New-Object System.Drawing.Point(15,266)
+		$EnoughHardStorageTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$EnoughHardStorageTooltip.ForeColor = $grayedColor
+		
+		$PSVersionTooltip           = New-Object system.Windows.Forms.Label
+		$PSVersionTooltip.text      = "Minimum Powershell version 5"
+		$PSVersionTooltip.AutoSize  = $true
+		$PSVersionTooltip.width     = 25
+		$PSVersionTooltip.height    = 10
+		$PSVersionTooltip.location  = New-Object System.Drawing.Point(15,312)
+		$PSVersionTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$PSVersionTooltip.ForeColor = $grayedColor
+
+		################################# Check Completion Controls #################################
+
+		$BreakMyInstallCheckbox          = New-Object system.Windows.Forms.CheckBox
+		$BreakMyInstallCheckbox.text     = "I understand that continuing without satisfying all"
+		$BreakMyInstallCheckbox.AutoSize = $false
+		$BreakMyInstallCheckbox.width    = 324
+		$BreakMyInstallCheckbox.height   = 21
+		$BreakMyInstallCheckbox.location = New-Object System.Drawing.Point(30,358)
+		$BreakMyInstallCheckbox.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$BreakMyInstallCheckbox.Add_CheckStateChanged({
+			if ($BreakMyInstallCheckbox.Checked) {
+				$ChecksCompleteButton.enabled = $true
+			} else {
+				$ChecksCompleteButton.enabled = $false
+			}
+		})
+
+		$BreakMyInstallLabel             = New-Object system.Windows.Forms.Label
+		$BreakMyInstallLabel.text        = "pre-install checks might cause install issues"
+		$BreakMyInstallLabel.AutoSize    = $true
+		$BreakMyInstallLabel.width       = 25
+		$BreakMyInstallLabel.height      = 10
+		$BreakMyInstallLabel.location    = New-Object System.Drawing.Point(30,378)
+		$BreakMyInstallLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+
+		$ChecksCompleteButton            = New-Object system.Windows.Forms.Button
+		$ChecksCompleteButton.text       = "Continue"
+		$ChecksCompleteButton.width      = 97
+		$ChecksCompleteButton.height     = 37
+		$ChecksCompleteButton.enabled    = $false
+		$ChecksCompleteButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
+		$ChecksCompleteButton.location   = New-Object System.Drawing.Point(387,360)
+		$ChecksCompleteButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		$ChecksCompleteButton.Add_Click({
+			$global:checksPassed = $true
+			[void]$formChecksManager.Close()
+		})
+
+		$InstallChecksGroup.controls.AddRange(@($ChecksPanel,$RunningAsAdminLabel,$ExecutionPolicyLabel,$WindowsDefenderLabel,$WindowsReleaseLabel,$RunningVMLabel,$PSVersionLabel,$RunningAsAdminTooltip,$ExecutionPolicyTooltip,$WindowsDefenderTooltip,$WindowsReleaseTooltip,$RunningVMTooltip,$EnoughHardStorageLabel, $EnoughHardStorageTooltip,$PSVersionTooltip,$RunningAsAdmin,$EnoughHardStorage))
+		$formChecksManager.controls.AddRange(@($InstallChecksGroup,$ChecksCompleteButton,$BreakMyInstallCheckbox,$BreakMyInstallLabel))
+		$ChecksPanel.controls.AddRange(@($RunningAsAdmin, $ExecutionPolicy,$WindowsDefender,$WindowsRelease,$RunningVM, $EnoughHardStorage, $PSVersion ))
+					
+	    # Make sure that the user completed all pre-install steps
+        if (Check-Admin) {
+            $RunningAsAdmin.Text = "True"
+            $RunningAsAdmin.ForeColor = $successColor
+        } else {
+            $global:mandatoryChecksPassed = $false
+        }
+
+        if (Check-ExecutionPolicy) {
+            $ExecutionPolicy.Text = "True"
+            $ExecutionPolicy.ForeColor = $successColor
+        } else {
+            $global:mandatoryChecksPassed = $false
+        }
+
+
+        if (Check-DefenderAndTamperProtection) {
+                $WindowsDefender.Text = "True"
+                $WindowsDefender.ForeColor = $successColor
+        } else {
+             $global:checksPassed = $false
+        }
+
+        if (Check-SupportedOS) {
+            $WindowsRelease.Text = "True"
+            $WindowsRelease.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
+
+        if (Check-VM) {
+            $RunningVM.Text = "True"
+            $RunningVM.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
+
+        if (Check-Storage) {
+            $EnoughHardStorage.Text = "True"
+            $EnoughHardStorage.ForeColor = $successColor
+        } else {
+            $global:checksPassed = $false
+        }
+		
+		if (Check-PSVersion){
+			$PSVersion.Text = "True"
+			$PSVersion.ForeColor = $successColor
+		} else {
+            $global:MandatoryChecksPassed = $false
+        }
+
+        if ($global:checksPassed) {
+            $ChecksCompleteButton.enabled = $true
+        }
+
+        Open-CheckManager
+		
+		if (-not $global:mandatoryChecksPassed){
+			[System.Windows.Forms.MessageBox]::Show("Mandatory checks were not fullfilled. Installation will exit","Warning")
+			Start-Sleep 3
+			Exit
+		}
+	
+	}
+}
 if (-not $noPassword.IsPresent) {
     # Get user credentials for autologin during reboots
     if ([string]::IsNullOrEmpty($password)) {
@@ -587,344 +926,7 @@ function Get-AdditionalPackages{
 }
 
 
-
-
-function Open-CheckManager {
-	if ($formChecksManager.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
-		exit
-	}
-}
-
 if (-not $noGui.IsPresent) {
-
-    Write-Host "[+] Starting GUI to allow user to edit configuration file..."
-    ################################################################################
-    ## BEGIN GUI
-    ################################################################################
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -Assembly System.Drawing
-
-    $errorColor = [System.Drawing.ColorTranslator]::FromHtml("#c80505")
-    $successColor = [System.Drawing.ColorTranslator]::FromHtml("#417505")
-    $grayedColor = [System.Drawing.ColorTranslator]::FromHtml("#959393")
-    $skippedColor = [System.Drawing.ColorTranslator]::FromHtml("#f59f00")
-    $skippedColor = [System.Drawing.ColorTranslator]::FromHtml("#f59f00")
-
-
-    if (-not $noChecks.IsPresent) {
-		
-    #################################################################################################
-    ################################ Installer Checks Form Controls #################################
-    #################################################################################################
-
-		$formChecksManager           = New-Object system.Windows.Forms.Form
-		$formChecksManager.ClientSize  = New-Object System.Drawing.Point(530,420)
-		$formChecksManager.text      = "FLAREVM Pre-Install Checks"
-		$formChecksManager.TopMost   = $true
-		$formChecksManager.StartPosition = 'CenterScreen'
-		
-		$ChecksPanel                     = New-Object system.Windows.Forms.Panel
-		$ChecksPanel.height              = 330
-		$ChecksPanel.width               = 89
-		$ChecksPanel.location            = New-Object System.Drawing.Point(365,8)
-		
-		$InstallChecksGroup              = New-Object system.Windows.Forms.Groupbox
-		$InstallChecksGroup.height       = 340
-		$InstallChecksGroup.width        = 462
-		$InstallChecksGroup.text         = "Installation Checks"
-		$InstallChecksGroup.location     = New-Object System.Drawing.Point(23,14)
-		
-		################################# Check Labels #################################
-
-		$RunningAsAdminLabel             = New-Object system.Windows.Forms.Label
-		$RunningAsAdminLabel.text        = "Running as Administrator"
-		$RunningAsAdminLabel.AutoSize    = $true
-		$RunningAsAdminLabel.width       = 25
-		$RunningAsAdminLabel.height      = 10
-		$RunningAsAdminLabel.location    = New-Object System.Drawing.Point(15,18)
-		$RunningAsAdminLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		
-		$ExecutionPolicyLabel            = New-Object system.Windows.Forms.Label
-		$ExecutionPolicyLabel.text       = "Execution Policy Unrestricted"
-		$ExecutionPolicyLabel.AutoSize   = $true
-		$ExecutionPolicyLabel.width      = 25
-		$ExecutionPolicyLabel.height     = 10
-		$ExecutionPolicyLabel.location   = New-Object System.Drawing.Point(15,59)
-		$ExecutionPolicyLabel.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		
-		$WindowsDefenderLabel           = New-Object system.Windows.Forms.Label
-		$WindowsDefenderLabel.text      = "Windows Defender Disabled"
-		$WindowsDefenderLabel.AutoSize  = $true
-		$WindowsDefenderLabel.width     = 25
-		$WindowsDefenderLabel.height    = 10
-		$WindowsDefenderLabel.location  = New-Object System.Drawing.Point(15,104)
-		$WindowsDefenderLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		
-		$WindowsReleaseLabel             = New-Object system.Windows.Forms.Label
-		$WindowsReleaseLabel.text        = "Compatible Windows Release"
-		$WindowsReleaseLabel.AutoSize    = $true
-		$WindowsReleaseLabel.width       = 25
-		$WindowsReleaseLabel.height      = 10
-		$WindowsReleaseLabel.location    = New-Object System.Drawing.Point(15,149)
-		$WindowsReleaseLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		
-		$RunningVMLabel                  = New-Object system.Windows.Forms.Label
-		$RunningVMLabel.text             = "Running in a Virtual Machine"
-		$RunningVMLabel.AutoSize         = $true
-		$RunningVMLabel.width            = 25
-		$RunningVMLabel.height           = 10
-		$RunningVMLabel.location         = New-Object System.Drawing.Point(15,193)
-		$RunningVMLabel.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		
-		$EnoughHardStorageLabel          = New-Object system.Windows.Forms.Label
-		$EnoughHardStorageLabel.text     = "Enough Hard Drive Space"
-		$EnoughHardStorageLabel.AutoSize  = $true
-		$EnoughHardStorageLabel.width    = 25
-		$EnoughHardStorageLabel.height   = 10
-		$EnoughHardStorageLabel.location  = New-Object System.Drawing.Point(15,239)
-		$EnoughHardStorageLabel.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-
-        $PSVersionLabel          = New-Object system.Windows.Forms.Label
-		$PSVersionLabel.text     = "Valid Powershell version"
-		$PSVersionLabel.AutoSize  = $true
-		$PSVersionLabel.width    = 25
-		$PSVersionLabel.height   = 10
-		$PSVersionLabel.location  = New-Object System.Drawing.Point(15,285)
-		$PSVersionLabel.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		
-		################################# Check Boolean Controls #################################
-		
-		$RunningAsAdmin                  = New-Object system.Windows.Forms.Label
-		$RunningAsAdmin.text             = "False"
-		$RunningAsAdmin.AutoSize         = $true
-		$RunningAsAdmin.width            = 25
-		$RunningAsAdmin.height           = 10
-		$RunningAsAdmin.location         = New-Object System.Drawing.Point(24,18)
-		$RunningAsAdmin.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$RunningAsAdmin.ForeColor        = $errorColor
-		
-		$ExecutionPolicy                 = New-Object system.Windows.Forms.Label
-		$ExecutionPolicy.text            = "False"
-		$ExecutionPolicy.AutoSize        = $true
-		$ExecutionPolicy.width           = 25
-		$ExecutionPolicy.height          = 10
-		$ExecutionPolicy.location        = New-Object System.Drawing.Point(24,63)
-		$ExecutionPolicy.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$ExecutionPolicy.ForeColor       = $errorColor
-		
-		$WindowsDefender                = New-Object system.Windows.Forms.Label
-		$WindowsDefender.text           = "False"
-		$WindowsDefender.AutoSize       = $true
-		$WindowsDefender.width          = 25
-		$WindowsDefender.height         = 10
-		$WindowsDefender.location       = New-Object System.Drawing.Point(24,108)
-		$WindowsDefender.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$WindowsDefender.ForeColor      = $errorColor
-		
-		$WindowsRelease                  = New-Object system.Windows.Forms.Label
-		$WindowsRelease.text             = "False"
-		$WindowsRelease.AutoSize         = $true
-		$WindowsRelease.width            = 25
-		$WindowsRelease.height           = 10
-		$WindowsRelease.location         = New-Object System.Drawing.Point(24,150)
-		$WindowsRelease.Font             = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$WindowsRelease.ForeColor        = $errorColor
-		
-		$RunningVM                       = New-Object system.Windows.Forms.Label
-		$RunningVM.text                  = "False"
-		$RunningVM.AutoSize              = $true
-		$RunningVM.width                 = 25
-		$RunningVM.height                = 10
-		$RunningVM.location              = New-Object System.Drawing.Point(24,195)
-		$RunningVM.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$RunningVM.ForeColor             = $errorColor
-		
-		$EnoughHardStorage               = New-Object system.Windows.Forms.Label
-		$EnoughHardStorage.text          = "False"
-		$EnoughHardStorage.AutoSize      = $true
-		$EnoughHardStorage.width         = 25
-		$EnoughHardStorage.height        = 10
-		$EnoughHardStorage.location      = New-Object System.Drawing.Point(24,241)
-		$EnoughHardStorage.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$EnoughHardStorage.ForeColor     = $errorColor
-		
-		$PSVersion						 = New-Object system.Windows.Forms.Label
-		$PSVersion.text                  = "False"
-		$PSVersion.AutoSize              = $true
-		$PSVersion.width                 = 25
-		$PSVersion.height                = 10
-		$PSVersion.location              = New-Object System.Drawing.Point(24,287)
-		$PSVersion.Font                  = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$PSVersion.ForeColor             = $errorColor
-		
-		################################# Check Tooltip Controls #################################
-
-		$RunningVMTooltip                = New-Object system.Windows.Forms.Label
-		$RunningVMTooltip.text           = "Only run this script inside a Virtual Machine"
-		$RunningVMTooltip.AutoSize       = $true
-		$RunningVMTooltip.width          = 25
-		$RunningVMTooltip.height         = 10
-		$RunningVMTooltip.location       = New-Object System.Drawing.Point(15,219)
-		$RunningVMTooltip.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$RunningVMTooltip.ForeColor      = $grayedColor
-		
-		$WindowsReleaseTooltip           = New-Object system.Windows.Forms.Label
-		$WindowsReleaseTooltip.text      = "Ensure your Windows version is supported"
-		$WindowsReleaseTooltip.AutoSize  = $true
-		$WindowsReleaseTooltip.width     = 25
-		$WindowsReleaseTooltip.height    = 10
-		$WindowsReleaseTooltip.location  = New-Object System.Drawing.Point(15,175)
-		$WindowsReleaseTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$WindowsReleaseTooltip.ForeColor  = $grayedColor
-		
-		$WindowsDefenderTooltip            = New-Object system.Windows.Forms.Label
-		$WindowsDefenderTooltip.text       = "Disable Windows Defender and Tamper Protection"
-		$WindowsDefenderTooltip.AutoSize   = $true
-		$WindowsDefenderTooltip.width      = 25
-		$WindowsDefenderTooltip.height     = 10
-		$WindowsDefenderTooltip.location   = New-Object System.Drawing.Point(15,130)
-		$WindowsDefenderTooltip.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$WindowsDefenderTooltip.ForeColor  = $grayedColor
-		
-		$ExecutionPolicyTooltip             = New-Object system.Windows.Forms.Label
-		$ExecutionPolicyTooltip.text        = "PowerShell: Set-ExecutionPolicy Unrestricted"
-		$ExecutionPolicyTooltip.AutoSize    = $true
-		$ExecutionPolicyTooltip.width       = 25
-		$ExecutionPolicyTooltip.height      = 10
-		$ExecutionPolicyTooltip.location    = New-Object System.Drawing.Point(15,85)
-		$ExecutionPolicyTooltip.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$ExecutionPolicyTooltip.ForeColor   = $grayedColor
-		
-		$RunningAsAdminTooltip              = New-Object system.Windows.Forms.Label
-		$RunningAsAdminTooltip.text         = "Please run this script as Administrator"
-		$RunningAsAdminTooltip.AutoSize     = $true
-		$RunningAsAdminTooltip.width        = 25
-		$RunningAsAdminTooltip.height       = 10
-		$RunningAsAdminTooltip.location     = New-Object System.Drawing.Point(15,41)
-		$RunningAsAdminTooltip.Font         = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$RunningAsAdminTooltip.ForeColor    = $grayedColor
-		
-		$EnoughHardStorageTooltip           = New-Object system.Windows.Forms.Label
-		$EnoughHardStorageTooltip.text      = "Have at least 70GB of available storage"
-		$EnoughHardStorageTooltip.AutoSize  = $true
-		$EnoughHardStorageTooltip.width     = 25
-		$EnoughHardStorageTooltip.height    = 10
-		$EnoughHardStorageTooltip.location  = New-Object System.Drawing.Point(15,266)
-		$EnoughHardStorageTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$EnoughHardStorageTooltip.ForeColor = $grayedColor
-		
-		$PSVersionTooltip           = New-Object system.Windows.Forms.Label
-		$PSVersionTooltip.text      = "Minimum Powershell version 5"
-		$PSVersionTooltip.AutoSize  = $true
-		$PSVersionTooltip.width     = 25
-		$PSVersionTooltip.height    = 10
-		$PSVersionTooltip.location  = New-Object System.Drawing.Point(15,312)
-		$PSVersionTooltip.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$PSVersionTooltip.ForeColor = $grayedColor
-
-		################################# Check Completion Controls #################################
-
-		$BreakMyInstallCheckbox          = New-Object system.Windows.Forms.CheckBox
-		$BreakMyInstallCheckbox.text     = "I understand that continuing without satisfying all"
-		$BreakMyInstallCheckbox.AutoSize = $false
-		$BreakMyInstallCheckbox.width    = 324
-		$BreakMyInstallCheckbox.height   = 21
-		$BreakMyInstallCheckbox.location = New-Object System.Drawing.Point(30,358)
-		$BreakMyInstallCheckbox.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$BreakMyInstallCheckbox.Add_CheckStateChanged({
-			if ($BreakMyInstallCheckbox.Checked) {
-				$ChecksCompleteButton.enabled = $true
-			} else {
-				$ChecksCompleteButton.enabled = $false
-			}
-		})
-
-		$BreakMyInstallLabel             = New-Object system.Windows.Forms.Label
-		$BreakMyInstallLabel.text        = "pre-install checks might cause install issues"
-		$BreakMyInstallLabel.AutoSize    = $true
-		$BreakMyInstallLabel.width       = 25
-		$BreakMyInstallLabel.height      = 10
-		$BreakMyInstallLabel.location    = New-Object System.Drawing.Point(30,378)
-		$BreakMyInstallLabel.Font        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-
-		$ChecksCompleteButton            = New-Object system.Windows.Forms.Button
-		$ChecksCompleteButton.text       = "Continue"
-		$ChecksCompleteButton.width      = 97
-		$ChecksCompleteButton.height     = 37
-		$ChecksCompleteButton.enabled    = $false
-		$ChecksCompleteButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
-		$ChecksCompleteButton.location   = New-Object System.Drawing.Point(387,360)
-		$ChecksCompleteButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
-		$ChecksCompleteButton.Add_Click({
-			$global:checksPassed = $true
-			[void]$formChecksManager.Close()
-		})
-
-		$InstallChecksGroup.controls.AddRange(@($ChecksPanel,$RunningAsAdminLabel,$ExecutionPolicyLabel,$WindowsDefenderLabel,$WindowsReleaseLabel,$RunningVMLabel,$PSVersionLabel,$RunningAsAdminTooltip,$ExecutionPolicyTooltip,$WindowsDefenderTooltip,$WindowsReleaseTooltip,$RunningVMTooltip,$EnoughHardStorageLabel, $EnoughHardStorageTooltip,$PSVersionTooltip,$RunningAsAdmin,$EnoughHardStorage))
-		$formChecksManager.controls.AddRange(@($InstallChecksGroup,$ChecksCompleteButton,$BreakMyInstallCheckbox,$BreakMyInstallLabel))
-		$ChecksPanel.controls.AddRange(@($RunningAsAdmin, $ExecutionPolicy,$WindowsDefender,$WindowsRelease,$RunningVM, $EnoughHardStorage, $PSVersion))
-					
-	    # Make sure that the user completed all pre-install steps
-        if (Check-Admin) {
-            $RunningAsAdmin.Text = "True"
-            $RunningAsAdmin.ForeColor = $successColor
-        } else {
-            $global:checksPassed = $false
-        }
-
-        if (Check-ExecutionPolicy) {
-            $ExecutionPolicy.Text = "True"
-            $ExecutionPolicy.ForeColor = $successColor
-        } else {
-            $global:checksPassed = $false
-        }
-
-
-        if (Check-DefenderAndTamperProtection) {
-                $WindowsDefender.Text = "True"
-                $WindowsDefender.ForeColor = $successColor
-        } else {
-            $WindowsDefender.Text = "Skip"
-            $WindowsDefender.ForeColor = $skippedColor
-            $global:selectedProfile = "Victim"
-        }
-
-        if (Check-SupportedOS) {
-            $WindowsRelease.Text = "True"
-            $WindowsRelease.ForeColor = $successColor
-        } else {
-            $global:checksPassed = $false
-        }
-
-        if (Check-VM) {
-            $RunningVM.Text = "True"
-            $RunningVM.ForeColor = $successColor
-        } else {
-            $global:checksPassed = $false
-        }
-
-        if (Check-Storage) {
-            $EnoughHardStorage.Text = "True"
-            $EnoughHardStorage.ForeColor = $successColor
-        } else {
-            $global:checksPassed = $false
-        }
-		
-		if (Check-PSVersion){
-			$PSVersion.Text = "True"
-			$PSVersion.ForeColor = $successColor
-		} else {
-            $global:checksPassed = $false
-        }
-
-        if ($global:checksPassed) {
-            $ChecksCompleteButton.enabled = $true
-        }
-
-        Open-CheckManager
-		
-	
-	}
 	
 	if ($global:checksPassed -or $noChecks.IsPresent) {
 
