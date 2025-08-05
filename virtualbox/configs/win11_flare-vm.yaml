@@ -3,9 +3,19 @@ EXPORTED_VM_NAME: FLARE-VM.Win11
 SNAPSHOTS:
 - extension: ".dynamic"
   description: "Windows 11 VM with FLARE-VM default configuration + idapro.vm"
-  cmd: "choco install idapro.vm"
+  cmd: |
+    choco install idapro.vm;
+
+    # Ensure files are written to persistent storage as the script shut down the VM abruptly
+    # sync is installed by sysinternals
+    sync;
   legal_notice: "legal_notice.txt"
 - extension: ".full.dynamic"
   description: "Windows 11 VM with FLARE-VM default configuration + idapro.vm + pdbs.pdbresym.vm + visualstudio.vm"
-  cmd: "choco install idapro.vm pdbs.pdbresym.vm visualstudio.vm --execution-timeout 10000"
+  cmd: |
+    choco install idapro.vm pdbs.pdbresym.vm visualstudio.vm --execution-timeout 10000;
+
+    # Ensure files are written to persistent storage as the script shut down the VM abruptly
+    # sync is installed by sysinternals
+    sync;
   legal_notice: "legal_notice.txt"

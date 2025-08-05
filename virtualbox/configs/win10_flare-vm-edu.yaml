@@ -5,7 +5,7 @@ SNAPSHOTS:
   description: "Windows 10 VM with FLARE-VM default configuration + FLARE-EDU materials"
   cmd: |
     $desktop = "C:\Users\flare\Desktop";
-    Set-Location $desktop
+    Set-Location $desktop;
 
     # Unzip EDU labs
     VM-Unzip-Recursively;
@@ -17,6 +17,10 @@ SNAPSHOTS:
     .\setup.exe;
     Start-Sleep 1800;
     Dismount-DiskImage -ImagePath $path;
+
+    # Ensure files are written to persistent storage as the script shut down the VM abruptly
+    # sync is installed by sysinternals
+    sync;
   legal_notice: "legal_notice_edu.txt"
   protected_folders: "'ATMA', 'MACC', 'MAF', 'MDA'"
   protected_files: "'Labs.zip', 'MICROSOFT Windows 10 License Terms.txt', 'MICROSOFT Office 2016 License Terms.txt'"
