@@ -26,6 +26,11 @@ CMDS:
     /usr/bin/python3.9 -m pip install rpyc flare-capa lznt1
 
   - |
+    # Fix fakenet issue: https://github.com/mandiant/flare-fakenet-ng/tree/master?tab=readme-ov-file#dns-not-resolving-names
+    sudo systemctl stop systemd-resolved
+    sudo systemctl disable systemd-resolved
+
+  - |
     # Install IDA
     # Expected IDA 9 installer in the Desktop
     cd /home/remnux/Desktop
