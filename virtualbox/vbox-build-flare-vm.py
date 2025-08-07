@@ -75,7 +75,8 @@ POWERSHELL_PATH = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 CMD_PATH = r"C:\Windows\System32\cmd.exe"
 
 # Cleanup command to be executed in cmd to delete the PowerShel logs
-CMD_CLEANUP_CMD = r"/C rmdir /s /q %UserProfile%\Desktop\PS_Transcripts && start timeout 3"
+# Run sync (installed by sysinternals) to ensure files are written to persistent storage as the script shut down the VM abruptly
+CMD_CLEANUP_CMD = r"/C rmdir /s /q %UserProfile%\Desktop\PS_Transcripts && sync"
 
 
 def run_command(vm_uuid, cmd, executable="PS"):

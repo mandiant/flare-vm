@@ -1,8 +1,8 @@
-VM_NAME: FLARE-VM.testing
-EXPORTED_VM_NAME: FLARE-VM.Win10
+VM_NAME: FLARE-VM.Win11.testing
+EXPORTED_VM_NAME: FLARE-VM.Win11
 SNAPSHOTS:
 - extension: ".dynamic"
-  description: "Windows 10 VM with FLARE-VM default configuration + idapro.vm"
+  description: "Windows 11 VM with FLARE-VM default configuration + idapro.vm"
   cmd: |
     choco install idapro.vm;
 
@@ -11,7 +11,7 @@ SNAPSHOTS:
     sync;
   legal_notice: "legal_notice.txt"
 - extension: ".full.dynamic"
-  description: "Windows 10 VM with FLARE-VM default configuration + idapro.vm + pdbs.pdbresym.vm + visualstudio.vm"
+  description: "Windows 11 VM with FLARE-VM default configuration + idapro.vm + pdbs.pdbresym.vm + visualstudio.vm"
   cmd: |
     choco install idapro.vm pdbs.pdbresym.vm visualstudio.vm --execution-timeout 10000;
 
