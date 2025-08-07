@@ -6,7 +6,8 @@ SNAPSHOT:
 CMDS:
   - |
     # Install additional useful packages
-    sudo apt-get --assume-yes install libwrap0-dev gdb-multiarch qemu gcc-multilib libcurl4:i386
+    sudo apt-get --assume-yes install libwrap0-dev gdb-multiarch qemu gcc-multilib libcurl4:i386 qemu-user libc6-mips64-mips-cross libc6-mipsel-cross libc6-arm64-cross libc6-armel-cross libc6-armhf-cross libc6-ppc64-cross libc6-powerpc-cross
+
 
   - |
     # Uninstall distro-info to fix "Invalid version: '0.23ubuntu1'" Python install warning
