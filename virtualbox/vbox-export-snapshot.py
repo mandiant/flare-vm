@@ -16,7 +16,15 @@
 import argparse
 import sys
 
-from vboxcommon import LONG_WAIT, ensure_vm_running, export_vm, get_vm_uuid, restore_snapshot, set_network_to_hostonly
+from vboxcommon import (
+    EXPORT_DIR_NAME,
+    LONG_WAIT,
+    ensure_vm_running,
+    export_vm,
+    get_vm_uuid,
+    restore_snapshot,
+    set_network_to_hostonly,
+)
 
 DESCRIPTION = """Export a snapshot to OVA (named after the snapshot) with a single Host-Only network interface.
 Generate a file containing the SHA256 hash of the OVA that can be used for verification."""
@@ -46,7 +54,7 @@ def export_snapshot(vm_name, snapshot, description, export_dir_name):
         ensure_vm_running(vm_uuid)
         export_vm(vm_uuid, snapshot, description, export_dir_name)
     except Exception as e:
-        print(f'VM {vm_uuid} ❌ ERROR exporting "{snapshot}":{e}\n')
+        print(f'VM {vm_uuid} ❌ ERROR exporting "{snapshot}": {e}\n')
 
 
 def main(argv=None):
@@ -63,7 +71,7 @@ def main(argv=None):
     parser.add_argument("--description", help="description of the exported OVA. Empty by default.")
     parser.add_argument(
         "--export_dir_name",
-        help="name of the directory in HOME to export the VMs The directory is created if it does not exist. Default: {EXPORTED_DIR_NAME}",
+        help=f"name of the directory in HOME to export the VMs The directory is created if it does not exist. Default: {EXPORT_DIR_NAME}",
     )
     args = parser.parse_args(args=argv)
 
