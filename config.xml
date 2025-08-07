@@ -23,6 +23,7 @@
     </envs>
     <packages>
         <package name="010editor.vm"/>
+        <package name="angr.vm"/>
         <package name="7zip.vm"/>
         <package name="advanced-installer.vm"/>
         <package name="apimonitor.vm"/>
