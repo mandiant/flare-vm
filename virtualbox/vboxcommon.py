@@ -49,10 +49,23 @@ def __run_vboxmanage(cmd, real_time=False):
         cmd: list with the command and its arguments
         real_time: Boolean that determines if displaying the output in realtime or returning it.
     """
+    # When running as a PyInstaller bundle, LD_LIBRARY_PATH is set,
+    # which can cause conflicts with external binaries like VBoxManage.
+    # We create a clean environment for the subprocess to use the system's libraries.
+    env = os.environ.copy()
+    if sys.frozen and "LD_LIBRARY_PATH" in env:
+        # 'sys.frozen' is True when running from a PyInstaller executable.
+        # We can either remove the variable or, more safely, restore the original
+        # one if PyInstaller saved it. PyInstaller often saves it as LD_LIBRARY_PATH_ORIG.
+        if "LD_LIBRARY_PATH_ORIG" in env:
+            env["LD_LIBRARY_PATH"] = env["LD_LIBRARY_PATH_ORIG"]
+        else:
+            del env["LD_LIBRARY_PATH"]
+
     if real_time:
-        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout)
+        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout, env=env)
     else:
-        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
 
 
 def run_vboxmanage(cmd, real_time=False):
