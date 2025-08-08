@@ -520,25 +520,31 @@ if (-not $noGui.IsPresent) {
              $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
              # Select only packages that have the latest version, contain a category and the category is not excluded
              if (($isLatestVersion -eq "true") -and ($category -ne "") -and ($excludedCategories -notcontains $category)) {
-                  $packageName = $_.properties.Id
-                  $description = $_.properties.Description
+	             $packageName = $_.properties.Id
+				 $description = $_.properties.Description
+				 $projectUrl = $_.properties.projectUrl
 
-                  # Initialize category as an empty array
-                  if (-not ($packagesByCategory.ContainsKey($category))) {
-                     $packagesByCategory[$category] = @()
-                  }
-		  # Add the PackageName and PackageDesccription to each entry in the array
-                  $packagesByCategory[$category] += [PSCustomObject]@{
-                     PackageName = $packageName
-                     PackageDescription = $description
-                  }
-               }
-          }
+				 # Initialize category as an empty array
+				 if (-not ($packagesByCategory.ContainsKey($category))) {
+					 $packagesByCategory[$category] = @()
+				 }
+				 $packageObject = [PSCustomObject]@{
+				 PackageName        = $packageName
+				 PackageDescription = $description
+				 }
+				 # Check if $projectUrl contains a valid URL
+				 if ($projectUrl -match "^http") {
+					 Add-Member -InputObject $packageObject -MemberType NoteProperty -Name "PackageUrl" -Value $projectURl
+				 }
+				 # Add the PackageName and PackageDescription (and PackageUrl if present) to each entry in the array
+				 $packagesByCategory[$category] += $packageObject
+            }
+		  }
           # Check if there is a next link in the XML and set the API URL to that link if it exists
           $nextLink = $vm_packages.SelectSingleNode("//atom:link[@rel='next']/@href", $ns)
           $vmPackagesUrl = $nextLink."#text"
 
-       } while ($vmPackagesUrl)
+        } while ($vmPackagesUrl)
 
       return $packagesByCategory
     }
@@ -794,11 +800,6 @@ if (-not $noGui.IsPresent) {
         )
         return $packagesByCategory[$category]
     }
-    # Function that returns an array of all the packages that are displayed sorted by category from $packagesByCategory
-    function Get-AllPackages{
-        $listedPackages = $packagesByCategory.Values | ForEach-Object { $_ } | Select-Object -ExpandProperty PackageName
-        return $listedPackages
-    }
 
     # Function that returns additional packages from the config that are not displayed in the textboxes
     # which includes both Choco packages and packages from excluded categories
@@ -1003,6 +1004,20 @@ if (-not $noGui.IsPresent) {
 		    $checkBox.Name = "checkBox$numCheckBoxPackages"
 		    $checkboxesPackages.Add($checkBox)
 		    $panelCategories.Controls.Add($checkBox)
+		    $url = $package.PackageUrl
+		    if ($url){
+				$linkProjectUrl = New-Object System.Windows.Forms.linkLabel
+				$linkProjectUrl.Top = $checkbox.Top + 2
+				$linkProjectUrl.Left = $checkbox.Right - 3
+				$linkProjectUrl.AutoSize                    = $true
+				$linkProjectUrl.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+				$linkProjectUrl.LinkColor                   = "BLUE";
+				$linkProjectUrl.ActiveLinkColor             = "RED"
+				$linkProjectUrl.Text                        = "Link"
+				$linkProjectUrl.Links.Add(0, 4, $url)| Out-Null
+				$linkProjectUrl.add_Click({ Start-Process $this.Links.LinkData })
+				$panelCategories.Controls.Add($linkProjectUrl)
+		    }
 		    $verticalPosition2 += 20
 		    $numCheckBoxPackages ++
 		}
@@ -1069,7 +1084,7 @@ if (-not $noGui.IsPresent) {
     $linkLabelChoco.LinkColor                   = "BLUE"
     $linkLabelChoco.ActiveLinkColor             = "RED"
     $linkLabelChoco.Text                        = "https://community.chocolatey.org/packages"
-    $linkLabelChoco.add_Click({[system.Diagnostics.Process]::start("https://community.chocolatey.org/packages")})
+    $linkLabelChoco.add_Click({Start-Process "https://community.chocolatey.org/packages"})
 
     $labelFlarevm                             = New-Object System.Windows.Forms.Label
     $labelFlarevm.Location                    = New-Object System.Drawing.Point(300,680)
@@ -1085,7 +1100,7 @@ if (-not $noGui.IsPresent) {
     $linkLabelFlarevm.LinkColor                   = "BLUE"
     $linkLabelFlarevm.ActiveLinkColor             = "RED"
     $linkLabelFlarevm.Text                        = "https://github.com/mandiant/VM-Packages/wiki/Packages"
-    $linkLabelFlarevm.add_Click({[system.Diagnostics.Process]::start("https://github.com/mandiant/VM-Packages/wiki/Packages")})
+    $linkLabelFlarevm.add_Click({Start-Process "https://github.com/mandiant/VM-Packages/wiki/Packages"})
 
     Set-AdditionalPackages
 
