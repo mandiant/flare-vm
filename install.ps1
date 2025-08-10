@@ -519,7 +519,7 @@ if (-not $noGui.IsPresent) {
              $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
              $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
              # Select only packages that have the latest version, contain a category and the category is not excluded
-             if (($isLatestVersion -eq "true") -and ($category -ne "") -and ($excludedCategories -notcontains $category)) {
+             if (($isLatestVersion -eq "true") -and ($category -ne "")) {
                   $packageName = $_.properties.Id
                   $description = $_.properties.Description
 
@@ -559,10 +559,88 @@ if (-not $noGui.IsPresent) {
        return $additionalPackages
     }
 
+    # Function that updates the excluded categories based on checkbox selection
+    function Update-ExcludedCategories {
+        $script:excludedCategories = @()
+        foreach ($checkBox in $checkboxesCategories) {
+            if (-not $checkBox.Checked) {
+                $script:excludedCategories += $checkBox.Text
+            }
+        }
+
+        # Clear existing package checkboxes
+        $checkboxesToRemove = @()
+        foreach ($control in $panelCategories.Controls) {
+            $checkboxesToRemove += $control
+        }
+        foreach ($control in $checkboxesToRemove) {
+            $panelCategories.Controls.Remove($control)
+        }
+        
+        # Recreate package display
+        Create-PackageCheckboxes
+    }
+
+    # Function to create package checkboxes dynamically
+    function Create-PackageCheckboxes {
+        # Get updated package categories (excluding selected categories)
+        
+        # Clear existing package checkboxes from the list
+        $script:checkboxesPackages.Clear()
+        
+        # Initial vertical position for checkboxes
+        $verticalPosition = 25
+        $numCheckBoxPackages = 1
+        $packages = @()
+        
+        foreach ($category in ($packagesByCategory.Keys | Where-Object { 
+    $excludedCategories -notcontains $_ } | Sort-Object)) {
+            # Create Labels for categories
+            $labelCategory = New-Object System.Windows.Forms.Label
+            $labelCategory.Text = $category
+            $labelCategory.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',11,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+            $labelCategory.AutoSize = $true
+            $labelCategory.Location = New-Object System.Drawing.Point(10, $verticalPosition)
+            $labelCategory.Name = "labelCategory$category"
+            $panelCategories.Controls.Add($labelCategory)
+            $NumPackages = 0
+            $verticalPosition2 = $verticalPosition + 20
+            $packages = Get-PackagesByCategory -category $category
+            foreach ($package in $packages) {
+                $NumPackages++
+                $checkBox = New-Object System.Windows.Forms.CheckBox
+                $checkBox.Text = $package.PackageName + ": " + $package.PackageDescription
+                $checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+                $checkBox.AutoSize = $true
+                $checkBox.Location = New-Object System.Drawing.Point(10, $verticalPosition2)
+                $checkBox.Name = "checkBoxPackage$numCheckBoxPackages"
+                $checkboxesPackages.Add($checkBox)
+                $panelCategories.Controls.Add($checkBox)
+                $verticalPosition2 += 20
+                $numCheckBoxPackages ++
+            }
+            # Increment to space checkboxes vertically
+            $verticalPosition += 20 * ($NumPackages) + 30
+        }
+        
+        # Create empty label and add it to the form categories to add some space
+        $posEnd = $verticalPosition2 + 10
+        $emptyLabel = New-Object system.Windows.Forms.Label
+        $emptyLabel.Width = 20
+        $emptyLabel.Height = 10
+        $emptyLabel.location = New-Object System.Drawing.Point(10,$posEnd)
+        $emptyLabel.Name = "emptyLabelEnd"
+        $panelCategories.Controls.Add($emptyLabel)
+        
+        # Select packages that are in the config.xml
+        Set-InitialPackages
+    }
+
     # Gather lists of packages
     $envs = [ordered]@{}
     $configXml.config.envs.env.ForEach({ $envs[$_.name] = $_.value })
-    $excludedCategories=@('Command and Control','Credential Access','Exploitation','Forensic','Lateral Movement', 'Payload Development','Privilege Escalation','Reconnaissance','Wordlists','Web Application')
+    $defaultExcludedCategories=@('Command and Control','Credential Access','Exploitation','Forensic','Lateral Movement', 'Payload Development','Privilege Escalation','Reconnaissance','Wordlists','Web Application')
+    $excludedCategories = $defaultExcludedCategories.Clone()
     # Read packages to install from the config
     $packagesToInstall = $configXml.config.packages.package.name
     $packagesByCategory = Get-Packages-Categories
@@ -896,7 +974,7 @@ if (-not $noGui.IsPresent) {
     [System.Windows.Forms.Application]::EnableVisualStyles()
 
     $formCategories                            = New-Object system.Windows.Forms.Form
-    $formCategories.ClientSize                 = New-Object System.Drawing.Point(1015,850)
+    $formCategories.ClientSize                 = New-Object System.Drawing.Point(1200,850)
     $formCategories.text                       = "FLARE-VM Package selection"
     $formCategories.StartPosition              = 'CenterScreen'
     $formCategories.TopMost                    = $true
@@ -924,8 +1002,8 @@ if (-not $noGui.IsPresent) {
 
     $panelCategories                = New-Object system.Windows.Forms.Panel
     $panelCategories.height         = 530
-    $panelCategories.width          = 970
-    $panelCategories.location       = New-Object System.Drawing.Point(30,60)
+    $panelCategories.width          = 950
+    $panelCategories.location       = New-Object System.Drawing.Point(240,60)
     $panelCategories.AutoScroll     = $true
 
     $resetButton                 = New-Object system.Windows.Forms.Button
@@ -960,83 +1038,69 @@ if (-not $noGui.IsPresent) {
     $installButton.width      = 97
     $installButton.height     = 37
     $installButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
-    $installButton.location   = New-Object System.Drawing.Point(750,800)
+    $installButton.location   = New-Object System.Drawing.Point(950,800)
     $installButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
 
     $cancelButton            = New-Object system.Windows.Forms.Button
     $cancelButton.text       = "Cancel"
     $cancelButton.width      = 97
     $cancelButton.height     = 37
-    $cancelButton.location   = New-Object System.Drawing.Point(850,800)
+    $cancelButton.location   = New-Object System.Drawing.Point(1050,800)
     $cancelButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
     $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    
+    # Category selection panel
+    $categorySelectionLabel                = New-Object system.Windows.Forms.Label
+    $categorySelectionLabel.text           = "Select Categories to Include"
+    $categorySelectionLabel.AutoSize       = $true
+    $categorySelectionLabel.location       = New-Object System.Drawing.Point(30,60)
+    $categorySelectionLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+
+    $categoryPanel                = New-Object system.Windows.Forms.Panel
+    $categoryPanel.height         = 540
+    $categoryPanel.width          = 200
+    $categoryPanel.location       = New-Object System.Drawing.Point(30,80)
+    $categoryPanel.AutoScroll     = $true
+
+    # Create category checkboxes
+    $checkboxesCategories = New-Object System.Collections.Generic.List[System.Object]
+    $allCategories = $defaultExcludedCategories + @('Analysis','Browsers','Cloud','Debuggers','Decompilers','Document and File Format','Hex Editors','Java','Network','Utilities','Vulnerability Assessment')
+    $verticalPos = 10
+    foreach ($category in $allCategories | Sort-Object) {
+        $categoryCheckBox = New-Object System.Windows.Forms.CheckBox
+        $categoryCheckBox.Text = $category
+        $categoryCheckBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9)
+        $categoryCheckBox.AutoSize = $true
+        $categoryCheckBox.Location = New-Object System.Drawing.Point(5, $verticalPos)
+        $categoryCheckBox.Checked = ($category -notin $defaultExcludedCategories)
+        $categoryCheckBox.Add_CheckedChanged({Update-ExcludedCategories})
+        $checkboxesCategories.Add($categoryCheckBox)
+        $categoryPanel.Controls.Add($categoryCheckBox)
+        $verticalPos += 25
+    }
 
     $formCategories.AcceptButton = $installButton
     $formCategories.CancelButton = $cancelButton
 
     # Create checkboxes for each package
     $checkboxesPackages = New-Object System.Collections.Generic.List[System.Object]
-    # Initial vertical position for checkboxes
-    $verticalPosition = 25
-    $numCheckBoxPackages = 1
-    $packages = @()
-    foreach ($category in $packagesByCategory.Keys |Sort-Object) {
-        # Create Labels for categories
-        $labelCategory = New-Object System.Windows.Forms.Label
-        $labelCategory.Text = $category
-        $labelCategory.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',11,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-        $labelCategory.AutoSize = $true
-        $labelCategory.Location = New-Object System.Drawing.Point(10, $verticalPosition)
-        $panelCategories.Controls.Add($labelCategory)
-
-        $NumPackages = 0
-        $verticalPosition2 = $verticalPosition + 20
-		$packages= Get-PackagesByCategory -category $category
-		foreach ($package in $packages)
-		{
-		    $NumPackages++
-		    $checkBox = New-Object System.Windows.Forms.CheckBox
-		    $checkBox.Text = $package.PackageName + ": " + $package.PackageDescription
-		    $checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		    $checkBox.AutoSize = $true
-		    $checkBox.Location = New-Object System.Drawing.Point(10, $verticalPosition2)
-		    $checkBox.Name = "checkBox$numCheckBoxPackages"
-		    $checkboxesPackages.Add($checkBox)
-		    $panelCategories.Controls.Add($checkBox)
-		    $verticalPosition2 += 20
-		    $numCheckBoxPackages ++
-		}
-        	# Increment to space checkboxes vertically
-		$verticalPosition += 20 * ($NumPackages ) + 30
-		$numCategories ++
-	}
-
-    # Create empty label and add it to the form categories to add some space
-    $posEnd = $verticalPosition2 +10
-    $emptyLabel                = New-Object system.Windows.Forms.Label
-    $emptyLabel.Width = 20
-    $emptyLabel.Height = 10
-    $emptyLabel.location       = New-Object System.Drawing.Point(10,$posEnd)
-    $panelCategories.Controls.Add($emptyLabel)
-
-    # Select packages that are in the config.xml
-    Set-InitialPackages
+    Create-PackageCheckboxes
 
     $additionalPackagesLabel                          = New-Object system.Windows.Forms.Label
     $additionalPackagesLabel.text                     = "Additional packages to install"
     $additionalPackagesLabel.AutoSize                 = $true
     $additionalPackagesLabel.width                    = 25
     $additionalPackagesLabel.height                   = 10
-    $additionalPackagesLabel.location                 = New-Object System.Drawing.Point(30,615)
+    $additionalPackagesLabel.location                 = New-Object System.Drawing.Point(30,620)
     $additionalPackagesLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-
+ 
     $additionalPackagesBox                 = New-Object system.Windows.Forms.ListBox
     $additionalPackagesBox.text            = "listBox"
     $additionalPackagesBox.SelectionMode   = 'MultiSimple'
     $additionalPackagesBox.Sorted          = $true
     $additionalPackagesBox.width           = 130
     $additionalPackagesBox.height          = 140
-    $additionalPackagesBox.location        = New-Object System.Drawing.Point(50,640)
+    $additionalPackagesBox.location        = New-Object System.Drawing.Point(50,645)
 
     $deletePackageButton          = New-Object system.Windows.Forms.Button
     $deletePackageButton.text     = "-"
@@ -1086,7 +1150,7 @@ if (-not $noGui.IsPresent) {
     $linkLabelFlarevm.ActiveLinkColor             = "RED"
     $linkLabelFlarevm.Text                        = "https://github.com/mandiant/VM-Packages/wiki/Packages"
     $linkLabelFlarevm.add_Click({[system.Diagnostics.Process]::start("https://github.com/mandiant/VM-Packages/wiki/Packages")})
-
+    
     Set-AdditionalPackages
 
     $chocoPackageLabel                          = New-Object system.Windows.Forms.Label
@@ -1168,7 +1232,7 @@ if (-not $noGui.IsPresent) {
           })
 
     $formCategories.controls.AddRange(@($additionalPackagesLabel,$packageLabel,$labelChoco,$labelFlarevm,$linkLabelChoco,$linkLabelFlarevm,$linkLabelFlarevm,$additionalPackagesBox,$deletePackageButton,$chocoPackageButton,$chocoPackageLabel,$packageTextBox,$chocoPackageErrorLabel,$findPackageButton,$addPackageButton))
-    $formCategories.controls.AddRange(@($labelCategories,$labelCategories2,$panelCategories,$installButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton))
+    $formCategories.controls.AddRange(@($labelCategories,$labelCategories2,$panelCategories,$installButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton,$categorySelectionLabel,$categoryPanel))
     $formCategories.Add_Shown({$formCategories.Activate()})
     $resultCategories = $formCategories.ShowDialog()
     if ($resultCategories -eq [System.Windows.Forms.DialogResult]::OK){
