@@ -32,8 +32,12 @@ jobs:
       # Only test vbox-clean-snapshots as vbox-adapter-check uses Notify and it fails in GH actions
       - name: Check  vbox-clean-snapshots runs correctly
         run: virtualbox/dist/vbox-clean-snapshots --help
+      - name: Make files executable
+        run: |
+          chmod +x virtualbox/dist/*
+          chmod +x virtualbox/install.sh
       - name: Zip binaries
-        run: zip -rj vbox.zip virtualbox/dist
+        run: zip -rj vbox.zip virtualbox/dist virtualbox/install.sh
       - name: Upload ZIP to release
         uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2.11.2
         with:
