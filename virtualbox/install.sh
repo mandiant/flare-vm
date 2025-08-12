@@ -28,18 +28,20 @@ echo_error() {
 echo_step "Setting up installation directory..."
 mkdir -p "$INSTALL_DIR"
 SCRIPT_DIR=$(dirname "$0")
-if [ -f "$SCRIPT_DIR/vbox-adapter-check" ]; then
+if [ -f "$SCRIPT_DIR/vbox-adapter-check" -a -f "$SCRIPT_DIR/vbox-clean-snapshots" ]; then
     cp "$SCRIPT_DIR/vbox-adapter-check" "$INSTALL_DIR/"
-elif [ -f "vbox-adapter-check" ]; then
+    cp "$SCRIPT_DIR/vbox-clean-snapshots" "$INSTALL_DIR/"
+elif [ -f "vbox-adapter-check" -a -f "vbox-clean-snapshots" ]; then
     cp "vbox-adapter-check" "$INSTALL_DIR/"
+    cp "vbox-clean-snapshots" "$INSTALL_DIR/"
 else
-    echo_error "The 'vbox-adapter-check' executable is not in the directory of the script or the current directory."
+    echo_error "The 'vbox-adapter-check' and 'vbox-clean-snapshots' binaries are not in the directory of the script or the current directory."
 fi
-echo_info "Copied 'vbox-adapter-check' to $INSTALL_DIR"
+echo_info "Copied 'vbox-adapter-check' and 'vbox-clean-snapshots' to $INSTALL_DIR"
 
 # Step 2: Make files executable
 echo_step "Making tools in $INSTALL_DIR executable..."
-if ! chmod +x "$INSTALL_DIR"/vbox-adapter-check; then
+if ! chmod +x "$INSTALL_DIR"/*; then
   echo_error "Failed to set execute permissions on files in $INSTALL_DIR."
 fi
 echo_info "File permissions updated."
