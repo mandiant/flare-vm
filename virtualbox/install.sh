@@ -61,6 +61,7 @@ fi
 
 echo_success "Installation Successful!"
 echo_info "The vbox tools are installed in: $INSTALL_DIR"
+echo_info "vbox-adapter-check writes logging information every 5 minutes to: $INSTALL_DIR/vbox-adapter-check.log"
 
 echo_step "MANUAL ACTION REQUIRED: Add to PATH"
 echo_info "To run the 'vbox' commands easily, you must add the installation directory to your shell's PATH."
