@@ -12,7 +12,7 @@ echo_step() {
 }
 
 echo_info() {
-  echo "    $1"
+  echo "$1"
 }
 
 echo_success() {
