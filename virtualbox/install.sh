@@ -46,7 +46,11 @@ if ! chmod +x "$INSTALL_DIR"/*; then
 fi
 echo_info "File permissions updated."
 
-# Step 3: Schedule the cron job if it doesn't exist
+# Step 3: Run vbox-adapter-check
+echo_step "Running vbox-adapter-check"
+$INSTALL_DIR/vbox-adapter-check
+
+# Step 4: Schedule the cron job if it doesn't exist
 echo_step "Scheduling background task..."
 CRON_JOB="*/5 * * * * (echo \"# \$(date)\"; $INSTALL_DIR/vbox-adapter-check) >> \"$INSTALL_DIR/vbox-adapter-check.log\" 2>&1"
 
