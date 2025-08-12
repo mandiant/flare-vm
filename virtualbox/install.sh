@@ -27,10 +27,14 @@ echo_error() {
 # Step 1: Create installation directory and copy files
 echo_step "Setting up installation directory..."
 mkdir -p "$INSTALL_DIR"
-if [ ! -f "vbox-adapter-check" ]; then
-    echo_error "The 'vbox-adapter-check' executable is not in the current directory."
+SCRIPT_DIR=$(dirname "$0")
+if [ -f "$SCRIPT_DIR/vbox-adapter-check" ]; then
+    cp "$SCRIPT_DIR/vbox-adapter-check" "$INSTALL_DIR/"
+elif [ -f "vbox-adapter-check" ]; then
+    cp "vbox-adapter-check" "$INSTALL_DIR/"
+else
+    echo_error "The 'vbox-adapter-check' executable is not in the directory of the script or the current directory."
 fi
-cp "vbox-adapter-check" "$INSTALL_DIR/"
 echo_info "Copied 'vbox-adapter-check' to $INSTALL_DIR"
 
 # Step 2: Make files executable
