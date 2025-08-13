@@ -27,20 +27,30 @@ echo_error() {
 # Step 1: Create installation directory and copy files
 echo_step "Setting up installation directory..."
 mkdir -p "$INSTALL_DIR"
-if [ ! -f "vbox-adapter-check" ]; then
-    echo_error "The 'vbox-adapter-check' executable is not in the current directory."
+SCRIPT_DIR=$(dirname "$0")
+if [ -f "$SCRIPT_DIR/vbox-adapter-check" -a -f "$SCRIPT_DIR/vbox-clean-snapshots" ]; then
+    cp "$SCRIPT_DIR/vbox-adapter-check" "$INSTALL_DIR/"
+    cp "$SCRIPT_DIR/vbox-clean-snapshots" "$INSTALL_DIR/"
+elif [ -f "vbox-adapter-check" -a -f "vbox-clean-snapshots" ]; then
+    cp "vbox-adapter-check" "$INSTALL_DIR/"
+    cp "vbox-clean-snapshots" "$INSTALL_DIR/"
+else
+    echo_error "The 'vbox-adapter-check' and 'vbox-clean-snapshots' binaries are not in the directory of the script or the current directory."
 fi
-cp "vbox-adapter-check" "$INSTALL_DIR/"
-echo_info "Copied 'vbox-adapter-check' to $INSTALL_DIR"
+echo_info "Copied 'vbox-adapter-check' and 'vbox-clean-snapshots' to $INSTALL_DIR"
 
 # Step 2: Make files executable
 echo_step "Making tools in $INSTALL_DIR executable..."
-if ! chmod +x "$INSTALL_DIR"/vbox-adapter-check; then
+if ! chmod +x "$INSTALL_DIR"/*; then
   echo_error "Failed to set execute permissions on files in $INSTALL_DIR."
 fi
 echo_info "File permissions updated."
 
-# Step 3: Schedule the cron job if it doesn't exist
+# Step 3: Run vbox-adapter-check
+echo_step "Running vbox-adapter-check"
+$INSTALL_DIR/vbox-adapter-check
+
+# Step 4: Schedule the cron job if it doesn't exist
 echo_step "Scheduling background task..."
 CRON_JOB="*/5 * * * * (echo \"# \$(date)\"; $INSTALL_DIR/vbox-adapter-check) >> \"$INSTALL_DIR/vbox-adapter-check.log\" 2>&1"
 
@@ -55,6 +65,7 @@ fi
 
 echo_success "Installation Successful!"
 echo_info "The vbox tools are installed in: $INSTALL_DIR"
+echo_info "vbox-adapter-check writes logging information every 5 minutes to: $INSTALL_DIR/vbox-adapter-check.log"
 
 echo_step "MANUAL ACTION REQUIRED: Add to PATH"
 echo_info "To run the 'vbox' commands easily, you must add the installation directory to your shell's PATH."
