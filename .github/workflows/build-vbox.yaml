@@ -46,7 +46,7 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           body: |
-            **FLARE-VM does not have releases**, as the project relies on external URLs outside of our control, making it impossible to install an older version. This release only includes standalone Linux executables for some of the scripts in the [`virtualbox`](https://github.com/mandiant/flare-vm/tree/main/virtualbox) folder (related to use FLARE-VM in VirtualBox) to make them easier to use. **To install FLARE-VM check the instructions in the [FLARE-VM README](https://github.com/mandiant/flare-vm)**.
+            **FLARE-VM does not have releases**, as the project relies on external URLs outside of our control, making it impossible to install an older version. This release only includes standalone Linux executables for some of the scripts in the [`virtualbox`](https://github.com/mandiant/flare-vm/tree/main/virtualbox) folder (related to use FLARE-VM in VirtualBox) and a bash script to make it easier to use them. **To install FLARE-VM check the instructions in the [FLARE-VM README](https://github.com/mandiant/flare-vm)**.
 
             - **vbox-adapter-check**: Print the status of all internet adapters of all VMs in VirtualBox. Useful to detect internet access, which is undesirable for dynamic malware analysis. Compatibility is limited to Linux systems using the GTK graphical toolkit, which includes desktops like GNOME.
             - **vbox-clean-snapshots**: Delete a snapshot and its children recursively skipping snapshots with a substring in the name. Useful to delete several snapshots, which is not possible via the VirtualBox UI.
