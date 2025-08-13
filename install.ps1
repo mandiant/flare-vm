@@ -515,24 +515,28 @@ if (-not $noGui.IsPresent) {
           $ns.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata")
 
           # Extract package information from the XML
-          $vm_packages.feed.entry | ForEach-Object {
-             $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
-             $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
-             # Select only packages that have the latest version, contain a category and the category is not excluded
-             if (($isLatestVersion -eq "true") -and ($category -ne "") -and ($excludedCategories -notcontains $category)) {
-                  $packageName = $_.properties.Id
-                  $description = $_.properties.Description
+          if ($vm_packages.feed.entry) {
+              $vm_packages.feed.entry | ForEach-Object {
+                  $isLatestVersion = $_.SelectSingleNode("m:properties/d:IsLatestVersion", $ns).InnerText
+                  $category = $_.SelectSingleNode("m:properties/d:Tags", $ns).InnerText
+                  # Select only packages that have the latest version, contain a category and the category is not excluded
+                  if (($isLatestVersion -eq "true") -and ($category -ne "") -and ($excludedCategories -notcontains $category)) {
+                      $packageName = $_.properties.Id
+                      $description = $_.properties.Description
 
-                  # Initialize category as an empty array
-                  if (-not ($packagesByCategory.ContainsKey($category))) {
-                     $packagesByCategory[$category] = @()
-                  }
-		  # Add the PackageName and PackageDesccription to each entry in the array
-                  $packagesByCategory[$category] += [PSCustomObject]@{
-                     PackageName = $packageName
-                     PackageDescription = $description
-                  }
-               }
+                      # Initialize category as an empty array
+                      if (-not ($packagesByCategory.ContainsKey($category))) {
+                         $packagesByCategory[$category] = @()
+                      }
+    		  # Add the PackageName and PackageDesccription to each entry in the array
+                      $packagesByCategory[$category] += [PSCustomObject]@{
+                         PackageName = $packageName
+                         PackageDescription = $description
+                      }
+                   }
+              }
+          } else {
+              Write-Host "No entries found in the package feed XML. The file may be empty or malformed."
           }
           # Check if there is a next link in the XML and set the API URL to that link if it exists
           $nextLink = $vm_packages.SelectSingleNode("//atom:link[@rel='next']/@href", $ns)
