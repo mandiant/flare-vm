@@ -292,7 +292,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if PowerShell version is compatible (mandatory)..."
 		$error_info = Test-PSVersion
 		if ($error_info){
-			Write-Host "`t[!]$error_info" -ForegroundColor Red
+			Write-Host "`t[!] $error_info" -ForegroundColor Red
 			$mandatoryChecksPassed = $false
 		}
 
@@ -300,7 +300,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if script is running as administrator (mandatory)..."
 		$error_info = Test-Admin
 		if ($error_info) {
-			Write-Host "`t[!]$error_info"  -ForegroundColor Red
+			Write-Host "`t[!] $error_info"  -ForegroundColor Red
 			$mandatoryChecksPassed = $false
 		}
 
@@ -308,7 +308,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if execution policy is unrestricted.. (mandatory)."
 		$error_info = Test-ExecutionPolicy
 		if ($error_info) {
-			Write-Host "`t[!]$error_info" -ForegroundColor Red
+			Write-Host "`t[!] $error_info" -ForegroundColor Red
 			$mandatoryChecksPassed = $false
 		}
 
@@ -316,7 +316,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking Operating System version compatibility..."
 		$error_info = Test-WindowsVersion
 		if ($error_info) {
-			Write-Host "`t[!]$error_info" -ForegroundColor Yellow
+			Write-Host "`t[!] $error_info" -ForegroundColor Yellow
 			$script:checksPassed = $false
 		}
 
@@ -324,7 +324,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if the Operating System has been tested..."
 		$error_info= Test-TestedOS
 		if ($error_info) {
-			Write-Host "`t[!]$error_info" -ForegroundColor Yellow
+			Write-Host "`t[!] $error_info" -ForegroundColor Yellow
 			$script:checksPassed = $false
 		}
 
@@ -332,7 +332,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if the system runs on a Virtual Machine..."
 		$error_info = Test-VM
 		if ($error_info) {
-			Write-Host "`t[!]$error_info" -ForegroundColor Yellow
+			Write-Host "`t[!] $error_info" -ForegroundColor Yellow
 			$script:checksPassed = $false
 		}
 
@@ -340,7 +340,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking for spaces in the username... (mandatory)"
 		$error_info = Test-SpaceUserName
 		if ($error_info) {
-			Write-Host "`t[!]$error_info" -ForegroundColor Red
+			Write-Host "`t[!] $error_info" -ForegroundColor Red
 			$mandatoryChecksPassed = $false
 		}
 
@@ -348,7 +348,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if host has enough disk space..."
 		$error_info = Test-Storage
 		if ($error_info) {
-			Write-Host "`t[!]$error_info"   -ForegroundColor Yellow
+			Write-Host "`t[!] $error_info"   -ForegroundColor Yellow
 			$script:checksPassed = $false
 		}
 
