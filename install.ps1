@@ -230,8 +230,9 @@ function Test-WindowsVersion {
 
 # 19045: https://www.microsoft.com/en-us/software-download/windows10ISO downloaded on April 25 2023.
 # 20348: the version used by windows-2022 in GH actions
+# 26100: https://www.microsoft.com/en-us/software-download/windows11 downloaded on May 6 2025.
 function Test-TestedOS {
-	$testedVersions = @(19045, 20348)
+	$testedVersions = @(19045, 20348, 26100)
 	try {
 		$osVersion = (Get-CimInstance -class Win32_OperatingSystem).BuildNumber
 		if (-not ($osVersion -in $testedVersions)){
