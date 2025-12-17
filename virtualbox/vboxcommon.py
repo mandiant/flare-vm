@@ -53,7 +53,7 @@ def __run_vboxmanage(cmd, real_time=False):
     # which can cause conflicts with external binaries like VBoxManage.
     # We create a clean environment for the subprocess to use the system's libraries.
     env = os.environ.copy()
-    if sys.frozen and "LD_LIBRARY_PATH" in env:
+    if getattr(sys, 'frozen', False) and "LD_LIBRARY_PATH" in env:
         # 'sys.frozen' is True when running from a PyInstaller executable.
         # We can either remove the variable or, more safely, restore the original
         # one if PyInstaller saved it. PyInstaller often saves it as LD_LIBRARY_PATH_ORIG.
@@ -283,7 +283,7 @@ def wait_until(vm_uuid, condition):
     Return True if the condition is met within one minute.
     Return False otherwise.
     """
-    timeout = 60  # seconds
+    timeout = 600  # seconds (10 minutes)
     check_interval = 5  # seconds
     start_time = time.time()
     while time.time() - start_time < timeout:
