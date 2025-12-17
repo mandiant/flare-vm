@@ -229,7 +229,10 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
         notice_file_name = snapshot.get("legal_notice", None)
         if notice_file_name:
             notice_file_path = rf"C:\Users\{GUEST_USERNAME}\Desktop\{notice_file_name}"
-            set_notice_cmd = f"Import-Module $env:VM_COMMON_DIR\\vm.common\\vm.common.psm1; VM-Set-Legal-Notice (Get-Content '{notice_file_path}' -Raw)"
+            set_notice_cmd = (
+                f"Import-Module $env:VM_COMMON_DIR\\vm.common\\vm.common.psm1; "
+                f"VM-Set-Legal-Notice (Get-Content '{notice_file_path}' -Raw)"
+            )
             run_command(vm_uuid, set_notice_cmd)
 
         # Perform clean up: run 'VM-Clean-Up' excluding configured files and folders
