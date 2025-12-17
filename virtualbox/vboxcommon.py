@@ -53,7 +53,7 @@ def __run_vboxmanage(cmd, real_time=False):
     # which can cause conflicts with external binaries like VBoxManage.
     # We create a clean environment for the subprocess to use the system's libraries.
     env = os.environ.copy()
-    if getattr(sys, 'frozen', False) and "LD_LIBRARY_PATH" in env:
+    if getattr(sys, "frozen", False) and "LD_LIBRARY_PATH" in env:
         # 'sys.frozen' is True when running from a PyInstaller executable.
         # We can either remove the variable or, more safely, restore the original
         # one if PyInstaller saved it. PyInstaller often saves it as LD_LIBRARY_PATH_ORIG.
