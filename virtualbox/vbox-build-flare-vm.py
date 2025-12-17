@@ -47,7 +47,7 @@ and file/folder exclusions for the automated cleanup process.
 EPILOG = """
 Example usage:
   # Build FLARE-VM and export several OVAs using the information in the provided configuration file, using '19930906' as date
-  #./vbox-build-vm.py configs/win10_flare-vm.yaml --custom_config --date='19930906'
+  # ./vbox-build-flare-vm.py configs/win10_flare-vm.yaml --custom_config --date='19930906'
 """
 
 # The base snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled
@@ -74,7 +74,7 @@ REQUIRED_FILES_DEST = rf"C:\Users\{GUEST_USERNAME}\Desktop"
 POWERSHELL_PATH = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 CMD_PATH = r"C:\Windows\System32\cmd.exe"
 
-# Cleanup command to be executed in cmd to delete the PowerShel logs
+# Cleanup command to be executed in cmd to delete the PowerShell logs
 # Run sync (installed by sysinternals) to ensure files are written to persistent storage as the script shut down the VM abruptly
 CMD_CLEANUP_CMD = r"/C rmdir /s /q %UserProfile%\Desktop\PS_Transcripts && sync"
 
@@ -229,11 +229,11 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
         notice_file_name = snapshot.get("legal_notice", None)
         if notice_file_name:
             notice_file_path = rf"C:\Users\{GUEST_USERNAME}\Desktop\{notice_file_name}"
-            set_notice_cmd = f"VM-Set-Legal-Notice (Get-Content  '{notice_file_path}' -Raw)"
+            set_notice_cmd = f"Import-Module $env:VM_COMMON_DIR\\vm.common\\vm.common.psm1; VM-Set-Legal-Notice (Get-Content '{notice_file_path}' -Raw)"
             run_command(vm_uuid, set_notice_cmd)
 
         # Perform clean up: run 'VM-Clean-Up' excluding configured files and folders
-        ps_cleanup_cmd = "VM-Clean-Up"
+        ps_cleanup_cmd = "Import-Module $env:VM_COMMON_DIR\\vm.common\\vm.common.psm1; VM-Clean-Up"
         protected_files = snapshot.get("protected_files", None)
         if protected_files:
             ps_cleanup_cmd += f" -excludeFiles {protected_files}"
