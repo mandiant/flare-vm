@@ -22,7 +22,7 @@ Snapshots with the following strings in the name (case insensitive) won't be del
 Cleaning FLARE-VM.20240604 🫧 Snapshots to delete:
   Snapshot 1
   wip unpacked
-  JS downloader deobfuscated 
+  JS downloader deobfuscated
   Snapshot 6
   C2 decoded
   Snapshot 5
