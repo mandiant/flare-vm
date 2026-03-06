@@ -161,6 +161,20 @@ Reasons **1-4** are difficult for us to fix since we do not control them. If an 
 We can help with reasons **5-7** and welcome the community to contribute fixes as well!
 Please [report the bug in VM-Packages](https://github.com/mandiant/VM-Packages/issues/new?labels=%3Abug%3A+bug&template=bug.yml) providing all the information requested.
 
+### Windows Defender still blocking malware
+On newer versions of Windows 10, Microsoft Defender may continue blocking malware samples even after disabling it through registry settings such as `DisableAntiSpyware`.
+
+This behavior is caused by additional protections such as Tamper Protection and other Defender services that cannot always be disabled through registry changes alone.
+
+Possible workarounds reported by users include:
+
+- Disabling Defender through Group Policy
+- Verifying Defender status using the EICAR test file
+- Using Windows 10 version 21H2 before upgrading
+- Running malware analysis inside an isolated virtual machine
+
+Refer to the installation requirements above to ensure that Tamper Protection and Windows Defender are fully disabled before installing FLARE-VM.
+
 ### Updates
 
 Note that package updates are best effort and that updates are not being tested.
