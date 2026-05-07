@@ -142,7 +142,7 @@ $mandatoryChecksPassed = $true
 $exit_message = "Installation cannot continue."
 
 ################################# Functions that conduct Pre-Install Checks #################################
-# Function to test the network stack. Ping/GET requests to the resource to ensure that network stack looks good for installation
+# Function to test the network stack. TCP Connect as well as a GET request to the resource ensures that the network stack looks good for installation
 function Test-WebConnection {
     param (
         [string]$url
@@ -150,8 +150,8 @@ function Test-WebConnection {
 
     Write-Host "[+] Checking for Internet connectivity ($url)... (mandatory)"
 
-    if (-not (Test-Connection $url -Quiet)) {
-        return "It looks like you cannot ping $url. Check your network settings."
+    if (-not ((Test-NetConnection $url -Port 443 -ErrorAction SilentlyContinue 3>$null | Select-Object -ExpandProperty TcpTestSucceeded) -eq $True)) {
+        return "It looks like you cannot connect to $url. Check your network settings."
     }
 
     $response = $null
