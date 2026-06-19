@@ -1,4 +1,4 @@
-VM_NAME: FLARE-VM.testing
+VM_NAME: FLARE-VM.Win10.testing
 EXPORTED_VM_NAME: FLARE-VM.Win10
 SNAPSHOTS:
 - extension: ".dynamic"
