@@ -22,7 +22,9 @@ This section documents the steps to install FLARE-VM. You may also find useful t
 
 ### Pre-installation
 * Prepare a Windows 10+ virtual machine
-  * Install Windows in the virtual machine, for example using the raw Windows 10 ISO from https://www.microsoft.com/en-us/software-download/windows10ISO
+  * Install Windows in the virtual machine by using a windows ISO:
+     * Windows 10: https://www.microsoft.com/en-us/software-download/windows10ISO
+     * Windows 11: https://www.microsoft.com/en-us/software-download/windows11
   * Ensure the [requirements above](#requirements) are satisfied, including:
     * Disable Windows Updates (at least until installation is finished)
       * https://www.windowscentral.com/how-stop-updates-installing-automatically-windows-10
