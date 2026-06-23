@@ -6,29 +6,22 @@ SNAPSHOT:
 CMDS:
   - |
     # Install additional useful packages
-    sudo apt-get --assume-yes install libwrap0-dev gdb-multiarch qemu gcc-multilib libcurl4:i386 qemu-user libc6-mips64-mips-cross libc6-mipsel-cross libc6-arm64-cross libc6-armel-cross libc6-armhf-cross libc6-ppc64-cross libc6-powerpc-cross libxcb-cursor0
-
+    sudo apt-get --assume-yes install libwrap0-dev gdb-multiarch gcc-multilib qemu-user qemu-system libcurl4:i386 libc6-mips64-mips-cross libc6-mipsel-cross libc6-arm64-cross libc6-armel-cross libc6-armhf-cross libc6-ppc64-cross libc6-powerpc-cross libxcb-cursor0
 
   - |
     # Uninstall distro-info to fix "Invalid version: '0.23ubuntu1'" Python install warning
-    # Uninstall it in both the default and Python 3.9
-    sudo pip uninstall -y distro-info
-    sudo /usr/bin/python3.9 -m pip uninstall -y distro-info
+    sudo pip uninstall -y distro-info --break-system-packages
 
   - |
-    # Install additional Python libraries
-    pip install -U pip
-    pip install rpyc flare-capa lznt1
+    # Install additional Python libraries into the default Python 3.12 environment
+    sudo pip install -U pip --ignore-installed pip --break-system-packages
+    sudo pip install rpyc flare-capa lznt1 --break-system-packages
 
   - |
-    # Install additional Python libraries using Python 3.9
-    /usr/bin/python3.9 -m pip install -U pip
-    /usr/bin/python3.9 -m pip install rpyc flare-capa lznt1
-
-  - |
-    # Fix fakenet issue: https://github.com/mandiant/flare-fakenet-ng/tree/master?tab=readme-ov-file#dns-not-resolving-names
+    # Fix fakenet issues: Disable systemd-resolved and set NetworkMode to SingleHost
     sudo systemctl stop systemd-resolved
     sudo systemctl disable systemd-resolved
+    sudo sed -i -E 's/^(NetworkMode:[[:space:]]+).*/\1SingleHost/' /opt/fakenet-ng/lib/python3.12/site-packages/fakenet/configs/default.ini
 
   - |
     # Install IDA
@@ -57,4 +50,3 @@ CMDS:
 
     # Ensure files are written to persistent storage as the script shut down the VM abruptly
     sync
-
