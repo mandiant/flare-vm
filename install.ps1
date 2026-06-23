@@ -1444,7 +1444,7 @@ if (-not $noGui.IsPresent) {
 		[System.Windows.Forms.Application]::EnableVisualStyles()
 
 		$formCategories                            = New-Object system.Windows.Forms.Form
-		$formCategories.ClientSize                 = New-Object System.Drawing.Point(1015,850)
+		$formCategories.ClientSize                 = New-Object System.Drawing.Point(1015,600)
 		$formCategories.text                       = "FLARE-VM Package selection"
 		$formCategories.StartPosition              = 'CenterScreen'
 		$formCategories.TopMost                    = $true
@@ -1471,7 +1471,7 @@ if (-not $noGui.IsPresent) {
 		$labelCategories2.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 
 		$panelCategories                = New-Object system.Windows.Forms.Panel
-		$panelCategories.height         = 530
+		$panelCategories.height         = 450
 		$panelCategories.width          = 970
 		$panelCategories.location       = New-Object System.Drawing.Point(30,60)
 		$panelCategories.AutoScroll     = $true
@@ -1479,7 +1479,7 @@ if (-not $noGui.IsPresent) {
 		$resetButton                 = New-Object system.Windows.Forms.Button
 		$resetButton.text            = "Reset"
 		$resetButton.AutoSize        = $true
-		$resetButton.location        = New-Object System.Drawing.Point(50,800)
+		$resetButton.location        = New-Object System.Drawing.Point(50,530)
 		$resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 		$resetButton.Add_Click({
 						Set-InitialPackages
@@ -1489,7 +1489,7 @@ if (-not $noGui.IsPresent) {
 		$allPackagesButton                 = New-Object system.Windows.Forms.Button
 		$allPackagesButton.text            = "Select All"
 		$allPackagesButton.AutoSize        = $true
-		$allPackagesButton.location        = New-Object System.Drawing.Point(130,800)
+		$allPackagesButton.location        = New-Object System.Drawing.Point(130,530)
 		$allPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 		$allPackagesButton.Add_Click({
 		   [System.Windows.Forms.MessageBox]::Show('Selecting all packages considerable increases installation time and it is not desirable for most use cases','Warning')
@@ -1499,7 +1499,7 @@ if (-not $noGui.IsPresent) {
 		$clearPackagesButton	         = New-Object system.Windows.Forms.Button
 		$clearPackagesButton.text            = "Clear"
 		$clearPackagesButton.AutoSize        = $true
-		$clearPackagesButton.location        = New-Object System.Drawing.Point(210,800)
+		$clearPackagesButton.location        = New-Object System.Drawing.Point(210,530)
 		$clearPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
 		$clearPackagesButton.Add_Click({Clear-AllPackages})
 
@@ -1508,14 +1508,14 @@ if (-not $noGui.IsPresent) {
 		$installButton.width      = 97
 		$installButton.height     = 37
 		$installButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
-		$installButton.location   = New-Object System.Drawing.Point(750,800)
+		$installButton.location   = New-Object System.Drawing.Point(750,530)
 		$installButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
 
 		$cancelButton            = New-Object system.Windows.Forms.Button
 		$cancelButton.text       = "Cancel"
 		$cancelButton.width      = 97
 		$cancelButton.height     = 37
-		$cancelButton.location   = New-Object System.Drawing.Point(850,800)
+		$cancelButton.location   = New-Object System.Drawing.Point(850,530)
 		$cancelButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
 		$cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
 
@@ -1841,4 +1841,3 @@ if ($noPassword.IsPresent) {
 } else {
     Install-BoxstarterPackage -packageName $PackageName -credential $credentials
 }
-
