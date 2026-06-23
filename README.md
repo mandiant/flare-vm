@@ -53,6 +53,7 @@ This section documents the steps to install FLARE-VM. You may also find useful t
 #### Installer Parameters
 Below are the CLI parameter descriptions.
 
+
 ```
 PARAMETERS
     -password <String>
@@ -161,6 +162,20 @@ Reasons **1-4** are difficult for us to fix since we do not control them. If an 
 We can help with reasons **5-7** and welcome the community to contribute fixes as well!
 Please [report the bug in VM-Packages](https://github.com/mandiant/VM-Packages/issues/new?labels=%3Abug%3A+bug&template=bug.yml) providing all the information requested.
 
+### Windows Defender still blocking malware
+On newer versions of Windows 10, Microsoft Defender may continue blocking malware samples even after disabling it through registry settings such as `DisableAntiSpyware`.
+
+This behavior is caused by additional protections such as Tamper Protection and other Defender services that cannot always be disabled through registry changes alone.
+
+Possible workarounds reported by users include:
+
+- Disabling Defender through Group Policy
+- Verifying Defender status using the EICAR test file
+- Using Windows 10 version 21H2 before upgrading
+- Running malware analysis inside an isolated virtual machine
+
+Refer to the installation requirements above to ensure that Tamper Protection and Windows Defender are fully disabled before installing FLARE-VM.
+
 ### Updates
 
 Note that package updates are best effort and that updates are not being tested.
@@ -169,5 +184,5 @@ If you encounter errors, perform a fresh FLARE-VM install.
 ### Mailing List
 Subscribe to the FLARE mailing list for community announcements! Email "subscribe" to [flare-external@google.com](mailto:flare-external@google.com?subject=subscribe).
 
-## Legal Notice
+## Legal Notice  
 > This download configuration script is provided to assist cyber security analysts in creating handy and versatile toolboxes for malware analysis environments. It provides a convenient interface for them to obtain a useful set of analysis tools directly from their original sources. Installation and use of this script is subject to the Apache 2.0 License. You as a user of this script must review, accept and comply with the license terms of each downloaded/installed package. By proceeding with the installation, you are accepting the license terms of each package, and acknowledging that your use of each package will be subject to its respective license terms.
