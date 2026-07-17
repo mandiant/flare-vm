@@ -28,6 +28,7 @@ if ($parseErrors.Count -ne 0) {
 
 $functionsToTest = @(
     'Test-WebConnection',
+    'Test-InternetConnectivity',
     'Test-ExecutionPolicy',
     'Test-WindowsVersion',
     'Test-TestedOS',
@@ -93,9 +94,30 @@ $script:webFailure = $true
 $script:pingResult = $false
 Assert-Match 'ping.*also failed' (Test-WebConnection 'example.invalid') 'A total network failure should include ping context.'
 
+# Replace the single-host probe to verify the orchestration helper's order and fail-fast behavior.
+$script:probedHosts = @()
+$script:failedHost = $null
+function Test-WebConnection {
+    param([string]$url)
+    $script:probedHosts += $url
+    if ($url -eq $script:failedHost) { return "failed: $url" }
+}
+$script:failedHost = 'github.com'
+Assert-Equal 'failed: github.com' (Test-InternetConnectivity) 'Connectivity should return the first endpoint failure.'
+Assert-Equal 'google.com,github.com' ($script:probedHosts -join ',') 'Connectivity should stop after the first failure.'
+$script:probedHosts = @()
+$script:failedHost = $null
+Assert-Equal $null (Test-InternetConnectivity) 'Connectivity should pass when every endpoint passes.'
+Assert-Equal 'google.com,github.com,raw.githubusercontent.com' ($script:probedHosts -join ',') 'Connectivity should probe every required endpoint in order.'
+
 [xml]$config = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\config.xml') -Raw
 if (-not $config.config.apps -or -not $config.config.'path-items') {
     throw 'config.xml is missing required apps or path-items sections.'
+}
+
+$installerText = Get-Content -LiteralPath $installerPath -Raw
+if ($installerText -notmatch '(?s)\$error_info = Test-VM\s+if \(\$error_info\)\{\s+\$RunningVMTooltip\.Text = \$error_info') {
+    throw 'The GUI VM check is not mapped to the VM tooltip.'
 }
 
 Write-Host 'Installer preflight tests: PASS'

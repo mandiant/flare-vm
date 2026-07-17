@@ -200,6 +200,17 @@ function Test-WebConnection {
 
 }
 
+function Test-InternetConnectivity {
+    # Keep the required endpoints in one place so CLI and GUI preflight modes cannot drift.
+    $requiredHosts = @('google.com', 'github.com', 'raw.githubusercontent.com')
+    foreach ($requiredHost in $requiredHosts) {
+        $errorInfo = Test-WebConnection $requiredHost
+        if ($errorInfo) {
+            return $errorInfo
+        }
+    }
+}
+
 
 function Test-PSVersion{
     try {
@@ -394,22 +405,10 @@ if ($noGui.IsPresent) {
 		}
 
 		# Internet connectivity checks
-		$error_info = Test-WebConnection 'google.com'
+		$error_info = Test-InternetConnectivity
 		if ($error_info){
 			Write-Host "`t[+] $error_info" -ForegroundColor Red
 			$mandatoryChecksPassed = $false
-		}else {
-			$error_info = Test-WebConnection 'github.com'
-			if ($error_info){
-				Write-Host "`t[+] $error_info" -ForegroundColor Red
-			    $mandatoryChecksPassed = $false
-			}else {
-				$error_info = Test-WebConnection 'raw.githubusercontent.com'
-				if ($error_info){
-				    Write-Host "`t[+] $error_info" -ForegroundColor Red
-			        $mandatoryChecksPassed = $false
-			    }
-			}
 		}
 
 		# Check if Tamper Protection is disabled
@@ -843,8 +842,8 @@ if (-not $noGui.IsPresent) {
         }
 		$error_info = Test-VM
 		if ($error_info){
-            $RunningAsAdminTooltip.Text = $error_info
-			$RunningAsAdminTooltip.Forecolor = $orangeColor
+            $RunningVMTooltip.Text = $error_info
+			$RunningVMTooltip.Forecolor = $orangeColor
             $script:checksPassed = $false
         } else {
 			$RunningVM.Text = "True"
@@ -869,28 +868,14 @@ if (-not $noGui.IsPresent) {
 			$PSVersion.ForeColor = $successColor
         }
 
-		$error_info = Test-WebConnection 'google.com'
+		$error_info = Test-InternetConnectivity
 		if ($error_info){
 			$internetConnectivityTooltip.Text = $error_info
 			$internetConnectivityTooltip.Forecolor = $errorColor
 			$mandatoryChecksPassed = $false
 		}else {
-			$error_info = Test-WebConnection 'github.com'
-			if ($error_info){
-				$internetConnectivityTooltip.Text = $error_info
-				$internetConnectivityTooltip.Forecolor = $errorColor
-			    $mandatoryChecksPassed = $false
-			}else {
-				$error_info = Test-WebConnection 'raw.githubusercontent.com'
-				if ($error_info){
-				    $internetConnectivityTooltip.Text = $error_info
-					$internetConnectivityTooltip.Forecolor = $errorColor
-			        $mandatoryChecksPassed = $false
-			    } else {
-	                $internetConnectivity.Text = "True"
-			        $internetConnectivity.ForeColor = $successColor
-				}
-			}
+	        $internetConnectivity.Text = "True"
+			$internetConnectivity.ForeColor = $successColor
 		}
 		$error_info = Test-WindowsVersion
 		if ($error_info){
