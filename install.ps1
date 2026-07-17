@@ -251,7 +251,12 @@ function Test-DefenderAndTamperProtection {
 function Test-WindowsVersion {
 	try {
 		$os = Get-CimInstance -Class Win32_OperatingSystem
-		$osMajorVersion = $os.Version.Split('.')[0] # Version examples: "6.1.7601", "10.0.19045"
+		$osMajorVersion = 0
+		# CIM returns Version as text (examples: "6.1.7601", "10.0.19045"). Cast the
+		# major component explicitly so PowerShell does not perform a lexical string comparison.
+		if (-not [int]::TryParse($os.Version.Split('.')[0], [ref]$osMajorVersion)) {
+			throw "Invalid Windows version '$($os.Version)'"
+		}
 		if ($osMajorVersion -lt 10) {
 			return "Only Windows >= 10 is supported"
 		}
@@ -266,7 +271,11 @@ function Test-WindowsVersion {
 function Test-TestedOS {
 	$testedVersions = @(19045, 20348, 26100)
 	try {
-		$osVersion = (Get-CimInstance -class Win32_OperatingSystem).BuildNumber
+		$osVersion = 0
+		$buildNumber = (Get-CimInstance -class Win32_OperatingSystem).BuildNumber
+		if (-not [int]::TryParse($buildNumber, [ref]$osVersion)) {
+			throw "Invalid Windows build number '$buildNumber'"
+		}
 		if (-not ($osVersion -in $testedVersions)){
 			return "Windows version $osVersion has not been tested. Tested versions: $($testedVersions -join ', ')"
 		}
