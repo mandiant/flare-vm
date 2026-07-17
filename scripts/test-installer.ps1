@@ -1,3 +1,15 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidOverwritingBuiltInCmdlets',
+    '',
+    Justification = 'The isolated test process shadows system commands to provide deterministic preflight fixtures.'
+)]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingPositionalParameters',
+    '',
+    Justification = 'Positional arguments keep the small assertion DSL readable in this test-only script.'
+)]
+param()
+
 $ErrorActionPreference = 'Stop'
 
 function Assert-Equal {
@@ -27,6 +39,7 @@ if ($parseErrors.Count -ne 0) {
 }
 
 $functionsToTest = @(
+    'Get-ConfigFile',
     'Test-WebConnection',
     'Test-InternetConnectivity',
     'Test-ExecutionPolicy',
@@ -58,6 +71,8 @@ function Test-Connection { return $script:pingResult }
 
 $script:executionPolicy = 'Unrestricted'
 Assert-Equal $null (Test-ExecutionPolicy) 'Unrestricted execution policy should pass.'
+$script:executionPolicy = 'Bypass'
+Assert-Equal $null (Test-ExecutionPolicy) 'Process-scoped Bypass execution policy should pass.'
 $script:executionPolicy = 'Restricted'
 Assert-Match 'enable script execution' (Test-ExecutionPolicy) 'Restricted execution policy should fail.'
 
@@ -109,6 +124,23 @@ $script:probedHosts = @()
 $script:failedHost = $null
 Assert-Equal $null (Test-InternetConnectivity) 'Connectivity should pass when every endpoint passes.'
 Assert-Equal 'google.com,github.com,raw.githubusercontent.com' ($script:probedHosts -join ',') 'Connectivity should probe every required endpoint in order.'
+
+$configTestDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "flare-vm-config-test-$([Guid]::NewGuid().ToString('N'))"
+try {
+    New-Item -Path $configTestDirectory -ItemType Directory | Out-Null
+    $sourceConfig = Join-Path $configTestDirectory 'source.xml'
+    $copiedConfig = Join-Path $configTestDirectory 'copied.xml'
+    Set-Content -LiteralPath $sourceConfig -Value '<config />'
+    Get-ConfigFile -fileDestination $copiedConfig -fileSource $sourceConfig
+    Assert-Equal $true (Test-Path -LiteralPath $sourceConfig) 'Using a local config must preserve the source file.'
+    Assert-Equal '<config />' (Get-Content -LiteralPath $copiedConfig -Raw).Trim() 'The local config should be copied intact.'
+    Get-ConfigFile -fileDestination $sourceConfig -fileSource $sourceConfig
+    Assert-Equal '<config />' (Get-Content -LiteralPath $sourceConfig -Raw).Trim() 'Using the destination itself should be a no-op.'
+} finally {
+    if (Test-Path -LiteralPath $configTestDirectory) {
+        Remove-Item -LiteralPath $configTestDirectory -Recurse -Force
+    }
+}
 
 [xml]$config = Get-Content -LiteralPath (Join-Path $PSScriptRoot '..\config.xml') -Raw
 if (-not $config.config.apps -or -not $config.config.'path-items') {

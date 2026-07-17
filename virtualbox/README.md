@@ -3,6 +3,12 @@
 **This folder contains several scripts related to enhance building, exporting, and using FLARE-VM in VirtualBox.**
 The scripts have been tested in Debian 12 with GNOME 44.9.
 
+Install the Python runtime dependency before running the source scripts:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
 
 ## Clean up snapshots
 
@@ -13,7 +19,7 @@ It is not possible to select and delete several snapshots in VirtualBox, making 
 ### Example
 
 ```
-$ ./vbox-remove-snapshots.py FLARE-VM.20240604 --protected empty,clean,done,important
+$ ./vbox-clean-snapshots.py FLARE-VM.20240604 --protected_snapshots empty,clean,done,important
 
 Snapshots with the following strings in the name (case insensitive) won't be deleted:
   clean
@@ -55,6 +61,9 @@ See you next time you need to clean up your VMs! ✨
 ```
 
 ##### Before
+
+When `--root_snapshot` is provided, the name must exist exactly. The command exits without
+deleting anything if the requested root snapshot cannot be found.
 
 ![Before](../Images/vbox-clean-snapshots_before.png)
 
@@ -98,7 +107,7 @@ If no export directory is provided, the default directory name is `EXPORTED VMS`
 ### Example
 
 ```
-$ ./vbox-export-snapshots.py "FLARE-VM.testing" "FLARE-VM" --description "Windows 10 VM with FLARE-VM default configuration"
+$ ./vbox-export-snapshot.py "FLARE-VM.testing" "FLARE-VM" --description "Windows 10 VM with FLARE-VM default configuration"
 
 Exporting snapshot "FLARE-VM" from "FLARE-VM.testing" {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d}...
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✨ restored snapshot "FLARE-VM"
@@ -109,8 +118,8 @@ VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🔄 power cycling before export... (i
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: poweroff. Starting VM...
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} state: running. Shutting down VM...
 VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} 🚧 exporting ... (it will take some time, go for an 🍦!)
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/None/FLARE-VM.ova"
-VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/None/FLARE-VM.ova.sha256": 987eed68038ce7c5072e7dc219ba82d11745267d8ab2ea7f76158877c13e3aa9
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ EXPORTED "/home/anamg/EXPORTED VMS/FLARE-VM.ova"
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ✅ GENERATED "/home/anamg/EXPORTED VMS/FLARE-VM.ova.sha256": 987eed68038ce7c5072e7dc219ba82d11745267d8ab2ea7f76158877c13e3aa9
 ```
 
 ## Build FLARE-VM VM(s)
@@ -123,6 +132,9 @@ This snapshot serves as the foundation for generating subsequent snapshots and e
 This configuration file specifies the VM name, the exported VM name, and details for each snapshot.
 Individual snapshot configurations can include custom commands to be executed within the guest, legal notices to be applied, and file/folder exclusions for the automated cleanup process.
 See the configuration example file [`configs/win10_flare-vm.yaml`](configs/win10_flare-vm.yaml).
+
+The builder waits up to 12 hours for installation by default. Use `--install-timeout SECONDS`
+to adjust the limit for unusually slow or fast-fail environments.
 
 The `BUILD-READY` snapshot is expected to be an empty Windows installation that satisfies the FLARE-VM installation requirements and has UAC disabled.
 To disable UAC execute in a cmd console with admin rights and restart the VM for the change to take effect:

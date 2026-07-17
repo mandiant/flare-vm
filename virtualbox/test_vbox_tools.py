@@ -20,12 +20,15 @@ subtle bugs tend to hide. `run_vboxmanage` is monkeypatched so no VirtualBox ins
 Run with:  pytest virtualbox/test_vbox_tools.py
 """
 
+import hashlib
 import importlib.util
 import os
 import sys
 import types
+from pathlib import Path
 
 import pytest
+import yaml
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -60,6 +63,8 @@ sys.path.insert(0, HERE)
 vboxcommon = _load_module("vboxcommon.py", "vboxcommon")
 adapter_check = _load_module("vbox-adapter-check.py", "vbox_adapter_check")
 clean_snapshots = _load_module("vbox-clean-snapshots.py", "vbox_clean_snapshots")
+export_snapshot = _load_module("vbox-export-snapshot.py", "vbox_export_snapshot")
+build_flare_vm = _load_module("vbox-build-flare-vm.py", "vbox_build_flare_vm")
 
 
 SHOWVMINFO_SAMPLE = """\
@@ -106,6 +111,25 @@ def test_cmd_to_str_quotes_only_when_needed():
     assert vboxcommon.cmd_to_str(["export", "my vm"]) == "export 'my vm'"
 
 
+def test_sha256_file_is_streamed_and_portable(tmp_path):
+    content = (b"FLARE-VM" * 200_000) + b"end"
+    test_file = tmp_path / "content.bin"
+    test_file.write_bytes(content)
+    assert vboxcommon.sha256_file(test_file) == hashlib.sha256(content).hexdigest()
+
+
+@pytest.mark.parametrize("directory", ["../outside", "..", "/tmp/outside"])
+def test_export_directory_rejects_paths_outside_home(directory):
+    with pytest.raises(ValueError, match="below HOME"):
+        vboxcommon.get_export_directory(directory)
+
+
+def test_export_directory_defaults_below_home(monkeypatch):
+    fake_home = os.path.abspath(os.path.join(os.sep, "home", "analyst"))
+    monkeypatch.setattr(vboxcommon.os.path, "expanduser", lambda _path: fake_home)
+    assert vboxcommon.get_export_directory(None) == os.path.join(fake_home, vboxcommon.EXPORT_DIR_NAME)
+
+
 # --------------------------- vboxcommon: VBoxManage output parsers ---------------------------
 
 
@@ -122,6 +146,36 @@ def test_get_vm_uuid_returns_none_when_absent(monkeypatch):
 def test_get_vm_state(monkeypatch):
     monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: SHOWVMINFO_SAMPLE)
     assert vboxcommon.get_vm_state("{uuid}") == "poweroff"
+
+
+def test_control_guest_does_not_retry_permanent_error(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "ensure_vm_running", lambda _uuid: None)
+    monkeypatch.setattr(
+        vboxcommon,
+        "run_vboxmanage",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("VERR_AUTHENTICATION_FAILURE")),
+    )
+    monkeypatch.setattr(vboxcommon.time, "sleep", lambda _seconds: pytest.fail("permanent errors must not sleep"))
+    with pytest.raises(RuntimeError, match="VERR_AUTHENTICATION_FAILURE"):
+        vboxcommon.control_guest("{uuid}", "user", "bad-password", ["run", "command"])
+
+
+def test_control_guest_retries_transient_error_once(monkeypatch):
+    calls = []
+    sleeps = []
+    monkeypatch.setattr(vboxcommon, "ensure_vm_running", lambda _uuid: None)
+
+    def run_with_transient_failure(*_args, **_kwargs):
+        calls.append(True)
+        if len(calls) == 1:
+            raise RuntimeError("guest additions are starting")
+        return "success"
+
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", run_with_transient_failure)
+    monkeypatch.setattr(vboxcommon.time, "sleep", sleeps.append)
+    assert vboxcommon.control_guest("{uuid}", "user", "password", ["run", "command"]) == "success"
+    assert len(calls) == 2
+    assert sleeps == [120]
 
 
 @pytest.mark.parametrize(
@@ -163,6 +217,17 @@ def test_get_nics_single(monkeypatch):
     assert adapter_check.get_nics("{uuid}", only_nic="2") == [("2", "nat")]
 
 
+def test_do_not_modify_does_not_create_hostonly_interface(monkeypatch):
+    monkeypatch.setattr(adapter_check, "get_vms", lambda _dynamic_only: [("FLARE-VM.dynamic", "{uuid}")])
+    monkeypatch.setattr(adapter_check, "verify_network_adapters", lambda *_args: None)
+    monkeypatch.setattr(
+        adapter_check,
+        "ensure_hostonlyif_exists",
+        lambda: pytest.fail("read-only mode must not create a host-only interface"),
+    )
+    adapter_check.main(["--do_not_modify"])
+
+
 # --------------------------- vbox-clean-snapshots: protection + children ---------------------------
 
 
@@ -190,3 +255,52 @@ def test_get_snapshot_children_root_subtree(monkeypatch):
     assert "clean state" in names
     assert "Snapshot 2" in names
     assert "Snapshot 3" not in names
+
+
+def test_get_snapshot_children_missing_root_fails_closed(monkeypatch):
+    monkeypatch.setattr(clean_snapshots, "run_vboxmanage", lambda cmd: SNAPSHOT_LIST_SAMPLE)
+    with pytest.raises(RuntimeError, match="Root snapshot not found"):
+        clean_snapshots.get_snapshot_children("VM", "does-not-exist", [])
+
+
+def test_export_snapshot_missing_vm_is_an_error(monkeypatch):
+    monkeypatch.setattr(export_snapshot, "get_vm_uuid", lambda _name: None)
+    with pytest.raises(RuntimeError, match="not found"):
+        export_snapshot.export_snapshot("missing", "snapshot", "", vboxcommon.EXPORT_DIR_NAME)
+
+
+def test_flare_install_wait_has_a_timeout(monkeypatch):
+    monkeypatch.setattr(build_flare_vm, "run_command", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(build_flare_vm.time, "monotonic", lambda: 0)
+    with pytest.raises(TimeoutError, match="did not finish"):
+        build_flare_vm.install_flare_vm("{uuid}", "snapshot", False, install_timeout=0)
+
+
+@pytest.mark.parametrize(
+    "config_path",
+    list((Path(HERE) / "configs").glob("*.yaml")),
+    ids=lambda path: path.name,
+)
+def test_example_yaml_config_has_required_shape(config_path):
+    with config_path.open(encoding="utf-8") as config_file:
+        config = yaml.safe_load(config_file)
+
+    assert isinstance(config.get("VM_NAME"), str) and config["VM_NAME"]
+    assert isinstance(config.get("EXPORTED_VM_NAME"), str) and config["EXPORTED_VM_NAME"]
+    if config_path.name == "remnux.yaml":
+        assert isinstance(config.get("SNAPSHOT"), dict)
+        assert isinstance(config.get("CMDS"), list)
+    else:
+        assert isinstance(config.get("SNAPSHOTS"), list) and config["SNAPSHOTS"]
+
+
+@pytest.mark.parametrize(
+    "workflow_path",
+    list((Path(HERE).parent / ".github" / "workflows").glob("*.y*ml")),
+    ids=lambda path: path.name,
+)
+def test_github_workflow_yaml_parses(workflow_path):
+    with workflow_path.open(encoding="utf-8") as workflow_file:
+        workflow = yaml.safe_load(workflow_file)
+    assert isinstance(workflow, dict)
+    assert "jobs" in workflow

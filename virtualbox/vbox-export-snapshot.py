@@ -40,21 +40,17 @@ def export_snapshot(vm_name, snapshot, description, export_dir_name):
     """Restore a snapshot, set the network to hostonly and then export it with the snapshot as name."""
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'❌ ERROR: "{vm_name}" not found')
-        exit()
+        raise RuntimeError(f'VM "{vm_name}" not found')
 
     print(f'\nExporting snapshot "{snapshot}" from "{vm_name}" {vm_uuid}...')
-    try:
-        restore_snapshot(vm_uuid, snapshot)
+    restore_snapshot(vm_uuid, snapshot)
 
-        set_network_to_hostonly(vm_uuid)
+    set_network_to_hostonly(vm_uuid)
 
-        # Start the VM to ensure everything is good
-        print(f"VM {vm_uuid} 🔄 power cycling before export{LONG_WAIT}")
-        ensure_vm_running(vm_uuid)
-        export_vm(vm_uuid, snapshot, description, export_dir_name)
-    except Exception as e:
-        print(f'VM {vm_uuid} ❌ ERROR exporting "{snapshot}": {e}\n')
+    # Start the VM to ensure everything is good
+    print(f"VM {vm_uuid} 🔄 power cycling before export{LONG_WAIT}")
+    ensure_vm_running(vm_uuid)
+    export_vm(vm_uuid, snapshot, description, export_dir_name)
 
 
 def main(argv=None):
@@ -68,9 +64,10 @@ def main(argv=None):
     )
     parser.add_argument("vm_name", help="name of the VM to export a snapshot from.")
     parser.add_argument("snapshot", help="name of the snapshot to export.")
-    parser.add_argument("--description", help="description of the exported OVA. Empty by default.")
+    parser.add_argument("--description", default="", help="description of the exported OVA. Empty by default.")
     parser.add_argument(
         "--export_dir_name",
+        default=EXPORT_DIR_NAME,
         help=f"name of the directory in HOME to export the VMs The directory is created if it does not exist. Default: {EXPORT_DIR_NAME}",
     )
     args = parser.parse_args(args=argv)

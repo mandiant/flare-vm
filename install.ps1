@@ -27,7 +27,7 @@
 
         To execute this script:
           1) Open PowerShell window as administrator
-          2) Allow script execution by running command "Set-ExecutionPolicy Unrestricted"
+          2) Allow script execution for this session by running command "Set-ExecutionPolicy Bypass -Scope Process -Force"
           3) Unblock the install script by running "Unblock-File .\install.ps1"
           4) Execute the script by running ".\install.ps1"
 
@@ -137,6 +137,7 @@ function Save-FileFromUrl {
             Start-Sleep 3
             exit 1
         }
+        throw
     } finally {
         if (Test-Path -LiteralPath $temporaryFile) {
             Remove-Item -LiteralPath $temporaryFile -Force
@@ -155,9 +156,13 @@ function Get-ConfigFile {
         # If the source doesn't exist, assume it's a URL and download the file.
         Save-FileFromUrl -fileSource $fileSource -fileDestination $fileDestination
     } else {
-        # If the source exists as a file, move it to the destination.
+        # Preserve user-provided configuration files. Copy only when source and destination differ.
         Write-Host "[+] Using existing file as configuration file."
-        Move-Item -Path $fileSource -Destination $fileDestination -Force
+        $sourcePath = [System.IO.Path]::GetFullPath($fileSource)
+        $destinationPath = [System.IO.Path]::GetFullPath($fileDestination)
+        if ($sourcePath -ne $destinationPath) {
+            Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+        }
     }
 }
 
@@ -235,8 +240,9 @@ function Test-Admin {
 }
 function Test-ExecutionPolicy {
 	try {
-		if (-not((Get-ExecutionPolicy).ToString() -eq "Unrestricted")){
-			return "You need to enable script execution with 'Set-ExecutionPolicy Unrestricted -Force'"
+		$executionPolicy = (Get-ExecutionPolicy).ToString()
+		if ($executionPolicy -notin @('Bypass', 'Unrestricted')){
+			return "You need to enable script execution with 'Set-ExecutionPolicy Bypass -Scope Process -Force'"
 		}
 	} catch {
 		return "Unable to determine Powershell execution policy"
@@ -509,7 +515,7 @@ if (-not $noGui.IsPresent) {
 		$RunningAsAdminLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
 
 		$ExecutionPolicyLabel = New-Object system.Windows.Forms.Label
-		$ExecutionPolicyLabel.text = "Execution Policy Unrestricted"
+		$ExecutionPolicyLabel.text = "Script Execution Enabled"
 		$ExecutionPolicyLabel.AutoSize = $true
 		$ExecutionPolicyLabel.width = 25
 		$ExecutionPolicyLabel.height = 10
@@ -1107,8 +1113,18 @@ if (${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco
 if (-not $boxstarterVersionGood) {
     Write-Host "[+] Installing Boxstarter..." -ForegroundColor Cyan
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
-    Get-Boxstarter -Force
+
+    if (${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.exe")) {
+        # Avoid executing the mutable web bootstrap when Chocolatey is already available.
+        choco upgrade boxstarter -y --source="https://community.chocolatey.org/api/v2/"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Chocolatey failed to install Boxstarter (exit code $LASTEXITCODE)."
+        }
+    } else {
+        Write-Host "`t[!] Chocolatey is unavailable; using Boxstarter's official web bootstrap." -ForegroundColor Yellow
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
+        Get-Boxstarter -Force
+    }
 
     Start-Sleep -Milliseconds 500
 }
@@ -1196,7 +1212,15 @@ if (-Not (Test-Path $configPath)) {
 
 # Get config contents
 Start-Sleep 1
-$configXml = [xml](Get-Content $configPath)
+try {
+    $configXml = [xml](Get-Content -LiteralPath $configPath -Raw)
+    if (-not $configXml.config) {
+        throw "Root element must be <config>."
+    }
+} catch {
+    Write-Host "`t[!] Invalid configuration XML '$configPath': $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
 
 
 
@@ -1809,6 +1833,12 @@ if ([string]::IsNullOrEmpty($customLayout)) {
 }
 
 Get-ConfigFile $layoutPath $layoutSource
+try {
+    [xml](Get-Content -LiteralPath $layoutPath -Raw) | Out-Null
+} catch {
+    Write-Host "`t[!] Invalid layout XML '$layoutPath': $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
 
 # Log basic system information to assist with troubleshooting
 Write-Host "[+] Logging basic system information to assist with any future troubleshooting..."

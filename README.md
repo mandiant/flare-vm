@@ -40,9 +40,9 @@ This section documents the steps to install FLARE-VM. You may also find useful t
   * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
 * Unblock the installation script:
   * `Unblock-File .\install.ps1`
-* Enable script execution:
-  * `Set-ExecutionPolicy Unrestricted -Force`
-    * If you receive an error saying the execution policy is overridden by a policy defined at a more specific scope, you may need to pass a scope in via `Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force`. To view execution policies for all scopes, execute `Get-ExecutionPolicy -List`
+* Enable script execution for the current PowerShell session:
+  * `Set-ExecutionPolicy Bypass -Scope Process -Force`
+    * Process scope is temporary and is removed when the PowerShell session closes. If the effective policy is controlled by Group Policy, contact your administrator. To view execution policies for all scopes, execute `Get-ExecutionPolicy -List`.
 * Finally, execute the installer script as follow:
   * `.\install.ps1`
     * To pass your password as an argument: `.\install.ps1 -password <password>`

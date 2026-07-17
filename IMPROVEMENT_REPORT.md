@@ -1,5 +1,10 @@
 # FLARE-VM Code Improvement Report
 
+> Follow-up status (2026-07-17): the upgrade branches now address all reproducible findings in
+> this report, add installer/security regression checks, and expand the Python suite to 34 tests
+> across Python 3.10, 3.12, and 3.14. Full WinForms decomposition remains intentionally deferred
+> because the installer must remain a standalone download and interactive VM validation is required.
+
 _Analysis date: 2026-07-17 — scope: `install.ps1`, `virtualbox/*.py`, `virtualbox/install.sh`, CI._
 
 This report is the result of a deep read of the FLARE-VM installer and its VirtualBox
@@ -171,6 +176,10 @@ On any `RuntimeError` it sleeps 120s and retries once, regardless of whether the
 "guest additions not ready yet" case or a genuine error (bad credentials, VM gone). Narrow the
 retry to the transient condition where possible, and surface the original error on the second failure.
 
+**Status:** Fixed. Known permanent VirtualBox authentication, access, path, and argument errors now
+fail immediately. Unknown startup failures retain one delayed retry, and a second failure is chained
+to the original error.
+
 ---
 
 ## 4. Security considerations
@@ -196,6 +205,10 @@ defects to "fix," but a couple are worth hardening.
 ---
 
 ## 5. Testing & CI gaps
+
+**Status:** Resolved. The bullets below describe the original baseline. CI now runs PowerShell
+installer/security tests, 34 Python tests on three supported Python versions, byte-compilation,
+formatters, YAML configuration/workflow parsing, and shell syntax/ShellCheck validation.
 
 - **No unit tests for the Python tooling.** The snapshot/adapter logic in `vboxcommon.py`,
   `vbox-adapter-check.py`, and `vbox-clean-snapshots.py` is pure string/regex parsing of
@@ -225,7 +238,7 @@ defects to "fix," but a couple are worth hardening.
 ## 7. Prioritized action list
 
 Status as of 2026-07-17: items 1-9 are **fixed and verified** (PowerShell parses cleanly,
-all Python byte-compiles, 16 unit tests pass, black/flake8/isort clean). Item 10 is
+all Python byte-compiles, 34 unit tests pass, black/flake8/isort clean). Item 10 is
 **deferred** — see note below.
 
 | # | Item | Severity | Status | Location |

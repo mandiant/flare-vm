@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script configures the vbox-adapter-check file to run automatically. It performs setup of a cron task.
 
 # --- Configuration ---
-INSTALL_DIR="$HOME/vbox"
+INSTALL_DIR="${HOME}/vbox"
 
-set -e
+set -euo pipefail
 
 echo_step() {
   echo -e "\n\033[1;34m==> $1\033[0m"
@@ -27,11 +27,11 @@ echo_error() {
 # Step 1: Create installation directory and copy files
 echo_step "Setting up installation directory..."
 mkdir -p "$INSTALL_DIR"
-SCRIPT_DIR=$(dirname "$0")
-if [ -f "$SCRIPT_DIR/vbox-adapter-check" -a -f "$SCRIPT_DIR/vbox-clean-snapshots" ]; then
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+if [[ -f "$SCRIPT_DIR/vbox-adapter-check" && -f "$SCRIPT_DIR/vbox-clean-snapshots" ]]; then
     cp "$SCRIPT_DIR/vbox-adapter-check" "$INSTALL_DIR/"
     cp "$SCRIPT_DIR/vbox-clean-snapshots" "$INSTALL_DIR/"
-elif [ -f "vbox-adapter-check" -a -f "vbox-clean-snapshots" ]; then
+elif [[ -f "vbox-adapter-check" && -f "vbox-clean-snapshots" ]]; then
     cp "vbox-adapter-check" "$INSTALL_DIR/"
     cp "vbox-clean-snapshots" "$INSTALL_DIR/"
 else
@@ -48,14 +48,17 @@ echo_info "File permissions updated."
 
 # Step 3: Run vbox-adapter-check
 echo_step "Running vbox-adapter-check"
-$INSTALL_DIR/vbox-adapter-check
+"$INSTALL_DIR/vbox-adapter-check"
 
 # Step 4: Schedule the cron job if it doesn't exist
 echo_step "Scheduling background task..."
-CRON_JOB="*/5 * * * * (echo \"# \$(date)\"; $INSTALL_DIR/vbox-adapter-check) >> \"$INSTALL_DIR/vbox-adapter-check.log\" 2>&1"
+ADAPTER_COMMAND=$(printf '%q' "$INSTALL_DIR/vbox-adapter-check")
+LOG_PATH=$(printf '%q' "$INSTALL_DIR/vbox-adapter-check.log")
+CRON_MARKER="# FLARE-VM vbox-adapter-check"
+CRON_JOB="*/5 * * * * (echo \"# \$(date)\"; $ADAPTER_COMMAND) >> $LOG_PATH 2>&1 $CRON_MARKER"
 
 # Check if the job already exists
-if crontab -l 2>/dev/null | grep -Fq "vbox-adapter-check"; then
+if crontab -l 2>/dev/null | grep -Fq "$CRON_MARKER"; then
     echo_info "Cron job for vbox-adapter-check already exists. Skipping."
 else
     echo_info "Adding cron job..."

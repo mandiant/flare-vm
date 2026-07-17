@@ -26,6 +26,29 @@ LONG_WAIT = "... (it will take some time, go for an 🍦!)"
 # Default name of the directory in HOME to export VMs to
 EXPORT_DIR_NAME = "EXPORTED VMS"
 
+PERMANENT_GUEST_CONTROL_ERRORS = (
+    "VERR_AUTHENTICATION_FAILURE",
+    "VERR_ACCESS_DENIED",
+    "VERR_FILE_NOT_FOUND",
+    "VERR_PATH_NOT_FOUND",
+    "VERR_INVALID_PARAMETER",
+    "VBOX_E_OBJECT_NOT_FOUND",
+)
+
+
+def get_export_directory(export_dir_name):
+    """Return a path below HOME for a user-provided export directory name."""
+    if not export_dir_name:
+        export_dir_name = EXPORT_DIR_NAME
+    if os.path.isabs(export_dir_name) or os.path.normpath(export_dir_name).startswith(".."):
+        raise ValueError("Export directory must be a relative path below HOME")
+
+    home_directory = os.path.abspath(os.path.expanduser("~"))
+    export_directory = os.path.abspath(os.path.join(home_directory, export_dir_name))
+    if os.path.commonpath((home_directory, export_directory)) != home_directory:
+        raise ValueError("Export directory must be below HOME")
+    return export_directory
+
 
 def format_arg(arg):
     """Add quotes to the string arg if it contains special characters like spaces."""
@@ -122,11 +145,16 @@ def control_guest(vm_uuid, user, password, args, real_time=False):
     cmd = ["guestcontrol", vm_uuid, f"--username={user}", f"--password={password}"] + args
     try:
         return run_vboxmanage(cmd, real_time)
-    except RuntimeError:
+    except RuntimeError as first_error:
+        if any(error_code in str(first_error) for error_code in PERMANENT_GUEST_CONTROL_ERRORS):
+            raise
         # The guest additions take a bit to load after the user is logged in
         # In slow environments this may cause the command to fail, wait a bit and re-try
         time.sleep(120)  # Wait 2 minutes
-        return run_vboxmanage(cmd, real_time)
+        try:
+            return run_vboxmanage(cmd, real_time)
+        except RuntimeError as retry_error:
+            raise retry_error from first_error
 
 
 def get_hostonlyif_name():
@@ -192,7 +220,7 @@ def set_network_to_hostonly(vm_uuid):
     # Ensure changes applied
     vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
     nic_values = re.findall(r'^nic\d+="(\S+)"', vm_info, flags=re.M)
-    if nic_values[0] != "hostonly" or any(nic_value != "none" for nic_value in nic_values[1:]):
+    if not nic_values or nic_values[0] != "hostonly" or any(nic_value != "none" for nic_value in nic_values[1:]):
         raise RuntimeError(f"Unable to change NICs to a single hostonly in VM {vm_uuid}")
 
     print(f"VM {vm_uuid} ⚙️  network set to single hostonly adapter")
@@ -200,22 +228,33 @@ def set_network_to_hostonly(vm_uuid):
 
 def sha256_file(filepath):
     """Return the SHA256 of the content of the file provided as argument."""
+    digest = hashlib.sha256()
     with open(filepath, "rb") as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def export_vm(vm_uuid, exported_vm_name, description="", export_dir_name=EXPORT_DIR_NAME):
     """Export VM as OVA and generate a file with the SHA256 of the exported OVA."""
+    if description is None:
+        description = ""
+    if os.path.basename(exported_vm_name) != exported_vm_name:
+        raise ValueError("Exported VM name must not contain path separators")
     # Create export directory
-    export_directory = os.path.expanduser(f"~/{export_dir_name}")
+    export_directory = get_export_directory(export_dir_name)
     os.makedirs(export_directory, exist_ok=True)
 
     exported_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.ova")
 
     # Rename OVA if it already exists (for example if the script is called twice) or exporting will fail
     if os.path.exists(exported_ova_filepath):
-        time_str = datetime.now().strftime("%H_%M")
+        time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         old_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.{time_str}.ova")
+        suffix = 1
+        while os.path.exists(old_ova_filepath):
+            old_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.{time_str}.{suffix}.ova")
+            suffix += 1
         os.rename(exported_ova_filepath, old_ova_filepath)
         print(f"⚠️  Renamed old OVA to export new one: {old_ova_filepath}")
 
@@ -237,8 +276,8 @@ def export_vm(vm_uuid, exported_vm_name, description="", export_dir_name=EXPORT_
     # Generate file with SHA256
     sha256 = sha256_file(exported_ova_filepath)
     sha256_filepath = f"{exported_ova_filepath}.sha256"
-    with open(sha256_filepath, "w") as f:
-        f.write(sha256)
+    with open(sha256_filepath, "w", encoding="ascii") as f:
+        f.write(f"{sha256}\n")
 
     print(f'VM {vm_uuid} ✅ GENERATED "{sha256_filepath}": {sha256}\n')
 

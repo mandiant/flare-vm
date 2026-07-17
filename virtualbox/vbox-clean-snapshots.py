@@ -88,7 +88,7 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
         if root_snapshot:
             root_snapshot_index = root_snapshot["index"]
         else:
-            print(f"\n⚠️  Root snapshot not found: {root_snapshot_name} 🫧 Cleaning all snapshots in the VM")
+            raise RuntimeError(f"Root snapshot not found: {root_snapshot_name}")
 
     # Find all root and child snapshots as (snapshot_name, snapshot_id)
     # Children of a snapshot share the same prefix index
@@ -124,16 +124,21 @@ def delete_snapshot_and_children(vm_name, snapshot_name, protected_snapshots):
             print("\nDELETING SNAPSHOTS... (this may take some time, go for an 🍦!)")
             # Delete snapshots in reverse order to avoid issues with child snapshots,
             # as a snapshot with more than 1 child can not be deleted
+            deletion_failed = False
             for snapshot_name, snapshot_id in reversed(snaps_to_delete):
                 try:
                     run_vboxmanage(["snapshot", vm_name, "delete", snapshot_id])
                     print(f"🫧 DELETED '{snapshot_name}'")
                 except Exception as e:
+                    deletion_failed = True
                     print(f"❌ ERROR '{snapshot_name}'\n{e}")
+            if deletion_failed:
+                return False
     else:
         print(f"\n{vm_name} is clean 🫧")
 
     print("\nSee you next time you need to clean up your VMs! ✨\n")
+    return True
 
 
 def main(argv=None):
@@ -162,8 +167,8 @@ def main(argv=None):
     )
     args = parser.parse_args(args=argv)
 
-    delete_snapshot_and_children(args.vm_name, args.root_snapshot, args.protected_snapshots)
+    return 0 if delete_snapshot_and_children(args.vm_name, args.root_snapshot, args.protected_snapshots) else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

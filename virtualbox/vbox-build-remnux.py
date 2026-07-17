@@ -89,8 +89,7 @@ def build_vm(vm_name, exported_vm_name, snapshot, cmds, date, do_not_upgrade):
     """
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'❌ ERROR: "{vm_name}" not found')
-        exit()
+        raise RuntimeError(f'VM "{vm_name}" not found')
 
     print(f'\nGetting the installation VM "{vm_name}" {vm_uuid} ready...')
 
@@ -162,8 +161,7 @@ def main(argv=None):
         with open(args.config_path) as f:
             config = yaml.safe_load(f)
     except Exception as e:
-        print(f'Invalid "{args.config_path}": {e}')
-        exit()
+        parser.error(f'Invalid "{args.config_path}": {e}')
 
     build_vm(
         config["VM_NAME"],

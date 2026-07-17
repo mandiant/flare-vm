@@ -159,7 +159,10 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
         )
 
     # Verify nic has been modify as the command may return code 0 even if it fails to set the adapter
-    _, nic_value = get_nics(vm_uuid, nic_number)[0]
+    nic_info = get_nics(vm_uuid, nic_number)
+    if not nic_info:
+        raise RuntimeError(f"nic{nic_number} was not reported by VirtualBox after modification")
+    _, nic_value = nic_info[0]
     if nic_value != DISABLED_ADAPTER_TYPE:
         raise RuntimeError(f"nic{nic_number} has type '{nic_value}'")
 
@@ -190,18 +193,20 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify
 
         if not invalid_nics:
             print(f"VM {vm_uuid} ✅ {vm_name} network configuration is ok")
-            return
+            return True
 
         invalid_nics_msg = list_to_str(invalid_nics)
         print(f"VM {vm_uuid} ⚠️  {vm_name} is connected to the internet on adapter(s): {invalid_nics_msg}")
 
         if modify_and_notify:
+            modification_failed = False
             # Disable invalid nics
             for nic in invalid_nics:
                 try:
                     disable_adapter(vm_uuid, nic, hostonly_ifname)
                     print(f"VM {vm_uuid} ⚙️  {vm_name} set adapter {nic} to {DISABLED_ADAPTER_TYPE}")
                 except Exception as e:
+                    modification_failed = True
                     print(f"VM {vm_uuid} ❌ {vm_name} unable to disable adapter {nic}: {e}")
 
             message = (
@@ -215,9 +220,13 @@ def verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify
             # Set highest priority
             notification.set_urgency(2)
             notification.show()
+            return not modification_failed
+
+        return True
 
     except Exception as e:
         print(f"VM {vm_uuid} {vm_name} ❌ Unable to verify network adapters: {e}")
+        return False
 
 
 def main(argv=None):
@@ -241,16 +250,21 @@ def main(argv=None):
     )
     args = parser.parse_args(args=argv)
 
-    hostonly_ifname = ensure_hostonlyif_exists()
     vms = get_vms(args.dynamic_only)
+    checks_passed = True
     if len(vms) > 0:
+        hostonly_ifname = None
         for vm_name, vm_uuid in vms:
             # Never modify VMs without DYNAMIC_VM_NAME in the name (only check the status)
             modify_and_notify = (DYNAMIC_VM_NAME in vm_name) and (not args.do_not_modify)
-            verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify)
+            if modify_and_notify and hostonly_ifname is None:
+                hostonly_ifname = ensure_hostonlyif_exists()
+            if not verify_network_adapters(vm_uuid, vm_name, hostonly_ifname, modify_and_notify):
+                checks_passed = False
     else:
         print("⚠️  No VMs found!")
+    return 0 if checks_passed else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

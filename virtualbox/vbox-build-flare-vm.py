@@ -65,6 +65,8 @@ LOG_FILE_GUEST = r"C:\ProgramData\_VM\log.txt"
 LOG_FILE_HOST = rf"{LOGS_DIR}/flare-vm-log.txt"
 FAILED_PACKAGES_GUEST = r"C:\ProgramData\_VM\failed_packages.txt"
 FAILED_PACKAGES_HOST = rf"{LOGS_DIR}/flare-vm-failed_packages.txt"
+INSTALL_TIMEOUT_SECONDS = 12 * 60 * 60
+INSTALL_POLL_SECONDS = 120
 
 # Required files
 REQUIRED_FILES_DIR = os.path.expanduser("~/FLARE-VM REQUIRED FILES")
@@ -107,13 +109,13 @@ def create_log_folder():
         os.remove(file_path)
 
 
-def install_flare_vm(vm_uuid, snapshot_name, custom_config):
+def install_flare_vm(vm_uuid, snapshot_name, custom_config, install_timeout=INSTALL_TIMEOUT_SECONDS):
     """Install FLARE-VM"""
     additional_arg = r"-customConfig '$desktop\config.xml'" if custom_config else ""
     flare_vm_installation_cmd = rf"""
     $desktop=[Environment]::GetFolderPath("Desktop")
     cd $desktop
-    Set-ExecutionPolicy Unrestricted -Force
+    Set-ExecutionPolicy Bypass -Scope Process -Force
     $url="https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1"
     $file = "$desktop\install.ps1"
     (New-Object net.webclient).DownloadFile($url,$file)
@@ -125,8 +127,11 @@ def install_flare_vm(vm_uuid, snapshot_name, custom_config):
     print(f"VM {vm_uuid} ✅ FLARE-VM is being installed...{LONG_WAIT}")
 
     index = 0
+    wait_started = time.monotonic()
     while True:
-        time.sleep(120)  # Wait 2 minutes
+        if time.monotonic() - wait_started >= install_timeout:
+            raise TimeoutError(f"FLARE-VM installation did not finish within {install_timeout} seconds")
+        time.sleep(INSTALL_POLL_SECONDS)
         try:
             control_guest(
                 vm_uuid,
@@ -164,7 +169,15 @@ def install_flare_vm(vm_uuid, snapshot_name, custom_config):
         print(f"  ❌ Reading {FAILED_PACKAGES_HOST} failed")
 
 
-def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_install_flare_vm):
+def build_vm(
+    vm_name,
+    exported_vm_name,
+    snapshots,
+    date,
+    custom_config,
+    do_not_install_flare_vm,
+    install_timeout=INSTALL_TIMEOUT_SECONDS,
+):
     """
     Build and export multiple FLARE-VM VMs as OVAs based on provided configurations.
 
@@ -192,8 +205,7 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
     """
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'❌ ERROR: "{vm_name}" not found')
-        exit()
+        raise RuntimeError(f'VM "{vm_name}" not found')
 
     print(f'\nGetting the installation VM "{vm_name}" {vm_uuid} ready...')
     create_log_folder()
@@ -212,7 +224,7 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
         )
         print(f"VM {vm_uuid} 📁 Copied required files in: {REQUIRED_FILES_DIR}")
 
-        install_flare_vm(vm_uuid, exported_vm_name, custom_config)
+        install_flare_vm(vm_uuid, exported_vm_name, custom_config, install_timeout)
         take_snapshot(vm_uuid, base_snapshot_name, False, True)
 
     for snapshot in snapshots:
@@ -284,14 +296,19 @@ def main(argv=None):
         default=False,
         help="flag to not install FLARE-VM and used an existent base snapshot. It also does not copy the required files.",
     )
+    parser.add_argument(
+        "--install-timeout",
+        type=int,
+        default=INSTALL_TIMEOUT_SECONDS,
+        help=f"maximum seconds to wait for FLARE-VM installation. Default: {INSTALL_TIMEOUT_SECONDS} (12 hours).",
+    )
     args = parser.parse_args(args=argv)
 
     try:
         with open(args.config_path) as f:
             config = yaml.safe_load(f)
     except Exception as e:
-        print(f'Invalid "{args.config_path}": {e}')
-        exit()
+        parser.error(f'Invalid "{args.config_path}": {e}')
 
     build_vm(
         config["VM_NAME"],
@@ -300,6 +317,7 @@ def main(argv=None):
         args.date,
         args.custom_config,
         args.do_not_install_flare_vm,
+        args.install_timeout,
     )
 
 

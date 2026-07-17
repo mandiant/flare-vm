@@ -31,11 +31,17 @@ Invoke-Expression $saveFunction.Extent.Text
 
 $destination = Join-Path ([System.IO.Path]::GetTempPath()) "flare-vm-http-test-$([Guid]::NewGuid().ToString('N'))"
 try {
-    $output = Save-FileFromUrl -fileSource 'http://example.invalid/config.xml' -fileDestination $destination 6>&1 | Out-String
+    $rejectionMessage = $null
+    try {
+        Save-FileFromUrl -fileSource 'http://example.invalid/config.xml' -fileDestination $destination 6>&1 | Out-Null
+        throw 'The insecure HTTP download was not rejected.'
+    } catch {
+        $rejectionMessage = $_.Exception.Message
+    }
     if (Test-Path -LiteralPath $destination) {
         throw 'An insecure HTTP download created a destination file.'
     }
-    if ($output -notmatch 'absolute HTTPS URL') {
+    if ($rejectionMessage -notmatch 'absolute HTTPS URL') {
         throw 'The HTTP rejection did not report the HTTPS requirement.'
     }
 } finally {
@@ -47,6 +53,9 @@ try {
 $installerText = Get-Content -LiteralPath $installerPath -Raw
 if ($installerText -notmatch '(?s)if \(\$allowEmptyChecksums\.IsPresent\).*?choco feature enable -n allowEmptyChecksums.*?else.*?choco feature disable -n allowEmptyChecksums') {
     throw 'Chocolatey empty-checksum support is not guarded by the compatibility switch.'
+}
+if ($installerText -notmatch '(?s)if \(\$\{Env:ChocolateyInstall\}.*?choco upgrade boxstarter.*?else.*?bootstrapper\.ps1') {
+    throw 'Boxstarter does not prefer the Chocolatey installation path over the mutable web bootstrap.'
 }
 
 Write-Host 'Supply-chain security checks: PASS'
