@@ -16,6 +16,7 @@
 import argparse
 import os
 import sys
+import tempfile
 import time
 from datetime import datetime
 
@@ -57,7 +58,7 @@ BASE_SNAPSHOT = "BUILD-READY"
 
 # Guest username and password, needed to execute commands in the guest
 GUEST_USERNAME = "flare"
-GUEST_PASSWORD = "password"
+GUEST_PASSWORD = os.environ.get("FLARE_VM_GUEST_PASSWORD")
 
 # Logs
 LOGS_DIR = os.path.expanduser("~/FLARE-VM LOGS")
@@ -71,6 +72,7 @@ INSTALL_POLL_SECONDS = 120
 # Required files
 REQUIRED_FILES_DIR = os.path.expanduser("~/FLARE-VM REQUIRED FILES")
 REQUIRED_FILES_DEST = rf"C:\Users\{GUEST_USERNAME}\Desktop"
+INSTALLER_HOST_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "install.ps1"))
 
 # Executable paths in guest
 POWERSHELL_PATH = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -112,16 +114,30 @@ def create_log_folder():
 def install_flare_vm(vm_uuid, snapshot_name, custom_config, install_timeout=INSTALL_TIMEOUT_SECONDS):
     """Install FLARE-VM"""
     additional_arg = r"-customConfig '$desktop\config.xml'" if custom_config else ""
+    password_fd, host_password_path = tempfile.mkstemp(prefix="flare-vm-install-password-")
+    guest_password_path = rf"{REQUIRED_FILES_DEST}\{os.path.basename(host_password_path)}"
+    try:
+        os.chmod(host_password_path, 0o600)
+        with os.fdopen(password_fd, "w", encoding="utf-8") as password_file:
+            password_file.write(GUEST_PASSWORD)
+        control_guest(
+            vm_uuid,
+            GUEST_USERNAME,
+            GUEST_PASSWORD,
+            ["copyto", f"--target-directory={REQUIRED_FILES_DEST}", host_password_path],
+        )
+    finally:
+        if os.path.exists(host_password_path):
+            os.remove(host_password_path)
+
     flare_vm_installation_cmd = rf"""
     $desktop=[Environment]::GetFolderPath("Desktop")
     cd $desktop
     Set-ExecutionPolicy Bypass -Scope Process -Force
-    $url="https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1"
     $file = "$desktop\install.ps1"
-    (New-Object net.webclient).DownloadFile($url,$file)
     Unblock-File .\install.ps1
 
-    start powershell "$file -password password -noWait -noGui -noChecks {additional_arg}"
+    start powershell "$file -passwordFile '{guest_password_path}' -removePasswordFile -noWait -noGui -noChecks {additional_arg}"
     """
     run_command(vm_uuid, flare_vm_installation_cmd)
     print(f"VM {vm_uuid} ✅ FLARE-VM is being installed...{LONG_WAIT}")
@@ -224,6 +240,14 @@ def build_vm(
         )
         print(f"VM {vm_uuid} 📁 Copied required files in: {REQUIRED_FILES_DIR}")
 
+        control_guest(
+            vm_uuid,
+            GUEST_USERNAME,
+            GUEST_PASSWORD,
+            ["copyto", f"--target-directory={REQUIRED_FILES_DEST}", INSTALLER_HOST_PATH],
+        )
+        print(f"VM {vm_uuid} 📁 Copied pinned local installer: {INSTALLER_HOST_PATH}")
+
         install_flare_vm(vm_uuid, exported_vm_name, custom_config, install_timeout)
         take_snapshot(vm_uuid, base_snapshot_name, False, True)
 
@@ -303,6 +327,9 @@ def main(argv=None):
         help=f"maximum seconds to wait for FLARE-VM installation. Default: {INSTALL_TIMEOUT_SECONDS} (12 hours).",
     )
     args = parser.parse_args(args=argv)
+
+    if not GUEST_PASSWORD:
+        parser.error("Set FLARE_VM_GUEST_PASSWORD to the guest VM password before running the builder.")
 
     try:
         with open(args.config_path) as f:

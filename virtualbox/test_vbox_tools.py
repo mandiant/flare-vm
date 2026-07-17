@@ -178,6 +178,27 @@ def test_control_guest_retries_transient_error_once(monkeypatch):
     assert sleeps == [120]
 
 
+def test_control_guest_uses_temporary_password_file(monkeypatch):
+    observed_commands = []
+    monkeypatch.setattr(vboxcommon, "ensure_vm_running", lambda _uuid: None)
+
+    def inspect_command(command, _real_time=False):
+        observed_commands.append(command)
+        password_argument = next(argument for argument in command if argument.startswith("--passwordfile="))
+        password_path = password_argument.split("=", 1)[1]
+        with open(password_path, encoding="utf-8") as password_file:
+            assert password_file.read() == "secret"
+        return "success"
+
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", inspect_command)
+    assert vboxcommon.control_guest("{uuid}", "user", "secret", ["run", "command"]) == "success"
+    assert not any(argument.startswith("--password=") for argument in observed_commands[0])
+    password_path = next(
+        argument.split("=", 1)[1] for argument in observed_commands[0] if argument.startswith("--passwordfile=")
+    )
+    assert not os.path.exists(password_path)
+
+
 @pytest.mark.parametrize(
     "output, expected",
     [
@@ -270,6 +291,8 @@ def test_export_snapshot_missing_vm_is_an_error(monkeypatch):
 
 
 def test_flare_install_wait_has_a_timeout(monkeypatch):
+    monkeypatch.setattr(build_flare_vm, "GUEST_PASSWORD", "test-password")
+    monkeypatch.setattr(build_flare_vm, "control_guest", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(build_flare_vm, "run_command", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(build_flare_vm.time, "monotonic", lambda: 0)
     with pytest.raises(TimeoutError, match="did not finish"):

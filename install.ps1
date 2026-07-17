@@ -32,7 +32,14 @@
           4) Execute the script by running ".\install.ps1"
 
     .PARAMETER password
-        Current user password to allow reboot resiliency via Boxstarter. The script prompts for the password if not provided.
+        Current user password to allow reboot resiliency via Boxstarter. Prefer passwordFile because
+        command-line arguments may be visible to other processes and retained in shell history.
+
+    .PARAMETER passwordFile
+        Path to a file containing the current user's password. Restrict access to this file.
+
+    .PARAMETER removePasswordFile
+        Delete passwordFile immediately after reading it. Recommended for automation-created files.
 
     .PARAMETER noPassword
         Switch parameter indicating a password is not needed for reboots.
@@ -42,6 +49,10 @@
 
     .PARAMETER customLayout
         Path to a taskbar layout XML file. May be a file path or URL.
+
+    .PARAMETER localPackageSource
+        Optional path to a trusted local Chocolatey package directory. Local package sources are
+        disabled by default to prevent package shadowing from the Desktop or current directory.
 
     .PARAMETER noWait
         Switch parameter to skip installation message before installation begins.
@@ -58,6 +69,10 @@
     .PARAMETER allowEmptyChecksums
         Compatibility switch that permits Chocolatey packages without checksums. This weakens
         download integrity validation and should only be used for a package that cannot otherwise install.
+
+    .PARAMETER allowWebBootstrap
+        Compatibility switch that permits execution of Boxstarter's mutable web bootstrap when
+        Chocolatey is unavailable. Prefer installing Chocolatey separately and leave this disabled.
 
     .EXAMPLE
         .\install.ps1
@@ -88,17 +103,25 @@
 
 param (
   [string]$password = $null,
+  [string]$passwordFile = $null,
+  [switch]$removePasswordFile,
   [switch]$noPassword,
   [string]$customConfig = $null,
   [string]$customLayout = $null,
+  [string]$localPackageSource = $null,
   [switch]$noWait,
   [switch]$noGui,
   [switch]$noReboots,
   [switch]$noChecks,
-  [switch]$allowEmptyChecksums
+  [switch]$allowEmptyChecksums,
+  [switch]$allowWebBootstrap
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+
+if (-not [string]::IsNullOrEmpty($password) -and -not [string]::IsNullOrWhiteSpace($passwordFile)) {
+    throw 'Use either -password or -passwordFile, not both.'
+}
 
 # Function to download files and handle errors consistently
 function Save-FileFromUrl {
@@ -214,6 +237,13 @@ function Test-InternetConnectivity {
             return $errorInfo
         }
     }
+}
+
+function Test-HttpsUrl {
+    param ([string]$url)
+
+    $parsedUrl = $null
+    return [System.Uri]::TryCreate($url, [System.UriKind]::Absolute, [ref]$parsedUrl) -and $parsedUrl.Scheme -eq 'https'
 }
 
 
@@ -1082,6 +1112,21 @@ if (-not $noGui.IsPresent) {
 }
 if (-not $noPassword.IsPresent) {
     # Get user credentials for autologin during reboots
+    if (-not [string]::IsNullOrWhiteSpace($passwordFile)) {
+        if (-not (Test-Path -LiteralPath $passwordFile -PathType Leaf)) {
+            throw "Password file does not exist: '$passwordFile'"
+        }
+        try {
+            $password = (Get-Content -LiteralPath $passwordFile -Raw).TrimEnd("`r", "`n")
+        } finally {
+            if ($removePasswordFile.IsPresent) {
+                Remove-Item -LiteralPath $passwordFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+        if ([string]::IsNullOrEmpty($password)) {
+            throw 'Password file is empty.'
+        }
+    }
     if ([string]::IsNullOrEmpty($password)) {
         Write-Host "[+] Getting user credentials ..."
         Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\PowerShell\1\ShellIds" -Name "ConsolePrompting" -Value $True
@@ -1121,6 +1166,9 @@ if (-not $boxstarterVersionGood) {
             throw "Chocolatey failed to install Boxstarter (exit code $LASTEXITCODE)."
         }
     } else {
+        if (-not $allowWebBootstrap.IsPresent) {
+            throw "Chocolatey is required for secure Boxstarter installation. Install Chocolatey first or explicitly use -allowWebBootstrap."
+        }
         Write-Host "`t[!] Chocolatey is unavailable; using Boxstarter's official web bootstrap." -ForegroundColor Yellow
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://boxstarter.org/bootstrapper.ps1'))
         Get-Boxstarter -Force
@@ -1152,12 +1200,29 @@ $Boxstarter.NoPassword = $noPassword.IsPresent
 $Boxstarter.AutoLogin = $true
 $Boxstarter.SuppressLogging = $True
 $VerbosePreference = "SilentlyContinue"
-Set-BoxstarterConfig -NugetSources "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2;https://chocolatey.org/api/v2"
+$vmPackagesSource = 'https://www.myget.org/F/vm-packages/api/v2'
+$communitySource = 'https://community.chocolatey.org/api/v2/'
+$packageSources = @($vmPackagesSource, $communitySource)
+$resolvedLocalPackageSource = $null
+if (-not [string]::IsNullOrWhiteSpace($localPackageSource)) {
+    if (-not (Test-Path -LiteralPath $localPackageSource -PathType Container)) {
+        throw "Local package source must be an existing directory: '$localPackageSource'"
+    }
+    $resolvedLocalPackageSource = (Resolve-Path -LiteralPath $localPackageSource).Path
+    Write-Host "`t[!] Trusting local Chocolatey packages from '$resolvedLocalPackageSource'." -ForegroundColor Yellow
+    $packageSources = @($resolvedLocalPackageSource) + $packageSources
+}
+Set-BoxstarterConfig -NugetSources ($packageSources -join ';')
 Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -EnableShowProtectedOSFiles -EnableShowFileExtensions -EnableShowFullPathInTitleBar
 
 # Set Chocolatey options
 Write-Host "[+] Updating Chocolatey settings..."
-choco sources add -n="vm-packages" -s "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2" --priority 1
+choco source add --name="vm-packages" --source="$vmPackagesSource" --priority=1
+if ($resolvedLocalPackageSource) {
+    choco source add --name="flare-local" --source="$resolvedLocalPackageSource" --priority=1
+} else {
+    choco source remove --name="flare-local" 2>$null | Out-Null
+}
 choco feature enable -n allowGlobalConfirmation
 if ($allowEmptyChecksums.IsPresent) {
     Write-Host "`t[!] Allowing Chocolatey packages without checksums. Download integrity cannot be verified." -ForegroundColor Yellow
@@ -1606,7 +1671,7 @@ if (-not $noGui.IsPresent) {
 				$checkboxesPackages.Add($checkBox)
 				$panelCategories.Controls.Add($checkBox)
 			    $url = $package.PackageUrl
-				if ($url){
+				if ($url -and (Test-HttpsUrl $url)){
 					$linkProjectUrl = New-Object System.Windows.Forms.linkLabel
 					$linkProjectUrl.Top = $checkbox.Top + 2
 					$linkProjectUrl.Left = $checkbox.Right - 3

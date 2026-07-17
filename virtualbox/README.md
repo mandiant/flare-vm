@@ -9,6 +9,21 @@ Install the Python runtime dependency before running the source scripts:
 python3 -m pip install -r requirements.txt
 ```
 
+The VM builders do not embed default guest passwords. Set the appropriate environment variable
+before running them:
+
+```bash
+export FLARE_VM_GUEST_PASSWORD='your Windows guest password'
+export REMNUX_GUEST_PASSWORD='your REMnux guest password'
+```
+
+Avoid storing these exports in shell startup files. The builders pass credentials to VirtualBox
+through restricted temporary password files and remove those files after each command.
+
+Builder YAML files are trusted code: their command fields execute inside the guest. Only use
+configurations you created or reviewed. Keep analysis VMs on Host-Only or isolated internal
+networks, with shared clipboard, drag-and-drop, shared folders, and USB passthrough disabled.
+
 
 ## Clean up snapshots
 

@@ -46,7 +46,7 @@ BASE_SNAPSHOT = "BUILD-READY"
 
 # Guest username and password, needed to execute commands in the guest
 GUEST_USERNAME = "remnux"
-GUEST_PASSWORD = "malware"
+GUEST_PASSWORD = os.environ.get("REMNUX_GUEST_PASSWORD")
 
 # Required files
 REQUIRED_FILES_DIR = os.path.expanduser("~/REMNUX REQUIRED FILES")
@@ -156,6 +156,9 @@ def main(argv=None):
         help="flag to not upgrade the REMnux distro and use an existent UPGRADED snapshot. It also does not copy the required files.",
     )
     args = parser.parse_args(args=argv)
+
+    if not GUEST_PASSWORD:
+        parser.error("Set REMNUX_GUEST_PASSWORD to the guest VM password before running the builder.")
 
     try:
         with open(args.config_path) as f:

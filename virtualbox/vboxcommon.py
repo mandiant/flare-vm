@@ -15,8 +15,11 @@
 import hashlib
 import os
 import re
-import subprocess
+
+# VBoxManage is executed as an argument list without a shell.
+import subprocess  # nosec B404
 import sys
+import tempfile
 import time
 from datetime import datetime
 
@@ -86,9 +89,10 @@ def __run_vboxmanage(cmd, real_time=False):
             del env["LD_LIBRARY_PATH"]
 
     if real_time:
-        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout, env=env)
+        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout, env=env)  # nosec B603
     else:
-        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
+        # cmd is an argument list and shell=False is the default.
+        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)  # nosec B603
 
 
 def run_vboxmanage(cmd, real_time=False):
@@ -142,19 +146,30 @@ def control_guest(vm_uuid, user, password, args, real_time=False):
     """
     # VM must be running to control the guest
     ensure_vm_running(vm_uuid)
-    cmd = ["guestcontrol", vm_uuid, f"--username={user}", f"--password={password}"] + args
+    if not password:
+        raise ValueError("Guest password is required")
+
+    password_fd, password_path = tempfile.mkstemp(prefix="flare-vm-vbox-password-")
     try:
-        return run_vboxmanage(cmd, real_time)
-    except RuntimeError as first_error:
-        if any(error_code in str(first_error) for error_code in PERMANENT_GUEST_CONTROL_ERRORS):
-            raise
-        # The guest additions take a bit to load after the user is logged in
-        # In slow environments this may cause the command to fail, wait a bit and re-try
-        time.sleep(120)  # Wait 2 minutes
+        os.chmod(password_path, 0o600)
+        with os.fdopen(password_fd, "w", encoding="utf-8") as password_file:
+            password_file.write(password)
+
+        cmd = ["guestcontrol", vm_uuid, f"--username={user}", f"--passwordfile={password_path}"] + args
         try:
             return run_vboxmanage(cmd, real_time)
-        except RuntimeError as retry_error:
-            raise retry_error from first_error
+        except RuntimeError as first_error:
+            if any(error_code in str(first_error) for error_code in PERMANENT_GUEST_CONTROL_ERRORS):
+                raise
+            # The guest additions take a bit to load after the user is logged in.
+            time.sleep(120)
+            try:
+                return run_vboxmanage(cmd, real_time)
+            except RuntimeError as retry_error:
+                raise retry_error from first_error
+    finally:
+        if os.path.exists(password_path):
+            os.remove(password_path)
 
 
 def get_hostonlyif_name():

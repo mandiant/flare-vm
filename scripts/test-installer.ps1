@@ -42,6 +42,7 @@ $functionsToTest = @(
     'Get-ConfigFile',
     'Test-WebConnection',
     'Test-InternetConnectivity',
+    'Test-HttpsUrl',
     'Test-ExecutionPolicy',
     'Test-WindowsVersion',
     'Test-TestedOS',
@@ -124,6 +125,11 @@ $script:probedHosts = @()
 $script:failedHost = $null
 Assert-Equal $null (Test-InternetConnectivity) 'Connectivity should pass when every endpoint passes.'
 Assert-Equal 'google.com,github.com,raw.githubusercontent.com' ($script:probedHosts -join ',') 'Connectivity should probe every required endpoint in order.'
+
+Assert-Equal $true (Test-HttpsUrl 'https://example.com/project') 'HTTPS project URLs should be accepted.'
+Assert-Equal $false (Test-HttpsUrl 'http://example.com/project') 'HTTP project URLs should be rejected.'
+Assert-Equal $false (Test-HttpsUrl 'file:///C:/Windows/System32/calc.exe') 'Local file URLs should be rejected.'
+Assert-Equal $false (Test-HttpsUrl 'not-a-url') 'Malformed project URLs should be rejected.'
 
 $configTestDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "flare-vm-config-test-$([Guid]::NewGuid().ToString('N'))"
 try {
