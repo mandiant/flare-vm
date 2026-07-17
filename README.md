@@ -78,6 +78,10 @@ PARAMETERS
 
     -noChecks [<SwitchParameter>]
         Switch parameter to skip validation checks (not recommended).
+
+    -allowEmptyChecksums [<SwitchParameter>]
+        Compatibility switch for Chocolatey packages that do not provide checksums. This weakens
+        download integrity validation and should only be used when a required package cannot install otherwise.
 ```
 
 Get full usage information by running `Get-Help .\install.ps1 -Detailed`.

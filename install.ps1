@@ -55,6 +55,10 @@
     .PARAMETER noChecks
         Switch parameter to skip validation checks (not recommended).
 
+    .PARAMETER allowEmptyChecksums
+        Compatibility switch that permits Chocolatey packages without checksums. This weakens
+        download integrity validation and should only be used for a package that cannot otherwise install.
+
     .EXAMPLE
         .\install.ps1
 
@@ -90,7 +94,8 @@ param (
   [switch]$noWait,
   [switch]$noGui,
   [switch]$noReboots,
-  [switch]$noChecks
+  [switch]$noChecks,
+  [switch]$allowEmptyChecksums
 )
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -98,19 +103,43 @@ $ProgressPreference = 'SilentlyContinue'
 # Function to download files and handle errors consistently
 function Save-FileFromUrl {
     param (
+        [Parameter(Mandatory=$true)]
         [string]$fileSource,
+        [Parameter(Mandatory=$true)]
         [string]$fileDestination,
+        [ValidatePattern('^[A-Fa-f0-9]{64}$')]
+        [string]$sha256,
         [switch]$exitOnError
     )
+
     Write-Host "[+] Downloading file from '$fileSource'"
+    $temporaryFile = "$fileDestination.download-$([Guid]::NewGuid().ToString('N'))"
     try {
-        (New-Object net.webclient).DownloadFile($fileSource,$FileDestination)
+        $sourceUri = New-Object System.Uri($fileSource)
+        if (-not $sourceUri.IsAbsoluteUri -or $sourceUri.Scheme -ne 'https') {
+            throw "Remote downloads must use an absolute HTTPS URL."
+        }
+
+        (New-Object net.webclient).DownloadFile($sourceUri, $temporaryFile)
+
+        if ($sha256) {
+            $actualSha256 = (Get-FileHash -Path $temporaryFile -Algorithm SHA256).Hash
+            if ($actualSha256 -ne $sha256) {
+                throw "SHA-256 mismatch. Expected $sha256, received $actualSha256."
+            }
+        }
+
+        Move-Item -LiteralPath $temporaryFile -Destination $fileDestination -Force
     } catch {
         Write-Host "`t[!] Failed to download '$fileSource'"
         Write-Host "`t[!] $_"
         if ($exitOnError) {
             Start-Sleep 3
             exit 1
+        }
+    } finally {
+        if (Test-Path -LiteralPath $temporaryFile) {
+            Remove-Item -LiteralPath $temporaryFile -Force
         }
     }
 }
@@ -1120,7 +1149,12 @@ Set-WindowsExplorerOptions -EnableShowHiddenFilesFoldersDrives -EnableShowProtec
 Write-Host "[+] Updating Chocolatey settings..."
 choco sources add -n="vm-packages" -s "$desktopPath;.;https://www.myget.org/F/vm-packages/api/v2;https://myget.org/F/vm-packages/api/v2" --priority 1
 choco feature enable -n allowGlobalConfirmation
-choco feature enable -n allowEmptyChecksums
+if ($allowEmptyChecksums.IsPresent) {
+    Write-Host "`t[!] Allowing Chocolatey packages without checksums. Download integrity cannot be verified." -ForegroundColor Yellow
+    choco feature enable -n allowEmptyChecksums
+} else {
+    choco feature disable -n allowEmptyChecksums
+}
 $cache = "${Env:LocalAppData}\ChocoCache"
 New-Item -Path $cache -ItemType directory -Force | Out-Null
 choco config set cacheLocation $cache
