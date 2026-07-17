@@ -83,7 +83,7 @@ def get_snapshot_children(vm_name, root_snapshot_name, protected_snapshots):
     root_snapshot_index = ""
     if root_snapshot_name:
         # Find root snapshot: first snapshot with name root_snapshot_name (case sensitive)
-        root_snapshot_regex = rf'^SnapshotName(?P<index>(?:-\d+)*)="{root_snapshot_name}"\n'
+        root_snapshot_regex = rf'^SnapshotName(?P<index>(?:-\d+)*)="{re.escape(root_snapshot_name)}"\n'
         root_snapshot = re.search(root_snapshot_regex, snapshots_info, flags=re.M)
         if root_snapshot:
             root_snapshot_index = root_snapshot["index"]

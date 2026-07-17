@@ -80,12 +80,19 @@ def run_vboxmanage(cmd, real_time=False):
 
     if result.returncode:
         # Check if we are affect by the following VERR_NO_LOW_MEMORY bug: https://www.virtualbox.org/ticket/22185
-        # and re-run the command every minute until the VERR_NO_LOW_MEMORY error is resolved
+        # and re-run the command every minute until the VERR_NO_LOW_MEMORY error is resolved.
+        # Bound the retries so a host that never frees low memory fails loudly instead of hanging forever.
+        max_low_memory_retries = 10
+        low_memory_retries = 0
         while result.stdout and "VERR_NO_LOW_MEMORY" in result.stdout:
+            if low_memory_retries >= max_low_memory_retries:
+                print(f"❌ VERR_NO_LOW_MEMORY still present after {max_low_memory_retries} retries, giving up")
+                break
+            low_memory_retries += 1
             print("❌ VirtualBox VERR_NO_LOW_MEMORY error (likely https://www.virtualbox.org/ticket/22185)")
-            print("🩹 Fit it running 'echo 3 | sudo tee /proc/sys/vm/drop_caches'")
-            print("⏳ I'll re-try the command in ~ 1 minute\n")
-            time.sleep(60)  # wait 1 minutes
+            print("🩹 Fix it running 'echo 3 | sudo tee /proc/sys/vm/drop_caches'")
+            print(f"⏳ I'll re-try the command in ~ 1 minute (attempt {low_memory_retries}/{max_low_memory_retries})\n")
+            time.sleep(60)  # wait 1 minute
 
             # Re-try command
             result = __run_vboxmanage(cmd, real_time)
@@ -244,7 +251,7 @@ def get_vm_uuid(vm_name):
     # "FLARE-VM" {a23c0c37-2062-4cf0-882b-9e9747dd33b6}
     vms_info = run_vboxmanage(["list", "vms"])
 
-    match = re.search(rf'^"{vm_name}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
+    match = re.search(rf'^"{re.escape(vm_name)}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
     if match:
         return match.group("uuid")
 
@@ -277,17 +284,22 @@ def get_num_logged_in_users(vm_uuid):
     return 0
 
 
-def wait_until(vm_uuid, condition):
-    """Wait for VM to verify a condition
+def wait_until(vm_uuid, predicate):
+    """Wait for VM to verify a condition.
 
-    Return True if the condition is met within one minute.
+    Args:
+        vm_uuid: VM UUID.
+        predicate: A callable taking the VM UUID and returning a truthy value when the
+                   condition is met.
+
+    Return True if the condition is met within the timeout (10 minutes).
     Return False otherwise.
     """
     timeout = 600  # seconds (10 minutes)
     check_interval = 5  # seconds
     start_time = time.time()
     while time.time() - start_time < timeout:
-        if eval(condition):
+        if predicate(vm_uuid):
             time.sleep(5)  # wait a bit to be careful and avoid any weird races
             return True
         time.sleep(check_interval)
@@ -302,7 +314,7 @@ def ensure_vm_running(vm_uuid):
         run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
 
     # Wait until at least 1 user is logged in.
-    if not wait_until(vm_uuid, "get_num_logged_in_users(vm_uuid)"):
+    if not wait_until(vm_uuid, lambda uuid: get_num_logged_in_users(uuid) > 0):
         raise RuntimeError(f"Unable to start VM {vm_uuid}.")
 
 
@@ -325,7 +337,7 @@ def ensure_vm_shutdown(vm_uuid):
     print(f"VM {vm_uuid} state: {vm_state}. Shutting down VM...")
     run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
 
-    if not wait_until(vm_uuid, "get_vm_state(vm_uuid) == 'poweroff'"):
+    if not wait_until(vm_uuid, lambda uuid: get_vm_state(uuid) == "poweroff"):
         raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")
 
 
@@ -353,9 +365,9 @@ def rename_old_snapshot(vm_uuid, snapshot_name):
     snapshots_info = run_vboxmanage(["snapshot", vm_uuid, "list", "--machinereadable"])
 
     # Find how many snapshots have the given name and edit a snapshot with that name as many times
-    snapshots = re.findall(rf'^SnapshotName(-\d+)*="{snapshot_name}"\n', snapshots_info, flags=re.M)
+    snapshots = re.findall(rf'^SnapshotName(-\d+)*="{re.escape(snapshot_name)}"\n', snapshots_info, flags=re.M)
     for _ in range(len(snapshots)):
-        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD"])
+        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name={snapshot_name} OLD"])
 
 
 def take_snapshot(vm_uuid, snapshot_name, shutdown=False, rename=False):

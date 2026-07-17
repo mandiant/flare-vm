@@ -22,8 +22,8 @@
     .DESCRIPTION
         Installation script for FLARE VM that leverages Chocolatey and Boxstarter.
         Script verifies minimal settings necessary to install FLARE VM on a virtual machine.
-        Script allows users to customize package selection and envrionment variables used in FLARE VM via a GUI before installation begins.
-        A CLI-only mode is also available by providing specific command-line arugment switches.
+        Script allows users to customize package selection and environment variables used in FLARE VM via a GUI before installation begins.
+        A CLI-only mode is also available by providing specific command-line argument switches.
 
         To execute this script:
           1) Open PowerShell window as administrator
@@ -150,16 +150,19 @@ function Test-WebConnection {
 
     Write-Host "[+] Checking for Internet connectivity ($url)... (mandatory)"
 
-    if (-not (Test-Connection $url -Quiet)) {
-        return "It looks like you cannot ping $url. Check your network settings."
-    }
-
+    # The HTTPS request is authoritative: ICMP (ping) is frequently blocked on networks that
+    # still allow HTTPS, so a failed ping alone must not fail the check. Ping is only used as
+    # extra context in the error message when the HTTPS request also fails.
     $response = $null
     try {
         $response = Invoke-WebRequest -Uri "https://$url" -UseBasicParsing -DisableKeepAlive
     }
     catch {
-        return "Error accessing $url. Exception: $($_.Exception.Message)`n`t[!] Check your network settings."
+        $pingHint = ""
+        if (-not (Test-Connection $url -Quiet)) {
+            $pingHint = " (ping to $url also failed)"
+        }
+        return "Error accessing $url$pingHint. Exception: $($_.Exception.Message)`n`t[!] Check your network settings."
     }
 
     if ($response -and $response.StatusCode -ne 200) {
@@ -375,7 +378,7 @@ if ($noGui.IsPresent) {
 		Write-Host "[+] Checking if Windows Defender Tamper Protection is disabled..."
 		$error_info = Test-DefenderAndTamperProtection
 		if ($error_info) {
-			Write-Host "`t[!]$errorinfo"  -ForegroundColor Red
+			Write-Host "`t[!]$error_info"  -ForegroundColor Red
 			$script:checksPassed = $false
 		}
 
@@ -1045,7 +1048,7 @@ if (-not $noGui.IsPresent) {
     $formEnv.AcceptButton = $okButton
     $formEnv.CancelButton = $cancelButton
 
-    $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$toolListShortCutText,$toolListShortcutSelect,$toolListShortcutLabel,$vmCommonDirNote,$toolListDirNote,$toolListShortcutNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote))
+    $envVarGroup.controls.AddRange(@($vmCommonDirText,$vmCommonDirSelect,$vmCommonDirLabel,$toolListDirText,$toolListDirSelect,$toolListDirLabel,$vmCommonDirNote,$toolListDirNote,$rawToolsDirText,$rawToolsDirSelect,$rawToolsDirLabel,$rawToolsDirNote))
 
 }
 if (-not $noPassword.IsPresent) {
@@ -1064,8 +1067,17 @@ if (-not $noPassword.IsPresent) {
 # Check Boxstarter version
 $boxstarterVersionGood = $false
 if (${Env:ChocolateyInstall} -and (Test-Path "${Env:ChocolateyInstall}\bin\choco.exe")) {
-    choco info -l -r "boxstarter" | ForEach-Object { $name, $version = $_ -split '\|' }
-    $boxstarterVersionGood = [System.Version]$version -ge [System.Version]"3.0.2"
+    # 'choco info -r' returns machine-readable 'name|version' lines. Match the exact 'boxstarter'
+    # line only (other lines may be present) and guard the version parse so a missing/odd value
+    # leaves $boxstarterVersionGood as $false instead of throwing under $ErrorActionPreference='Stop'.
+    $boxstarterInfo = choco info -l -r "boxstarter" | Where-Object { $_ -match '^boxstarter\|' } | Select-Object -First 1
+    if ($boxstarterInfo) {
+        $null, $version = $boxstarterInfo -split '\|'
+        $parsedVersion = $null
+        if ([System.Version]::TryParse($version, [ref]$parsedVersion)) {
+            $boxstarterVersionGood = $parsedVersion -ge [System.Version]"3.0.2"
+        }
+    }
 }
 
 # Install Boxstarter if needed
@@ -1140,7 +1152,7 @@ Write-Host "Configuration file path: $configPath"
 # Check the configuration file exists
 if (-Not (Test-Path $configPath)) {
     Write-Host "`t[!] Configuration file missing: " $configPath -ForegroundColor Red
-    Write-Host "`t[-] Please download config.xml from $configPathUrl to your desktop" -ForegroundColor Yellow
+    Write-Host "`t[-] Please download config.xml from $configSource to your desktop" -ForegroundColor Yellow
     Write-Host "`t[-] Is the file on your desktop? (Y/N): " -ForegroundColor Yellow -NoNewline
     $response = Read-Host
     if ($response -notin @("y","Y")) {
@@ -1179,12 +1191,12 @@ function Get-Packages-Categories {
    # MyGet API URL that contains a filter to display only the latest packages
    # This URL displays the last two versions of a package
    # Minimize the number of HTTP requests to display all the packages due to the number of versions a package might have
-   $vmPackagesUrl = "https://www.myget.org/F/vm-packages/api/v2/Packages?$filter=IsLatestVersion%20eq%20true"
+   $vmPackagesUrl = 'https://www.myget.org/F/vm-packages/api/v2/Packages?$filter=IsLatestVersion%20eq%20true'
    $vmPackagesFile = "${Env:VM_COMMON_DIR}\vm-packages.xml"
    $packagesByCategory=@{}
    do {
 	  # Download the XML from MyGet API
-	  Save-FileFromUrl -fileSource $vmPackagesUrl -fileDestination $vmPackagesFile --exitOnError
+	  Save-FileFromUrl -fileSource $vmPackagesUrl -fileDestination $vmPackagesFile -exitOnError
 
 	  # Load the XML content
 	  [xml]$vm_packages = Get-Content $vmPackagesFile
@@ -1346,16 +1358,6 @@ if (-not $noGui.IsPresent) {
 			 [string]$category
 			)
 			return $packagesByCategory[$category]
-		}
-
-		# Function that returns additional packages from the config that are not displayed in the textboxes
-		# which includes both Choco packages and packages from excluded categories
-		function Get-AdditionalPackages{
-		   $additionalPackages=@()
-
-		   # Packages from the config that are not displayed
-		   $additionalPackages = $packagesToInstall | where-Object { $listedPackages -notcontains $_}
-		   return $additionalPackages
 		}
 
 		# Function that checks all the checkboxes
@@ -1570,7 +1572,6 @@ if (-not $noGui.IsPresent) {
 			}
 				# Increment to space checkboxes vertically
 			$verticalPosition += 20 * ($NumPackages ) + 30
-			$numCategories ++
 		}
 
 		# Create empty label and add it to the form categories to add some space
@@ -1729,7 +1730,7 @@ if (-not $noGui.IsPresent) {
 					  $addPackageButton.enabled = $false
 			  })
 
-		$formCategories.controls.AddRange(@($additionalPackagesLabel,$packageLabel,$labelChoco,$labelFlarevm,$linkLabelChoco,$linkLabelFlarevm,$linkLabelFlarevm,$additionalPackagesBox,$deletePackageButton,$chocoPackageButton,$chocoPackageLabel,$packageTextBox,$chocoPackageErrorLabel,$findPackageButton,$addPackageButton))
+		$formCategories.controls.AddRange(@($additionalPackagesLabel,$packageLabel,$labelChoco,$labelFlarevm,$linkLabelChoco,$linkLabelFlarevm,$linkLabelFlarevm,$additionalPackagesBox,$deletePackageButton,$chocoPackageLabel,$packageTextBox,$chocoPackageErrorLabel,$findPackageButton,$addPackageButton))
 		$formCategories.controls.AddRange(@($labelCategories,$labelCategories2,$panelCategories,$installButton,$resetButton,$allPackagesButton,$cancelButton,$clearPackagesButton))
 		$formCategories.Add_Shown({$formCategories.Activate()})
 		$resultCategories = $formCategories.ShowDialog()
@@ -1756,8 +1757,8 @@ foreach ($env in $configXml.config.envs.env) {
     $path = [Environment]::ExpandEnvironmentVariables($($env.value))
     Write-Host "`t[+] Setting %$($env.name)% to: $path" -ForegroundColor Green
     [Environment]::SetEnvironmentVariable("$($env.name)", $path, "Machine")
-    [Environment]::SetEnvironmentVariable('VMname', 'FLARE-VM', [EnvironmentVariableTarget]::Machine)
 }
+[Environment]::SetEnvironmentVariable('VMname', 'FLARE-VM', [EnvironmentVariableTarget]::Machine)
 refreshenv
 
 # Install the common module

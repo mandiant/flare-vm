@@ -75,7 +75,7 @@ def get_vms(dynamic_only):
     vms = re.findall(r'"(.*?)" (\{.*?\})', vms_info)
     for vm_name, vm_uuid in vms:
         # Get only the VMs containing DYNAMIC_VM_NAME in the name if dynamic_only is true
-        if not (dynamic_only and (DYNAMIC_VM_NAME in vm_name)):
+        if (not dynamic_only) or (DYNAMIC_VM_NAME in vm_name):
             vms_list.append((vm_name, vm_uuid))
     return vms_list
 
@@ -110,7 +110,8 @@ def get_nics(vm_uuid, only_nic=None):
     vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
 
     # If no nic provided, get all possible numbers using RegExp
-    only_nic = r"\d+"
+    if only_nic is None:
+        only_nic = r"\d+"
 
     # Get adapters numbers and their values as a list: [(nic_number, nic_value)]
     return re.findall(rf'^nic({only_nic})="(\S+)"', vm_info, flags=re.M)
