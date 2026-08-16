@@ -16,6 +16,7 @@
 import argparse
 import os
 import sys
+import tempfile
 import time
 from datetime import datetime
 
@@ -57,7 +58,7 @@ BASE_SNAPSHOT = "BUILD-READY"
 
 # Guest username and password, needed to execute commands in the guest
 GUEST_USERNAME = "flare"
-GUEST_PASSWORD = "password"
+GUEST_PASSWORD = os.environ.get("FLARE_VM_GUEST_PASSWORD")
 
 # Logs
 LOGS_DIR = os.path.expanduser("~/FLARE-VM LOGS")
@@ -65,10 +66,13 @@ LOG_FILE_GUEST = r"C:\ProgramData\_VM\log.txt"
 LOG_FILE_HOST = rf"{LOGS_DIR}/flare-vm-log.txt"
 FAILED_PACKAGES_GUEST = r"C:\ProgramData\_VM\failed_packages.txt"
 FAILED_PACKAGES_HOST = rf"{LOGS_DIR}/flare-vm-failed_packages.txt"
+INSTALL_TIMEOUT_SECONDS = 12 * 60 * 60
+INSTALL_POLL_SECONDS = 120
 
 # Required files
 REQUIRED_FILES_DIR = os.path.expanduser("~/FLARE-VM REQUIRED FILES")
 REQUIRED_FILES_DEST = rf"C:\Users\{GUEST_USERNAME}\Desktop"
+INSTALLER_HOST_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "install.ps1"))
 
 # Executable paths in guest
 POWERSHELL_PATH = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -107,26 +111,43 @@ def create_log_folder():
         os.remove(file_path)
 
 
-def install_flare_vm(vm_uuid, snapshot_name, custom_config):
+def install_flare_vm(vm_uuid, snapshot_name, custom_config, install_timeout=INSTALL_TIMEOUT_SECONDS):
     """Install FLARE-VM"""
     additional_arg = r"-customConfig '$desktop\config.xml'" if custom_config else ""
+    password_fd, host_password_path = tempfile.mkstemp(prefix="flare-vm-install-password-")
+    guest_password_path = rf"{REQUIRED_FILES_DEST}\{os.path.basename(host_password_path)}"
+    try:
+        os.chmod(host_password_path, 0o600)
+        with os.fdopen(password_fd, "w", encoding="utf-8") as password_file:
+            password_file.write(GUEST_PASSWORD)
+        control_guest(
+            vm_uuid,
+            GUEST_USERNAME,
+            GUEST_PASSWORD,
+            ["copyto", f"--target-directory={REQUIRED_FILES_DEST}", host_password_path],
+        )
+    finally:
+        if os.path.exists(host_password_path):
+            os.remove(host_password_path)
+
     flare_vm_installation_cmd = rf"""
     $desktop=[Environment]::GetFolderPath("Desktop")
     cd $desktop
-    Set-ExecutionPolicy Unrestricted -Force
-    $url="https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1"
+    Set-ExecutionPolicy Bypass -Scope Process -Force
     $file = "$desktop\install.ps1"
-    (New-Object net.webclient).DownloadFile($url,$file)
     Unblock-File .\install.ps1
 
-    start powershell "$file -password password -noWait -noGui -noChecks {additional_arg}"
+    start powershell "$file -passwordFile '{guest_password_path}' -removePasswordFile -noWait -noGui -noChecks {additional_arg}"
     """
     run_command(vm_uuid, flare_vm_installation_cmd)
     print(f"VM {vm_uuid} ✅ FLARE-VM is being installed...{LONG_WAIT}")
 
     index = 0
+    wait_started = time.monotonic()
     while True:
-        time.sleep(120)  # Wait 2 minutes
+        if time.monotonic() - wait_started >= install_timeout:
+            raise TimeoutError(f"FLARE-VM installation did not finish within {install_timeout} seconds")
+        time.sleep(INSTALL_POLL_SECONDS)
         try:
             control_guest(
                 vm_uuid,
@@ -164,7 +185,15 @@ def install_flare_vm(vm_uuid, snapshot_name, custom_config):
         print(f"  ❌ Reading {FAILED_PACKAGES_HOST} failed")
 
 
-def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_install_flare_vm):
+def build_vm(
+    vm_name,
+    exported_vm_name,
+    snapshots,
+    date,
+    custom_config,
+    do_not_install_flare_vm,
+    install_timeout=INSTALL_TIMEOUT_SECONDS,
+):
     """
     Build and export multiple FLARE-VM VMs as OVAs based on provided configurations.
 
@@ -192,8 +221,7 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
     """
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'❌ ERROR: "{vm_name}" not found')
-        exit()
+        raise RuntimeError(f'VM "{vm_name}" not found')
 
     print(f'\nGetting the installation VM "{vm_name}" {vm_uuid} ready...')
     create_log_folder()
@@ -212,7 +240,15 @@ def build_vm(vm_name, exported_vm_name, snapshots, date, custom_config, do_not_i
         )
         print(f"VM {vm_uuid} 📁 Copied required files in: {REQUIRED_FILES_DIR}")
 
-        install_flare_vm(vm_uuid, exported_vm_name, custom_config)
+        control_guest(
+            vm_uuid,
+            GUEST_USERNAME,
+            GUEST_PASSWORD,
+            ["copyto", f"--target-directory={REQUIRED_FILES_DEST}", INSTALLER_HOST_PATH],
+        )
+        print(f"VM {vm_uuid} 📁 Copied pinned local installer: {INSTALLER_HOST_PATH}")
+
+        install_flare_vm(vm_uuid, exported_vm_name, custom_config, install_timeout)
         take_snapshot(vm_uuid, base_snapshot_name, False, True)
 
     for snapshot in snapshots:
@@ -284,14 +320,22 @@ def main(argv=None):
         default=False,
         help="flag to not install FLARE-VM and used an existent base snapshot. It also does not copy the required files.",
     )
+    parser.add_argument(
+        "--install-timeout",
+        type=int,
+        default=INSTALL_TIMEOUT_SECONDS,
+        help=f"maximum seconds to wait for FLARE-VM installation. Default: {INSTALL_TIMEOUT_SECONDS} (12 hours).",
+    )
     args = parser.parse_args(args=argv)
+
+    if not GUEST_PASSWORD:
+        parser.error("Set FLARE_VM_GUEST_PASSWORD to the guest VM password before running the builder.")
 
     try:
         with open(args.config_path) as f:
             config = yaml.safe_load(f)
     except Exception as e:
-        print(f'Invalid "{args.config_path}": {e}')
-        exit()
+        parser.error(f'Invalid "{args.config_path}": {e}')
 
     build_vm(
         config["VM_NAME"],
@@ -300,6 +344,7 @@ def main(argv=None):
         args.date,
         args.custom_config,
         args.do_not_install_flare_vm,
+        args.install_timeout,
     )
 
 

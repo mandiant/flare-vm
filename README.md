@@ -17,6 +17,19 @@ The VM should satisfy the following requirements:
 * Tamper Protection and any Anti-Malware solution (e.g., Windows Defender) disabled, preferably via Group Policy
 * Windows Updates Disabled
 
+### Isolation requirements
+
+FLARE-VM intentionally weakens Windows security controls for malware analysis. Treat the VM as
+untrusted and disposable:
+
+* Never install FLARE-VM on a physical workstation or production system.
+* Use NAT only while downloading trusted installation packages; never use bridged networking.
+* Switch to Host-Only or an isolated internal network before opening or executing samples.
+* Disable shared clipboard, drag-and-drop, shared folders, USB passthrough, and host filesystem mounts.
+* Keep the host-only network separate from corporate, management, and personal networks.
+* Take a clean snapshot before installation and another before analyzing any sample.
+* Treat custom XML/YAML configuration files and local Chocolatey packages as executable code.
+
 ## Installation instruction
 This section documents the steps to install FLARE-VM. You may also find useful the [_Building a VM for Reverse Engineering and Malware Analysis! Installing the FLARE-VM_ video](https://www.youtube.com/watch?v=i8dCyy8WMKY).
 
@@ -40,14 +53,14 @@ This section documents the steps to install FLARE-VM. You may also find useful t
   * `(New-Object net.webclient).DownloadFile('https://raw.githubusercontent.com/mandiant/flare-vm/main/install.ps1',"$([Environment]::GetFolderPath("Desktop"))\install.ps1")`
 * Unblock the installation script:
   * `Unblock-File .\install.ps1`
-* Enable script execution:
-  * `Set-ExecutionPolicy Unrestricted -Force`
-    * If you receive an error saying the execution policy is overridden by a policy defined at a more specific scope, you may need to pass a scope in via `Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force`. To view execution policies for all scopes, execute `Get-ExecutionPolicy -List`
+* Enable script execution for the current PowerShell session:
+  * `Set-ExecutionPolicy Bypass -Scope Process -Force`
+    * Process scope is temporary and is removed when the PowerShell session closes. If the effective policy is controlled by Group Policy, contact your administrator. To view execution policies for all scopes, execute `Get-ExecutionPolicy -List`.
 * Finally, execute the installer script as follow:
   * `.\install.ps1`
-    * To pass your password as an argument: `.\install.ps1 -password <password>`
-    * To use the CLI-only mode with minimal user interaction: `.\install.ps1 -password <password> -noWait -noGui`
-    * To use the CLI-only mode with minimal user interaction and a custom config file: `.\install.ps1 -customConfig <config.xml> -password <password> -noWait -noGui`
+    * For automation, place the password in an access-restricted temporary file and run: `.\install.ps1 -passwordFile <path> -removePasswordFile`
+    * To use the CLI-only mode with minimal user interaction: `.\install.ps1 -passwordFile <path> -removePasswordFile -noWait -noGui`
+    * To use the CLI-only mode with minimal user interaction and a custom config file: `.\install.ps1 -customConfig <config.xml> -passwordFile <path> -removePasswordFile -noWait -noGui`
 * After installation it is recommended to switch to `host-only` networking mode and take a VM snapshot
 
 #### Installer Parameters
@@ -56,7 +69,14 @@ Below are the CLI parameter descriptions.
 ```
 PARAMETERS
     -password <String>
-        Current user password to allow reboot resiliency via Boxstarter. The script prompts for the password if not provided.
+        Current user password. Prefer passwordFile because command-line arguments can be visible to
+        other processes and retained in shell history.
+
+    -passwordFile <String>
+        Path to an access-restricted file containing the current user's password.
+
+    -removePasswordFile [<SwitchParameter>]
+        Deletes the password file immediately after reading it. Recommended for automation.
 
     -noPassword [<SwitchParameter>]
         Switch parameter indicating a password is not needed for reboots.
@@ -66,6 +86,10 @@ PARAMETERS
 
     -customLayout <String>
         Path to a taskbar layout XML file. May be a file path or URL.
+
+    -localPackageSource <String>
+        Optional path to a trusted local Chocolatey package directory. Local sources are disabled
+        by default to prevent package shadowing from the Desktop or current directory.
 
     -noWait [<SwitchParameter>]
         Switch parameter to skip installation message before installation begins.
@@ -78,6 +102,14 @@ PARAMETERS
 
     -noChecks [<SwitchParameter>]
         Switch parameter to skip validation checks (not recommended).
+
+    -allowEmptyChecksums [<SwitchParameter>]
+        Compatibility switch for Chocolatey packages that do not provide checksums. This weakens
+        download integrity validation and should only be used when a required package cannot install otherwise.
+
+    -allowWebBootstrap [<SwitchParameter>]
+        Allows Boxstarter's mutable web bootstrap when Chocolatey is unavailable. For stronger
+        supply-chain security, install Chocolatey separately and leave this disabled.
 ```
 
 Get full usage information by running `Get-Help .\install.ps1 -Detailed`.

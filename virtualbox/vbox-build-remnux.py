@@ -46,7 +46,7 @@ BASE_SNAPSHOT = "BUILD-READY"
 
 # Guest username and password, needed to execute commands in the guest
 GUEST_USERNAME = "remnux"
-GUEST_PASSWORD = "malware"
+GUEST_PASSWORD = os.environ.get("REMNUX_GUEST_PASSWORD")
 
 # Required files
 REQUIRED_FILES_DIR = os.path.expanduser("~/REMNUX REQUIRED FILES")
@@ -89,8 +89,7 @@ def build_vm(vm_name, exported_vm_name, snapshot, cmds, date, do_not_upgrade):
     """
     vm_uuid = get_vm_uuid(vm_name)
     if not vm_uuid:
-        print(f'❌ ERROR: "{vm_name}" not found')
-        exit()
+        raise RuntimeError(f'VM "{vm_name}" not found')
 
     print(f'\nGetting the installation VM "{vm_name}" {vm_uuid} ready...')
 
@@ -158,12 +157,14 @@ def main(argv=None):
     )
     args = parser.parse_args(args=argv)
 
+    if not GUEST_PASSWORD:
+        parser.error("Set REMNUX_GUEST_PASSWORD to the guest VM password before running the builder.")
+
     try:
         with open(args.config_path) as f:
             config = yaml.safe_load(f)
     except Exception as e:
-        print(f'Invalid "{args.config_path}": {e}')
-        exit()
+        parser.error(f'Invalid "{args.config_path}": {e}')
 
     build_vm(
         config["VM_NAME"],

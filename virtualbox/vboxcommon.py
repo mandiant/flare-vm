@@ -15,8 +15,11 @@
 import hashlib
 import os
 import re
-import subprocess
+
+# VBoxManage is executed as an argument list without a shell.
+import subprocess  # nosec B404
 import sys
+import tempfile
 import time
 from datetime import datetime
 
@@ -25,6 +28,36 @@ LONG_WAIT = "... (it will take some time, go for an 🍦!)"
 
 # Default name of the directory in HOME to export VMs to
 EXPORT_DIR_NAME = "EXPORTED VMS"
+
+# Substring used in VM names to mark them as dynamic-analysis VMs whose internet access
+# should stay disabled. Shared by vbox-adapter-check.py and vbox-set-network.py.
+DYNAMIC_VM_NAME = ".dynamic"
+
+# NIC types considered safe for a dynamic-analysis VM (no direct internet access).
+ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
+
+PERMANENT_GUEST_CONTROL_ERRORS = (
+    "VERR_AUTHENTICATION_FAILURE",
+    "VERR_ACCESS_DENIED",
+    "VERR_FILE_NOT_FOUND",
+    "VERR_PATH_NOT_FOUND",
+    "VERR_INVALID_PARAMETER",
+    "VBOX_E_OBJECT_NOT_FOUND",
+)
+
+
+def get_export_directory(export_dir_name):
+    """Return a path below HOME for a user-provided export directory name."""
+    if not export_dir_name:
+        export_dir_name = EXPORT_DIR_NAME
+    if os.path.isabs(export_dir_name) or os.path.normpath(export_dir_name).startswith(".."):
+        raise ValueError("Export directory must be a relative path below HOME")
+
+    home_directory = os.path.abspath(os.path.expanduser("~"))
+    export_directory = os.path.abspath(os.path.join(home_directory, export_dir_name))
+    if os.path.commonpath((home_directory, export_directory)) != home_directory:
+        raise ValueError("Export directory must be below HOME")
+    return export_directory
 
 
 def format_arg(arg):
@@ -63,9 +96,10 @@ def __run_vboxmanage(cmd, real_time=False):
             del env["LD_LIBRARY_PATH"]
 
     if real_time:
-        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout, env=env)
+        return subprocess.run(cmd, stderr=sys.stderr, stdout=sys.stdout, env=env)  # nosec B603
     else:
-        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
+        # cmd is an argument list and shell=False is the default.
+        return subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)  # nosec B603
 
 
 def run_vboxmanage(cmd, real_time=False):
@@ -80,12 +114,19 @@ def run_vboxmanage(cmd, real_time=False):
 
     if result.returncode:
         # Check if we are affect by the following VERR_NO_LOW_MEMORY bug: https://www.virtualbox.org/ticket/22185
-        # and re-run the command every minute until the VERR_NO_LOW_MEMORY error is resolved
+        # and re-run the command every minute until the VERR_NO_LOW_MEMORY error is resolved.
+        # Bound the retries so a host that never frees low memory fails loudly instead of hanging forever.
+        max_low_memory_retries = 10
+        low_memory_retries = 0
         while result.stdout and "VERR_NO_LOW_MEMORY" in result.stdout:
+            if low_memory_retries >= max_low_memory_retries:
+                print(f"❌ VERR_NO_LOW_MEMORY still present after {max_low_memory_retries} retries, giving up")
+                break
+            low_memory_retries += 1
             print("❌ VirtualBox VERR_NO_LOW_MEMORY error (likely https://www.virtualbox.org/ticket/22185)")
-            print("🩹 Fit it running 'echo 3 | sudo tee /proc/sys/vm/drop_caches'")
-            print("⏳ I'll re-try the command in ~ 1 minute\n")
-            time.sleep(60)  # wait 1 minutes
+            print("🩹 Fix it running 'echo 3 | sudo tee /proc/sys/vm/drop_caches'")
+            print(f"⏳ I'll re-try the command in ~ 1 minute (attempt {low_memory_retries}/{max_low_memory_retries})\n")
+            time.sleep(60)  # wait 1 minute
 
             # Re-try command
             result = __run_vboxmanage(cmd, real_time)
@@ -112,14 +153,30 @@ def control_guest(vm_uuid, user, password, args, real_time=False):
     """
     # VM must be running to control the guest
     ensure_vm_running(vm_uuid)
-    cmd = ["guestcontrol", vm_uuid, f"--username={user}", f"--password={password}"] + args
+    if not password:
+        raise ValueError("Guest password is required")
+
+    password_fd, password_path = tempfile.mkstemp(prefix="flare-vm-vbox-password-")
     try:
-        return run_vboxmanage(cmd, real_time)
-    except RuntimeError:
-        # The guest additions take a bit to load after the user is logged in
-        # In slow environments this may cause the command to fail, wait a bit and re-try
-        time.sleep(120)  # Wait 2 minutes
-        return run_vboxmanage(cmd, real_time)
+        os.chmod(password_path, 0o600)
+        with os.fdopen(password_fd, "w", encoding="utf-8") as password_file:
+            password_file.write(password)
+
+        cmd = ["guestcontrol", vm_uuid, f"--username={user}", f"--passwordfile={password_path}"] + args
+        try:
+            return run_vboxmanage(cmd, real_time)
+        except RuntimeError as first_error:
+            if any(error_code in str(first_error) for error_code in PERMANENT_GUEST_CONTROL_ERRORS):
+                raise
+            # The guest additions take a bit to load after the user is logged in.
+            time.sleep(120)
+            try:
+                return run_vboxmanage(cmd, real_time)
+            except RuntimeError as retry_error:
+                raise retry_error from first_error
+    finally:
+        if os.path.exists(password_path):
+            os.remove(password_path)
 
 
 def get_hostonlyif_name():
@@ -148,6 +205,57 @@ def ensure_hostonlyif_exists():
         print(f"Hostonly interface created: {hostonlyif_name}")
 
     return hostonlyif_name
+
+
+def get_nics(vm_uuid, only_nic=None):
+    """Retrieve the configured network interfaces and their types for a given virtual machine.
+
+    Args:
+        vm_uuid: The unique identifier (UUID) of the virtual machine.
+        only_nic: An optional string specifying a specific NIC number to retrieve
+                  (e.g., "1" for nic1). If None, information for all configured NICs
+                  will be returned.
+
+    Returns:
+        A list of tuples, where each tuple contains:
+        - The NIC number as a string (e.g., "1", "2")
+        - The NIC value (e.g., "hostonly", "nat")
+    """
+    # Example of `VBoxManage showvminfo <VM_UUID> --machinereadable` relevant output:
+    # nic1="hostonly"
+    # nictype1="82540EM"
+    # nicspeed1="0"
+    # nic2="none"
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
+
+    # If no nic provided, get all possible numbers using RegExp
+    if only_nic is None:
+        only_nic = r"\d+"
+
+    # Get adapters numbers and their values as a list: [(nic_number, nic_value)]
+    return re.findall(rf'^nic({only_nic})="(\S+)"', vm_info, flags=re.M)
+
+
+def set_nic(vm_uuid, nic_number, adapter_type, hostonly_ifname=None):
+    """Set a single NIC to adapter_type, live if the VM is running.
+
+    Args:
+        vm_uuid: VM UUID
+        nic_number: NIC number to change (e.g. "1")
+        adapter_type: VBoxManage NIC type (e.g. "hostonly", "nat")
+        hostonly_ifname: Host-only interface name. Required when adapter_type is "hostonly".
+    """
+    if get_vm_state(vm_uuid) in ("poweroff", "aborted"):
+        run_vboxmanage(["modifyvm", vm_uuid, f"--nic{nic_number}", adapter_type])
+        if adapter_type == "hostonly":
+            # Set the hostonlyadapter for nic as "VBoxManage modifyvm --nic" does not set it
+            # If hostonlyadapter is empty, starting the VM raises an error
+            run_vboxmanage(["modifyvm", vm_uuid, f"--hostonlyadapter{nic_number}", hostonly_ifname])
+    else:
+        cmd = ["controlvm", vm_uuid, f"nic{nic_number}", adapter_type]
+        if adapter_type == "hostonly":
+            cmd.append(hostonly_ifname)
+        run_vboxmanage(cmd)
 
 
 def set_network_to_hostonly(vm_uuid):
@@ -185,7 +293,7 @@ def set_network_to_hostonly(vm_uuid):
     # Ensure changes applied
     vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
     nic_values = re.findall(r'^nic\d+="(\S+)"', vm_info, flags=re.M)
-    if nic_values[0] != "hostonly" or any(nic_value != "none" for nic_value in nic_values[1:]):
+    if not nic_values or nic_values[0] != "hostonly" or any(nic_value != "none" for nic_value in nic_values[1:]):
         raise RuntimeError(f"Unable to change NICs to a single hostonly in VM {vm_uuid}")
 
     print(f"VM {vm_uuid} ⚙️  network set to single hostonly adapter")
@@ -193,22 +301,33 @@ def set_network_to_hostonly(vm_uuid):
 
 def sha256_file(filepath):
     """Return the SHA256 of the content of the file provided as argument."""
+    digest = hashlib.sha256()
     with open(filepath, "rb") as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def export_vm(vm_uuid, exported_vm_name, description="", export_dir_name=EXPORT_DIR_NAME):
     """Export VM as OVA and generate a file with the SHA256 of the exported OVA."""
+    if description is None:
+        description = ""
+    if os.path.basename(exported_vm_name) != exported_vm_name:
+        raise ValueError("Exported VM name must not contain path separators")
     # Create export directory
-    export_directory = os.path.expanduser(f"~/{export_dir_name}")
+    export_directory = get_export_directory(export_dir_name)
     os.makedirs(export_directory, exist_ok=True)
 
     exported_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.ova")
 
     # Rename OVA if it already exists (for example if the script is called twice) or exporting will fail
     if os.path.exists(exported_ova_filepath):
-        time_str = datetime.now().strftime("%H_%M")
+        time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         old_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.{time_str}.ova")
+        suffix = 1
+        while os.path.exists(old_ova_filepath):
+            old_ova_filepath = os.path.join(export_directory, f"{exported_vm_name}.{time_str}.{suffix}.ova")
+            suffix += 1
         os.rename(exported_ova_filepath, old_ova_filepath)
         print(f"⚠️  Renamed old OVA to export new one: {old_ova_filepath}")
 
@@ -230,8 +349,8 @@ def export_vm(vm_uuid, exported_vm_name, description="", export_dir_name=EXPORT_
     # Generate file with SHA256
     sha256 = sha256_file(exported_ova_filepath)
     sha256_filepath = f"{exported_ova_filepath}.sha256"
-    with open(sha256_filepath, "w") as f:
-        f.write(sha256)
+    with open(sha256_filepath, "w", encoding="ascii") as f:
+        f.write(f"{sha256}\n")
 
     print(f'VM {vm_uuid} ✅ GENERATED "{sha256_filepath}": {sha256}\n')
 
@@ -244,7 +363,7 @@ def get_vm_uuid(vm_name):
     # "FLARE-VM" {a23c0c37-2062-4cf0-882b-9e9747dd33b6}
     vms_info = run_vboxmanage(["list", "vms"])
 
-    match = re.search(rf'^"{vm_name}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
+    match = re.search(rf'^"{re.escape(vm_name)}" (?P<uuid>\{{.*?\}})', vms_info, flags=re.M)
     if match:
         return match.group("uuid")
 
@@ -277,17 +396,22 @@ def get_num_logged_in_users(vm_uuid):
     return 0
 
 
-def wait_until(vm_uuid, condition):
-    """Wait for VM to verify a condition
+def wait_until(vm_uuid, predicate):
+    """Wait for VM to verify a condition.
 
-    Return True if the condition is met within one minute.
+    Args:
+        vm_uuid: VM UUID.
+        predicate: A callable taking the VM UUID and returning a truthy value when the
+                   condition is met.
+
+    Return True if the condition is met within the timeout (10 minutes).
     Return False otherwise.
     """
     timeout = 600  # seconds (10 minutes)
     check_interval = 5  # seconds
     start_time = time.time()
     while time.time() - start_time < timeout:
-        if eval(condition):
+        if predicate(vm_uuid):
             time.sleep(5)  # wait a bit to be careful and avoid any weird races
             return True
         time.sleep(check_interval)
@@ -302,7 +426,7 @@ def ensure_vm_running(vm_uuid):
         run_vboxmanage(["startvm", vm_uuid, "--type", "gui"])
 
     # Wait until at least 1 user is logged in.
-    if not wait_until(vm_uuid, "get_num_logged_in_users(vm_uuid)"):
+    if not wait_until(vm_uuid, lambda uuid: get_num_logged_in_users(uuid) > 0):
         raise RuntimeError(f"Unable to start VM {vm_uuid}.")
 
 
@@ -325,7 +449,7 @@ def ensure_vm_shutdown(vm_uuid):
     print(f"VM {vm_uuid} state: {vm_state}. Shutting down VM...")
     run_vboxmanage(["controlvm", vm_uuid, "poweroff"])
 
-    if not wait_until(vm_uuid, "get_vm_state(vm_uuid) == 'poweroff'"):
+    if not wait_until(vm_uuid, lambda uuid: get_vm_state(uuid) == "poweroff"):
         raise RuntimeError(f"Unable to shutdown VM {vm_uuid}.")
 
 
@@ -353,9 +477,9 @@ def rename_old_snapshot(vm_uuid, snapshot_name):
     snapshots_info = run_vboxmanage(["snapshot", vm_uuid, "list", "--machinereadable"])
 
     # Find how many snapshots have the given name and edit a snapshot with that name as many times
-    snapshots = re.findall(rf'^SnapshotName(-\d+)*="{snapshot_name}"\n', snapshots_info, flags=re.M)
+    snapshots = re.findall(rf'^SnapshotName(-\d+)*="{re.escape(snapshot_name)}"\n', snapshots_info, flags=re.M)
     for _ in range(len(snapshots)):
-        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name='{snapshot_name} OLD"])
+        run_vboxmanage(["snapshot", vm_uuid, "edit", snapshot_name, f"--name={snapshot_name} OLD"])
 
 
 def take_snapshot(vm_uuid, snapshot_name, shutdown=False, rename=False):
