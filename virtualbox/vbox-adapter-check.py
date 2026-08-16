@@ -20,14 +20,19 @@ import sys
 import textwrap
 
 import gi
-from vboxcommon import ensure_hostonlyif_exists, get_vm_state, run_vboxmanage
+from vboxcommon import (
+    ALLOWED_ADAPTER_TYPES,
+    DYNAMIC_VM_NAME,
+    ensure_hostonlyif_exists,
+    get_nics,
+    run_vboxmanage,
+    set_nic,
+)
 
 gi.require_version("Notify", "0.7")
 from gi.repository import Notify  # noqa: E402
 
-DYNAMIC_VM_NAME = ".dynamic"
 DISABLED_ADAPTER_TYPE = "hostonly"
-ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
 
 DESCRIPTION = f"""Print the status of all internet adapters of all VMs in VirtualBox.
 Optionally, if any VM with {DYNAMIC_VM_NAME} in the name has an adapter whose type is not allowed,
@@ -80,43 +85,6 @@ def get_vms(dynamic_only):
     return vms_list
 
 
-def get_nics(vm_uuid, only_nic=None):
-    """
-    Retrieves the configured network interfaces and their types for a given virtual machine.
-
-    Args:
-        vm_uuid: The unique identifier (UUID) of the virtual machine.
-        only_nic: An optional string specifying a specific NIC number to retrieve
-                  (e.g., "1" for nic1). If None, information for all configured NICs
-                  will be returned.
-
-    Returns:
-        A list of tuples, where each tuple contains:
-        - The NIC number as a string (e.g., "1", "2")
-        - The NIC value (e.g., "hostonly", "nat")
-    """
-
-    # Example of `VBoxManage showvm_info <VM_UUID> --machinereadable` relevant output:
-    # nic1="hostonly"
-    # nictype1="82540EM"
-    # nicspeed1="0"
-    # nic2="none"
-    # nic3="none"
-    # nic4="none"
-    # nic5="none"
-    # nic6="none"
-    # nic7="none"
-    # nic8="none"
-    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
-
-    # If no nic provided, get all possible numbers using RegExp
-    if only_nic is None:
-        only_nic = r"\d+"
-
-    # Get adapters numbers and their values as a list: [(nic_number, nic_value)]
-    return re.findall(rf'^nic({only_nic})="(\S+)"', vm_info, flags=re.M)
-
-
 def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
     """Disable the network adapter of the VM by setting it to DISABLED_ADAPTER_TYPE
 
@@ -127,36 +95,7 @@ def disable_adapter(vm_uuid, nic_number, hostonly_ifname):
     Raises:
         RuntimeError: If the nic type is not changed to DISABLED_ADAPTER_TYPE
     """
-    # We need to run a different command if the machine is running.
-    if get_vm_state(vm_uuid) in ("poweroff", "aborted"):
-        run_vboxmanage(
-            [
-                "modifyvm",
-                vm_uuid,
-                f"--nic{nic_number}",
-                DISABLED_ADAPTER_TYPE,
-            ]
-        )
-        # Set the hostonlyadapter for nic as "VBoxManage modifyvm --nic" does not set it
-        # If hostonlyadapter is empty, starting the VM raises an error
-        run_vboxmanage(
-            [
-                "modifyvm",
-                vm_uuid,
-                f"--hostonlyadapter{nic_number}",
-                hostonly_ifname,
-            ]
-        )
-    else:
-        run_vboxmanage(
-            [
-                "controlvm",
-                vm_uuid,
-                f"nic{nic_number}",
-                DISABLED_ADAPTER_TYPE,
-                hostonly_ifname,
-            ]
-        )
+    set_nic(vm_uuid, nic_number, DISABLED_ADAPTER_TYPE, hostonly_ifname)
 
     # Verify nic has been modify as the command may return code 0 even if it fails to set the adapter
     nic_info = get_nics(vm_uuid, nic_number)

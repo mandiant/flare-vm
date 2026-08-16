@@ -29,6 +29,13 @@ LONG_WAIT = "... (it will take some time, go for an 🍦!)"
 # Default name of the directory in HOME to export VMs to
 EXPORT_DIR_NAME = "EXPORTED VMS"
 
+# Substring used in VM names to mark them as dynamic-analysis VMs whose internet access
+# should stay disabled. Shared by vbox-adapter-check.py and vbox-set-network.py.
+DYNAMIC_VM_NAME = ".dynamic"
+
+# NIC types considered safe for a dynamic-analysis VM (no direct internet access).
+ALLOWED_ADAPTER_TYPES = ("hostonly", "intnet", "none")
+
 PERMANENT_GUEST_CONTROL_ERRORS = (
     "VERR_AUTHENTICATION_FAILURE",
     "VERR_ACCESS_DENIED",
@@ -198,6 +205,57 @@ def ensure_hostonlyif_exists():
         print(f"Hostonly interface created: {hostonlyif_name}")
 
     return hostonlyif_name
+
+
+def get_nics(vm_uuid, only_nic=None):
+    """Retrieve the configured network interfaces and their types for a given virtual machine.
+
+    Args:
+        vm_uuid: The unique identifier (UUID) of the virtual machine.
+        only_nic: An optional string specifying a specific NIC number to retrieve
+                  (e.g., "1" for nic1). If None, information for all configured NICs
+                  will be returned.
+
+    Returns:
+        A list of tuples, where each tuple contains:
+        - The NIC number as a string (e.g., "1", "2")
+        - The NIC value (e.g., "hostonly", "nat")
+    """
+    # Example of `VBoxManage showvminfo <VM_UUID> --machinereadable` relevant output:
+    # nic1="hostonly"
+    # nictype1="82540EM"
+    # nicspeed1="0"
+    # nic2="none"
+    vm_info = run_vboxmanage(["showvminfo", vm_uuid, "--machinereadable"])
+
+    # If no nic provided, get all possible numbers using RegExp
+    if only_nic is None:
+        only_nic = r"\d+"
+
+    # Get adapters numbers and their values as a list: [(nic_number, nic_value)]
+    return re.findall(rf'^nic({only_nic})="(\S+)"', vm_info, flags=re.M)
+
+
+def set_nic(vm_uuid, nic_number, adapter_type, hostonly_ifname=None):
+    """Set a single NIC to adapter_type, live if the VM is running.
+
+    Args:
+        vm_uuid: VM UUID
+        nic_number: NIC number to change (e.g. "1")
+        adapter_type: VBoxManage NIC type (e.g. "hostonly", "nat")
+        hostonly_ifname: Host-only interface name. Required when adapter_type is "hostonly".
+    """
+    if get_vm_state(vm_uuid) in ("poweroff", "aborted"):
+        run_vboxmanage(["modifyvm", vm_uuid, f"--nic{nic_number}", adapter_type])
+        if adapter_type == "hostonly":
+            # Set the hostonlyadapter for nic as "VBoxManage modifyvm --nic" does not set it
+            # If hostonlyadapter is empty, starting the VM raises an error
+            run_vboxmanage(["modifyvm", vm_uuid, f"--hostonlyadapter{nic_number}", hostonly_ifname])
+    else:
+        cmd = ["controlvm", vm_uuid, f"nic{nic_number}", adapter_type]
+        if adapter_type == "hostonly":
+            cmd.append(hostonly_ifname)
+        run_vboxmanage(cmd)
 
 
 def set_network_to_hostonly(vm_uuid):

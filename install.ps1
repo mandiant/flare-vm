@@ -123,6 +123,15 @@ if (-not [string]::IsNullOrEmpty($password) -and -not [string]::IsNullOrWhiteSpa
     throw 'Use either -password or -passwordFile, not both.'
 }
 
+# In an RE/malware-analysis lab, samples may already be executing on this VM by the time
+# a reboot is needed. A password passed via -password is visible for the life of this
+# process to anything that can enumerate process command lines (e.g. Get-CimInstance
+# Win32_Process), and may also be retained in shell history. Warn loudly so -passwordFile
+# (not visible via process enumeration) is used instead.
+if (-not [string]::IsNullOrEmpty($password)) {
+    Write-Host "[!] WARNING: -password exposes the plaintext password to any process on this VM (via process command-line enumeration) and to shell history. Prefer -passwordFile for malware analysis / RE lab use." -ForegroundColor Yellow
+}
+
 # Function to download files and handle errors consistently
 function Save-FileFromUrl {
     param (
@@ -509,330 +518,368 @@ if (-not $noGui.IsPresent) {
 		################################ Installer Checks Form Controls #################################
 		#################################################################################################
 
-		$formChecksManager           = New-Object system.Windows.Forms.Form
-		$formChecksManager.ClientSize  = New-Object System.Drawing.Point(700,640)
-		$formChecksManager.text      = "FLAREVM Pre-Install Checks"
-		$formChecksManager.TopMost   = $true
-		$formChecksManager.StartPosition = 'CenterScreen'
+		$formChecksManager = New-Object system.Windows.Forms.Form -Property ([ordered]@{
+		    ClientSize = New-Object System.Drawing.Point(700,640)
+		    text = "FLAREVM Pre-Install Checks"
+		    TopMost = $true
+		    StartPosition = 'CenterScreen'
+		})
 
-		$ChecksPanel                     = New-Object system.Windows.Forms.Panel
-		$ChecksPanel.height              = 460
-		$ChecksPanel.width               = 89
-		$ChecksPanel.location            = New-Object System.Drawing.Point(570,8)
+		$ChecksPanel = New-Object system.Windows.Forms.Panel -Property ([ordered]@{
+		    height = 460
+		    width = 89
+		    location = New-Object System.Drawing.Point(570,8)
+		})
 
-		$InstallChecksGroup              = New-Object system.Windows.Forms.Groupbox
-		$InstallChecksGroup.height       = 490
-		$InstallChecksGroup.width        = 665
-		$InstallChecksGroup.text         = "Installation Checks"
-		$InstallChecksGroup.location     = New-Object System.Drawing.Point(23,14)
+		$InstallChecksGroup = New-Object system.Windows.Forms.Groupbox -Property ([ordered]@{
+		    height = 490
+		    width = 665
+		    text = "Installation Checks"
+		    location = New-Object System.Drawing.Point(23,14)
+		})
 
 		################################# Check Labels #################################
 
-		$PSVersionLabel = New-Object system.Windows.Forms.Label
-		$PSVersionLabel.text = "Valid Powershell version"
-		$PSVersionLabel.AutoSize = $true
-		$PSVersionLabel.width = 25
-		$PSVersionLabel.height = 10
-		$PSVersionLabel.location = New-Object System.Drawing.Point(15,18)
-		$PSVersionLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$PSVersionLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Valid Powershell version"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(15,18)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-        $RunningAsAdminLabel = New-Object system.Windows.Forms.Label
-		$RunningAsAdminLabel.text = "Running as Administrator"
-		$RunningAsAdminLabel.AutoSize = $true
-		$RunningAsAdminLabel.width = 25
-		$RunningAsAdminLabel.height = 10
-		$RunningAsAdminLabel.location = New-Object System.Drawing.Point(15,59)
-		$RunningAsAdminLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+        $RunningAsAdminLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+            text = "Running as Administrator"
+            AutoSize = $true
+            width = 25
+            height = 10
+            location = New-Object System.Drawing.Point(15,59)
+            Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+        })
 
-		$ExecutionPolicyLabel = New-Object system.Windows.Forms.Label
-		$ExecutionPolicyLabel.text = "Script Execution Enabled"
-		$ExecutionPolicyLabel.AutoSize = $true
-		$ExecutionPolicyLabel.width = 25
-		$ExecutionPolicyLabel.height = 10
-		$ExecutionPolicyLabel.location = New-Object System.Drawing.Point(15,104)
-		$ExecutionPolicyLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$ExecutionPolicyLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Script Execution Enabled"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(15,104)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$validWindowsVersionLabel = New-Object system.Windows.Forms.Label
-		$validWindowsVersionLabel.text = "Valid Windows Version"
-		$validWindowsVersionLabel.AutoSize = $true
-		$validWindowsVersionLabel.location = New-Object System.Drawing.Point(15,149)
-		$validWindowsVersionLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$validWindowsVersionLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Valid Windows Version"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,149)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$WindowsReleaseLabel = New-Object system.Windows.Forms.Label
-		$WindowsReleaseLabel.text = "Tested Windows Version"
-		$WindowsReleaseLabel.AutoSize = $true
-		$WindowsReleaseLabel.width = 25
-		$WindowsReleaseLabel.height = 10
-		$WindowsReleaseLabel.location = New-Object System.Drawing.Point(15,193)
-		$WindowsReleaseLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$WindowsReleaseLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Tested Windows Version"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(15,193)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$RunningVMLabel = New-Object system.Windows.Forms.Label
-		$RunningVMLabel.text = "Running in a Virtual Machine"
-		$RunningVMLabel.AutoSize = $true
-		$RunningVMLabel.width = 25
-		$RunningVMLabel.height = 10
-		$RunningVMLabel.location = New-Object System.Drawing.Point(15,239)
-		$RunningVMLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$RunningVMLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Running in a Virtual Machine"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(15,239)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$usernameContainsSpacesLabel = New-Object system.Windows.Forms.Label
-		$usernameContainsSpacesLabel.text = "Valid username"
-		$usernameContainsSpacesLabel.AutoSize = $true
-		$usernameContainsSpacesLabel.location = New-Object System.Drawing.Point(15,285)
-		$usernameContainsSpacesLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$usernameContainsSpacesLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Valid username"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,285)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$EnoughHardStorageLabel = New-Object system.Windows.Forms.Label
-		$EnoughHardStorageLabel.text = "Enough Hard Drive Space"
-		$EnoughHardStorageLabel.AutoSize = $true
-		$EnoughHardStorageLabel.width = 25
-		$EnoughHardStorageLabel.height = 10
-		$EnoughHardStorageLabel.location = New-Object System.Drawing.Point(15,325)
-		$EnoughHardStorageLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$EnoughHardStorageLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Enough Hard Drive Space"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(15,325)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$internetConnectivityLabel = New-Object system.Windows.Forms.Label
-		$internetConnectivityLabel.text = "Internet connectivity"
-		$internetConnectivityLabel.AutoSize = $true
-		$internetConnectivityLabel.location = New-Object System.Drawing.Point(15,369)
-		$internetConnectivityLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$internetConnectivityLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Internet connectivity"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,369)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$WindowsDefenderLabel = New-Object system.Windows.Forms.Label
-		$WindowsDefenderLabel.text = "Windows Defender Disabled"
-		$WindowsDefenderLabel.AutoSize = $true
-		$WindowsDefenderLabel.width = 25
-		$WindowsDefenderLabel.height = 10
-		$WindowsDefenderLabel.location = New-Object System.Drawing.Point(15,411)
-		$WindowsDefenderLabel.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$WindowsDefenderLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Windows Defender Disabled"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(15,411)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
 		################################# Check Boolean Controls #################################
 
-		$PSVersion = New-Object system.Windows.Forms.Label
-		$PSVersion.text = "False"
-		$PSVersion.AutoSize = $true
-		$PSVersion.width = 25
-		$PSVersion.height = 10
-		$PSVersion.location = New-Object System.Drawing.Point(24,18)
-		$PSVersion.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$PSVersion.ForeColor = $errorColor
+		$PSVersion = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,18)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $errorColor
+		})
 
-		$RunningAsAdmin = New-Object system.Windows.Forms.Label
-		$RunningAsAdmin.text = "False"
-		$RunningAsAdmin.AutoSize = $true
-		$RunningAsAdmin.width = 25
-		$RunningAsAdmin.height = 10
-		$RunningAsAdmin.location = New-Object System.Drawing.Point(24,63)
-		$RunningAsAdmin.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$RunningAsAdmin.ForeColor = $errorColor
+		$RunningAsAdmin = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,63)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $errorColor
+		})
 
-		$ExecutionPolicy = New-Object system.Windows.Forms.Label
-		$ExecutionPolicy.text = "False"
-		$ExecutionPolicy.AutoSize = $true
-		$ExecutionPolicy.width = 25
-		$ExecutionPolicy.height = 10
-		$ExecutionPolicy.location = New-Object System.Drawing.Point(24,108)
-		$ExecutionPolicy.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$ExecutionPolicy.ForeColor = $errorColor
+		$ExecutionPolicy = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,108)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $errorColor
+		})
 
-		$validWindowsVersion = New-Object system.Windows.Forms.Label
-		$validWindowsVersion.text = "False"
-		$validWindowsVersion.AutoSize = $true
-		$validWindowsVersion.width = 25
-		$validWindowsVersion.height = 10
-		$validWindowsVersion.location = New-Object System.Drawing.Point(24,150)
-		$validWindowsVersion.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$validWindowsVersion.ForeColor = $errorColor
+		$validWindowsVersion = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,150)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $errorColor
+		})
 
-		$WindowsRelease = New-Object system.Windows.Forms.Label
-		$WindowsRelease.text = "False"
-		$WindowsRelease.AutoSize = $true
-		$WindowsRelease.width = 25
-		$WindowsRelease.height = 10
-		$WindowsRelease.location = New-Object System.Drawing.Point(24,195)
-		$WindowsRelease.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$WindowsRelease.ForeColor = $orangeColor
+		$WindowsRelease = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,195)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $orangeColor
+		})
 
-		$RunningVM = New-Object system.Windows.Forms.Label
-		$RunningVM.text = "False"
-		$RunningVM.AutoSize = $true
-		$RunningVM.width = 25
-		$RunningVM.height = 10
-		$RunningVM.location = New-Object System.Drawing.Point(24,240)
-		$RunningVM.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$RunningVM.ForeColor = $orangeColor
+		$RunningVM = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,240)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $orangeColor
+		})
 
-		$usernameContainsSpaces = New-Object system.Windows.Forms.Label
-		$usernameContainsSpaces.text = "False"
-		$usernameContainsSpaces.AutoSize = $true
-		$usernameContainsSpaces.width = 25
-		$usernameContainsSpaces.height = 10
-		$usernameContainsSpaces.location = New-Object System.Drawing.Point(24,285)
-		$usernameContainsSpaces.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$usernameContainsSpaces.ForeColor = $errorColor
+		$usernameContainsSpaces = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,285)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $errorColor
+		})
 
-		$EnoughHardStorage = New-Object system.Windows.Forms.Label
-		$EnoughHardStorage.text = "False"
-		$EnoughHardStorage.AutoSize = $true
-		$EnoughHardStorage.width = 25
-		$EnoughHardStorage.height = 10
-		$EnoughHardStorage.location = New-Object System.Drawing.Point(24,322)
-		$EnoughHardStorage.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$EnoughHardStorage.ForeColor = $orangeColor
+		$EnoughHardStorage = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,322)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $orangeColor
+		})
 
-		$internetConnectivity = New-Object system.Windows.Forms.Label
-		$internetConnectivity.text = "False"
-		$internetConnectivity.AutoSize = $true
-		$internetConnectivity.width = 25
-		$internetConnectivity.height = 10
-		$internetConnectivity.location = New-Object System.Drawing.Point(24,368)
-		$internetConnectivity.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$internetConnectivity.ForeColor = $errorColor
+		$internetConnectivity = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,368)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $errorColor
+		})
 
-		$WindowsDefender = New-Object system.Windows.Forms.Label
-		$WindowsDefender.text = "False"
-		$WindowsDefender.AutoSize = $true
-		$WindowsDefender.width = 25
-		$WindowsDefender.height = 10
-		$WindowsDefender.location = New-Object System.Drawing.Point(24,409)
-		$WindowsDefender.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-		$WindowsDefender.ForeColor = $orangeColor
+		$WindowsDefender = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "False"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(24,409)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		    ForeColor = $orangeColor
+		})
 
 		################################# Check Tooltip Controls #################################
 		$verticalPosition = 41
 
 		# $PSVersionTooltip
-		$PSVersionTooltip = New-Object system.Windows.Forms.Label
-		$PSVersionTooltip.text = "Powershell version must be >= 5 (mandatory)"
-		$PSVersionTooltip.AutoSize = $true
-		$PSVersionTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$PSVersionTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$PSVersionTooltip.ForeColor = $grayedColor
+		$PSVersionTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Powershell version must be >= 5 (mandatory)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $RunningAsAdminTooltip
-		$RunningAsAdminTooltip = New-Object system.Windows.Forms.Label
-		$RunningAsAdminTooltip.text = "You must run the script as Administrator (mandatory)"
-		$RunningAsAdminTooltip.AutoSize = $true
-		$RunningAsAdminTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$RunningAsAdminTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$RunningAsAdminTooltip.ForeColor = $grayedColor
+		$RunningAsAdminTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "You must run the script as Administrator (mandatory)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $ExecutionPolicyTooltip
-		$ExecutionPolicyTooltip = New-Object system.Windows.Forms.Label
-		$ExecutionPolicyTooltip.text = "You must enable script execution (mandatory)"
-		$ExecutionPolicyTooltip.AutoSize = $true
-		$ExecutionPolicyTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$ExecutionPolicyTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$ExecutionPolicyTooltip.ForeColor = $grayedColor
+		$ExecutionPolicyTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "You must enable script execution (mandatory)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $validWindowsVersionToolTip
-		$validWindowsVersionToolTip = New-Object system.Windows.Forms.Label
-		$validWindowsVersionToolTip.text = "Only Windows Version >= 10 is supported (mandatory)"
-		$validWindowsVersionToolTip.AutoSize = $true
-		$validWindowsVersionToolTip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$validWindowsVersionToolTip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$validWindowsVersionToolTip.ForeColor = $grayedColor
+		$validWindowsVersionToolTip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Only Windows Version >= 10 is supported (mandatory)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $WindowsReleaseTooltip
-		$WindowsReleaseTooltip = New-Object system.Windows.Forms.Label
-		$WindowsReleaseTooltip.text = "You might run into issues when using a non tested version"
-		$WindowsReleaseTooltip.AutoSize = $true
-		$WindowsReleaseTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$WindowsReleaseTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$WindowsReleaseTooltip.ForeColor = $grayedColor
+		$WindowsReleaseTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "You might run into issues when using a non tested version"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $RunningVMTooltip
-		$RunningVMTooltip = New-Object system.Windows.Forms.Label
-		$RunningVMTooltip.text = "Only run this script inside a Virtual Machine (VM)"
-		$RunningVMTooltip.AutoSize = $true
-		$RunningVMTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$RunningVMTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$RunningVMTooltip.ForeColor = $grayedColor
+		$RunningVMTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Only run this script inside a Virtual Machine (VM)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $usernameContainsSpacesToolTip
-		$usernameContainsSpacesToolTip = New-Object system.Windows.Forms.Label
-		$usernameContainsSpacesToolTip.text = "Username cannot contain spaces (mandatory)"
-		$usernameContainsSpacesToolTip.AutoSize = $true
-		$usernameContainsSpacesToolTip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$usernameContainsSpacesToolTip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$usernameContainsSpacesToolTip.ForeColor = $grayedColor
+		$usernameContainsSpacesToolTip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Username cannot contain spaces (mandatory)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $EnoughHardStorageTooltip
-		$EnoughHardStorageTooltip = New-Object system.Windows.Forms.Label
-		$EnoughHardStorageTooltip.text = "A minimum of 60 GB hard drive space is preferred"
-		$EnoughHardStorageTooltip.AutoSize = $true
-		$EnoughHardStorageTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$EnoughHardStorageTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$EnoughHardStorageTooltip.ForeColor = $grayedColor
+		$EnoughHardStorageTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "A minimum of 60 GB hard drive space is preferred"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $internetConnectivityTooltip
-		$internetConnectivityTooltip = New-Object system.Windows.Forms.Label
-		$internetConnectivityTooltip.text = "You must have internet connection (mandatory)"
-		$internetConnectivityTooltip.AutoSize = $true
-		$internetConnectivityTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$internetConnectivityTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$internetConnectivityTooltip.ForeColor = $grayedColor
+		$internetConnectivityTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "You must have internet connection (mandatory)"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 		$verticalPosition += 44
 
 		# $WindowsDefenderTooltip
-		$WindowsDefenderTooltip = New-Object system.Windows.Forms.Label
-		$WindowsDefenderTooltip.text = "Disable Windows Defender and Tamper Protection"
-		$WindowsDefenderTooltip.AutoSize = $true
-		$WindowsDefenderTooltip.location = New-Object System.Drawing.Point(15,$verticalPosition)
-		$WindowsDefenderTooltip.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$WindowsDefenderTooltip.ForeColor = $grayedColor
+		$WindowsDefenderTooltip = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Disable Windows Defender and Tamper Protection"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(15,$verticalPosition)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    ForeColor = $grayedColor
+		})
 
 
 		################################# Check Completion Controls #################################
 
-		$breakInstallationLabel                = New-Object system.Windows.Forms.Label
-		$breakInstallationLabel.Text           = $exit_message
-		$breakInstallationLabel.AutoSize       = $true
-		$breakInstallationLabel.location       = New-Object System.Drawing.Point(40,530)
-		$breakInstallationLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
-		$breakInstallationLabel.ForeColor      = $errorColor
-		$breakInstallationLabel.Visible        = $false
+		$breakInstallationLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    Text = $exit_message
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(40,530)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		    ForeColor = $errorColor
+		    Visible = $false
+		})
 
-		$BreakMyInstallCheckbox          = New-Object system.Windows.Forms.CheckBox
-		$BreakMyInstallCheckbox.Visible  = $false
-		$BreakMyInstallCheckbox.text     = "I understand that continuing without satisfying all pre-install checks might cause install issues"
-		$BreakMyInstallCheckbox.AutoSize = $true
-		$BreakMyInstallCheckbox.width    = 324
-		$BreakMyInstallCheckbox.height   = 21
-		$BreakMyInstallCheckbox.location = New-Object System.Drawing.Point(30,510)
-		$BreakMyInstallCheckbox.Font     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$BreakMyInstallCheckbox = New-Object system.Windows.Forms.CheckBox -Property ([ordered]@{
+		    Visible = $false
+		    text = "I understand that continuing without satisfying all pre-install checks might cause install issues"
+		    AutoSize = $true
+		    width = 324
+		    height = 21
+		    location = New-Object System.Drawing.Point(30,510)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 
-        $snapshotCheckBox 	             = New-Object system.Windows.Forms.CheckBox
-		$snapshotCheckBox.Text           = "I have taken a VM snapshot to ensure I can revert to pre-installation state"
-		$snapshotCheckBox.AutoSize       = $true
-		$snapshotCheckBox.location       = New-Object System.Drawing.Point(30,532)
-		$snapshotCheckBox.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$snapshotCheckBox.Visible 	     = $false
+        $snapshotCheckBox = New-Object system.Windows.Forms.CheckBox -Property ([ordered]@{
+            Text = "I have taken a VM snapshot to ensure I can revert to pre-installation state"
+            AutoSize = $true
+            location = New-Object System.Drawing.Point(30,532)
+            Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+            Visible = $false
+        })
 
-		$ChecksCompleteButton            = New-Object system.Windows.Forms.Button
-		$ChecksCompleteButton.text       = "Continue"
-		$ChecksCompleteButton.width      = 97
-		$ChecksCompleteButton.height     = 37
-		$ChecksCompleteButton.enabled    = $false
-		$ChecksCompleteButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
-		$ChecksCompleteButton.location   = New-Object System.Drawing.Point(420,565)
-		$ChecksCompleteButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		$ChecksCompleteButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Continue"
+		    width = 97
+		    height = 37
+		    enabled = $false
+		    DialogResult = [System.Windows.Forms.DialogResult]::OK
+		    location = New-Object System.Drawing.Point(420,565)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		})
 		$ChecksCompleteButton.Add_Click({
 			$script:checksPassed = $true
 			[void]$formChecksManager.Close()
 		})
 
-		$checksCancelButton            = New-Object system.Windows.Forms.Button
-		$checksCancelButton.Text       = "Cancel"
-		$checksCancelButton.width      = 97
-		$checksCancelButton.height     = 37
-		$checksCancelButton.location   = New-Object System.Drawing.Point(519,565)
-		$checksCancelButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
-		$checksCancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+		$checksCancelButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    Text = "Cancel"
+		    width = 97
+		    height = 37
+		    location = New-Object System.Drawing.Point(519,565)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		    DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+		})
 
 		$InstallChecksGroup.controls.AddRange(@($ChecksPanel,$RunningAsAdminLabel,$ExecutionPolicyLabel,$WindowsDefenderLabel,$WindowsReleaseLabel,$RunningVMLabel,$PSVersionLabel,$internetConnectivityLabel,$validWindowsVersionLabel,$validWindowsVersionToolTip,$RunningAsAdminTooltip,$ExecutionPolicyTooltip,$WindowsDefenderTooltip,$WindowsReleaseTooltip,$RunningVMTooltip,$EnoughHardStorageLabel, $EnoughHardStorageTooltip,$PSVersionTooltip,$internetConnectivityTooltip,$usernameContainsSpacesLabel,$usernameContainsSpacesToolTip,$RunningAsAdmin,$EnoughHardStorage))
 		$formChecksManager.controls.AddRange(@($InstallChecksGroup,$ChecksCompleteButton,$checksCancelButton,$BreakMyInstallCheckbox,$snapshotCheckBox,$breakInstallationLabel))
@@ -969,139 +1016,156 @@ if (-not $noGui.IsPresent) {
         Open-CheckManager
 	}
     # init GUI controls of the install customization Window
-    $formEnv                   = New-Object system.Windows.Forms.Form
-    $formEnv.ClientSize        = New-Object System.Drawing.Point(750,350)
-    $formEnv.text              = "FLARE VM Install Customization"
-    $formEnv.TopMost           = $true
-    $formEnv.MaximizeBox       = $false
-    $formEnv.FormBorderStyle   = 'FixedDialog'
-    $formEnv.StartPosition     = 'CenterScreen'
+    $formEnv = New-Object system.Windows.Forms.Form -Property ([ordered]@{
+        ClientSize = New-Object System.Drawing.Point(750,350)
+        text = "FLARE VM Install Customization"
+        TopMost = $true
+        MaximizeBox = $false
+        FormBorderStyle = 'FixedDialog'
+        StartPosition = 'CenterScreen'
+    })
 
-    $envVarGroup            = New-Object system.Windows.Forms.Groupbox
-    $envVarGroup.height     = 201
-    $envVarGroup.width      = 690
-    $envVarGroup.text       = "Environment Variable Customization"
-    $envVarGroup.location   = New-Object System.Drawing.Point(15,59)
+    $envVarGroup = New-Object system.Windows.Forms.Groupbox -Property ([ordered]@{
+        height = 201
+        width = 690
+        text = "Environment Variable Customization"
+        location = New-Object System.Drawing.Point(15,59)
+    })
 
-    $welcomeLabel           = New-Object system.Windows.Forms.Label
-    $welcomeLabel.text      = "Welcome to FLARE VM's custom installer. Please select your options below.`nDefault values will be used if you make no modifications."
-    $welcomeLabel.AutoSize  = $true
-    $welcomeLabel.width     = 25
-    $welcomeLabel.height    = 10
-    $welcomeLabel.location  = New-Object System.Drawing.Point(15,14)
-    $welcomeLabel.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $welcomeLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "Welcome to FLARE VM's custom installer. Please select your options below.`nDefault values will be used if you make no modifications."
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(15,14)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $vmCommonDirText                 = New-Object system.Windows.Forms.TextBox
-    $vmCommonDirText.multiline       = $false
-    $vmCommonDirText.width           = 385
-    $vmCommonDirText.height          = 20
-    $vmCommonDirText.location        = New-Object System.Drawing.Point(190,21)
-    $vmCommonDirText.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $vmCommonDirText = New-Object system.Windows.Forms.TextBox -Property ([ordered]@{
+        multiline = $false
+        width = 385
+        height = 20
+        location = New-Object System.Drawing.Point(190,21)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $vmCommonDirSelect               = New-Object system.Windows.Forms.Button
-    $vmCommonDirSelect.text          = "Select Folder"
-    $vmCommonDirSelect.width         = 95
-    $vmCommonDirSelect.height        = 30
-    $vmCommonDirSelect.location      = New-Object System.Drawing.Point(588,17)
-    $vmCommonDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $vmCommonDirSelect = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+        text = "Select Folder"
+        width = 95
+        height = 30
+        location = New-Object System.Drawing.Point(588,17)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
     $selectFolderArgs1 = @{textBox=$vmCommonDirText; envVar="VM_COMMON_DIR"}
     $vmCommonDirSelect.Add_Click({Get-Folder @selectFolderArgs1})
 
-    $vmCommonDirLabel                = New-Object system.Windows.Forms.Label
-    $vmCommonDirLabel.text           = "%VM_COMMON_DIR%"
-    $vmCommonDirLabel.AutoSize       = $true
-    $vmCommonDirLabel.width          = 25
-    $vmCommonDirLabel.height         = 10
-    $vmCommonDirLabel.location       = New-Object System.Drawing.Point(2,24)
-    $vmCommonDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+    $vmCommonDirLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "%VM_COMMON_DIR%"
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(2,24)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+    })
 
-    $vmCommonDirNote                 = New-Object system.Windows.Forms.Label
-    $vmCommonDirNote.text            = "Shared module and metadata for VM (e.g., config, logs, etc...)"
-    $vmCommonDirNote.AutoSize        = $true
-    $vmCommonDirNote.width           = 25
-    $vmCommonDirNote.height          = 10
-    $vmCommonDirNote.location        = New-Object System.Drawing.Point(190,46)
-    $vmCommonDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $vmCommonDirNote = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "Shared module and metadata for VM (e.g., config, logs, etc...)"
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(190,46)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $toolListDirText                 = New-Object system.Windows.Forms.TextBox
-    $toolListDirText.multiline       = $false
-    $toolListDirText.width           = 385
-    $toolListDirText.height          = 20
-    $toolListDirText.location        = New-Object System.Drawing.Point(190,68)
-    $toolListDirText.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $toolListDirText = New-Object system.Windows.Forms.TextBox -Property ([ordered]@{
+        multiline = $false
+        width = 385
+        height = 20
+        location = New-Object System.Drawing.Point(190,68)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $toolListDirSelect               = New-Object system.Windows.Forms.Button
-    $toolListDirSelect.text          = "Select Folder"
-    $toolListDirSelect.width         = 95
-    $toolListDirSelect.height        = 30
-    $toolListDirSelect.location      = New-Object System.Drawing.Point(588,64)
-    $toolListDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $toolListDirSelect = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+        text = "Select Folder"
+        width = 95
+        height = 30
+        location = New-Object System.Drawing.Point(588,64)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
     $selectFolderArgs2 = @{textBox=$toolListDirText; envVar="TOOL_LIST_DIR"}
     $toolListDirSelect.Add_Click({Get-Folder @selectFolderArgs2})
 
-    $toolListDirLabel                = New-Object system.Windows.Forms.Label
-    $toolListDirLabel.text           = "%TOOL_LIST_DIR%"
-    $toolListDirLabel.AutoSize       = $true
-    $toolListDirLabel.width          = 25
-    $toolListDirLabel.height         = 10
-    $toolListDirLabel.location       = New-Object System.Drawing.Point(2,71)
-    $toolListDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+    $toolListDirLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "%TOOL_LIST_DIR%"
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(2,71)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+    })
 
-    $toolListDirNote                 = New-Object system.Windows.Forms.Label
-    $toolListDirNote.text            = "Folder to store tool categories and shortcuts"
-    $toolListDirNote.AutoSize        = $true
-    $toolListDirNote.width           = 25
-    $toolListDirNote.height          = 10
-    $toolListDirNote.location        = New-Object System.Drawing.Point(190,94)
-    $toolListDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $toolListDirNote = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "Folder to store tool categories and shortcuts"
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(190,94)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $rawToolsDirText                 = New-Object system.Windows.Forms.TextBox
-    $rawToolsDirText.multiline       = $false
-    $rawToolsDirText.width           = 385
-    $rawToolsDirText.height          = 20
-    $rawToolsDirText.location        = New-Object System.Drawing.Point(190,113)
-    $rawToolsDirText.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $rawToolsDirText = New-Object system.Windows.Forms.TextBox -Property ([ordered]@{
+        multiline = $false
+        width = 385
+        height = 20
+        location = New-Object System.Drawing.Point(190,113)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $rawToolsDirSelect               = New-Object system.Windows.Forms.Button
-    $rawToolsDirSelect.text          = "Select Folder"
-    $rawToolsDirSelect.width         = 95
-    $rawToolsDirSelect.height        = 30
-    $rawToolsDirSelect.location      = New-Object System.Drawing.Point(588,109)
-    $rawToolsDirSelect.Font          = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $rawToolsDirSelect = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+        text = "Select Folder"
+        width = 95
+        height = 30
+        location = New-Object System.Drawing.Point(588,109)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
     $selectFolderArgs4 = @{textBox=$rawToolsDirText; envVar="RAW_TOOLS_DIR"}
     $rawToolsDirSelect.Add_Click({Get-Folder @selectFolderArgs4})
 
-    $rawToolsDirLabel                = New-Object system.Windows.Forms.Label
-    $rawToolsDirLabel.text           = "%RAW_TOOLS_DIR%"
-    $rawToolsDirLabel.AutoSize       = $true
-    $rawToolsDirLabel.width          = 25
-    $rawToolsDirLabel.height         = 10
-    $rawToolsDirLabel.location       = New-Object System.Drawing.Point(2,116)
-    $rawToolsDirLabel.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+    $rawToolsDirLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "%RAW_TOOLS_DIR%"
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(2,116)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',9.5,[System.Drawing.FontStyle]::Bold)
+    })
 
-    $rawToolsDirNote                 = New-Object system.Windows.Forms.Label
-    $rawToolsDirNote.text            = "Folder to store downloaded tools"
-    $rawToolsDirNote.AutoSize        = $true
-    $rawToolsDirNote.width           = 25
-    $rawToolsDirNote.height          = 10
-    $rawToolsDirNote.location        = New-Object System.Drawing.Point(190,137)
-    $rawToolsDirNote.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    $rawToolsDirNote = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+        text = "Folder to store downloaded tools"
+        AutoSize = $true
+        width = 25
+        height = 10
+        location = New-Object System.Drawing.Point(190,137)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+    })
 
-    $okButton                        = New-Object system.Windows.Forms.Button
-    $okButton.text                   = "Continue"
-    $okButton.width                  = 97
-    $okButton.height                 = 37
-    $okButton.location               = New-Object System.Drawing.Point(480,280)
-    $okButton.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',11)
-    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $okButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+        text = "Continue"
+        width = 97
+        height = 37
+        location = New-Object System.Drawing.Point(480,280)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',11)
+        DialogResult = [System.Windows.Forms.DialogResult]::OK
+    })
 
-    $cancelButton                    = New-Object system.Windows.Forms.Button
-    $cancelButton.text               = "Cancel"
-    $cancelButton.width              = 97
-    $cancelButton.height             = 37
-    $cancelButton.location           = New-Object System.Drawing.Point(580,280)
-    $cancelButton.Font               = New-Object System.Drawing.Font('Microsoft Sans Serif',11)
-    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $cancelButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+        text = "Cancel"
+        width = 97
+        height = 37
+        location = New-Object System.Drawing.Point(580,280)
+        Font = New-Object System.Drawing.Font('Microsoft Sans Serif',11)
+        DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    })
 
     $formEnv.controls.AddRange(@($envVarGroup,$okButton,$cancelButton,$welcomeLabel))
     $formEnv.AcceptButton = $okButton
@@ -1135,6 +1199,12 @@ if (-not $noPassword.IsPresent) {
     } else {
         $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
         $credentials = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList ${Env:UserName}, $securePassword
+        # Best-effort scrub: drop the plaintext/SecureString copies now that $credentials
+        # holds what's needed, shrinking the window a later-running sample in this same
+        # session could recover the password via Get-Variable or a memory scan.
+        $securePassword = $null
+        Remove-Variable -Name password, securePassword -ErrorAction SilentlyContinue
+        [System.GC]::Collect()
     }
 }
 
@@ -1562,11 +1632,12 @@ if (-not $noGui.IsPresent) {
 		Add-Type -AssemblyName System.Windows.Forms
 		[System.Windows.Forms.Application]::EnableVisualStyles()
 
-		$formCategories                            = New-Object system.Windows.Forms.Form
-		$formCategories.ClientSize                 = New-Object System.Drawing.Point(1015,850)
-		$formCategories.text                       = "FLARE-VM Package selection"
-		$formCategories.StartPosition              = 'CenterScreen'
-		$formCategories.TopMost                    = $true
+		$formCategories = New-Object system.Windows.Forms.Form -Property ([ordered]@{
+		    ClientSize = New-Object System.Drawing.Point(1015,850)
+		    text = "FLARE-VM Package selection"
+		    StartPosition = 'CenterScreen'
+		    TopMost = $true
+		})
 
 		if ([string]::IsNullOrEmpty($customConfig)) {
 			$textLabel = "The default configuration (recommended) is pre-selected. Click on the reset button to restore the default configuration."
@@ -1574,69 +1645,77 @@ if (-not $noGui.IsPresent) {
 			$textLabel = "The provided custom configuration is pre-selected. Click on the reset button to restore the custom configuration."
 		}
 
-		$labelCategories                = New-Object system.Windows.Forms.Label
-		$labelCategories.text           = "Select packages to install"
-		$labelCategories.AutoSize       = $true
-		$labelCategories.width          = 25
-		$labelCategories.height         = 10
-		$labelCategories.location       = New-Object System.Drawing.Point(30,20)
-		$labelCategories.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$labelCategories = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Select packages to install"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(30,20)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
 
-		$labelCategories2                = New-Object system.Windows.Forms.Label
-		$labelCategories2.text           = $textLabel
-		$labelCategories2.AutoSize       = $true
-		$labelCategories2.location       = New-Object System.Drawing.Point(30,40)
-		$labelCategories2.Font           = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$labelCategories2 = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = $textLabel
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(30,40)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 
-		$panelCategories                = New-Object system.Windows.Forms.Panel
-		$panelCategories.height         = 530
-		$panelCategories.width          = 970
-		$panelCategories.location       = New-Object System.Drawing.Point(30,60)
-		$panelCategories.AutoScroll     = $true
+		$panelCategories = New-Object system.Windows.Forms.Panel -Property ([ordered]@{
+		    height = 530
+		    width = 970
+		    location = New-Object System.Drawing.Point(30,60)
+		    AutoScroll = $true
+		})
 
-		$resetButton                 = New-Object system.Windows.Forms.Button
-		$resetButton.text            = "Reset"
-		$resetButton.AutoSize        = $true
-		$resetButton.location        = New-Object System.Drawing.Point(50,800)
-		$resetButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$resetButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Reset"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(50,800)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 		$resetButton.Add_Click({
 						Set-InitialPackages
 						Set-AdditionalPackages
 					})
 
-		$allPackagesButton                 = New-Object system.Windows.Forms.Button
-		$allPackagesButton.text            = "Select All"
-		$allPackagesButton.AutoSize        = $true
-		$allPackagesButton.location        = New-Object System.Drawing.Point(130,800)
-		$allPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$allPackagesButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Select All"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(130,800)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 		$allPackagesButton.Add_Click({
 		   [System.Windows.Forms.MessageBox]::Show('Selecting all packages considerable increases installation time and it is not desirable for most use cases','Warning')
 		   Select-AllPackages
 		})
 
-		$clearPackagesButton	         = New-Object system.Windows.Forms.Button
-		$clearPackagesButton.text            = "Clear"
-		$clearPackagesButton.AutoSize        = $true
-		$clearPackagesButton.location        = New-Object System.Drawing.Point(210,800)
-		$clearPackagesButton.Font            = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$clearPackagesButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Clear"
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(210,800)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 		$clearPackagesButton.Add_Click({Clear-AllPackages})
 
-		$installButton            = New-Object system.Windows.Forms.Button
-		$installButton.text       = "Install"
-		$installButton.width      = 97
-		$installButton.height     = 37
-		$installButton.DialogResult   = [System.Windows.Forms.DialogResult]::OK
-		$installButton.location   = New-Object System.Drawing.Point(750,800)
-		$installButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		$installButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Install"
+		    width = 97
+		    height = 37
+		    DialogResult = [System.Windows.Forms.DialogResult]::OK
+		    location = New-Object System.Drawing.Point(750,800)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		})
 
-		$cancelButton            = New-Object system.Windows.Forms.Button
-		$cancelButton.text       = "Cancel"
-		$cancelButton.width      = 97
-		$cancelButton.height     = 37
-		$cancelButton.location   = New-Object System.Drawing.Point(850,800)
-		$cancelButton.Font       = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
-		$cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+		$cancelButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Cancel"
+		    width = 97
+		    height = 37
+		    location = New-Object System.Drawing.Point(850,800)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12)
+		    DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+		})
 
 		$formCategories.AcceptButton = $installButton
 		$formCategories.CancelButton = $cancelButton
@@ -1649,11 +1728,12 @@ if (-not $noGui.IsPresent) {
 		$packages = @()
 		foreach ($category in $packagesByCategory.Keys |Sort-Object) {
 			# Create Labels for categories
-			$labelCategory = New-Object System.Windows.Forms.Label
-			$labelCategory.Text = $category
-			$labelCategory.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',11,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
-			$labelCategory.AutoSize = $true
-			$labelCategory.Location = New-Object System.Drawing.Point(10, $verticalPosition)
+			$labelCategory = New-Object System.Windows.Forms.Label -Property ([ordered]@{
+			    Text = $category
+			    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',11,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+			    AutoSize = $true
+			    Location = New-Object System.Drawing.Point(10, $verticalPosition)
+			})
 			$panelCategories.Controls.Add($labelCategory)
 
 			$NumPackages = 0
@@ -1662,24 +1742,26 @@ if (-not $noGui.IsPresent) {
 			foreach ($package in $packages)
 			{
 				$NumPackages++
-				$checkBox = New-Object System.Windows.Forms.CheckBox
-				$checkBox.Text = $package.PackageName + ": " + $package.PackageDescription
-				$checkBox.Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-				$checkBox.AutoSize = $true
-				$checkBox.Location = New-Object System.Drawing.Point(10, $verticalPosition2)
-				$checkBox.Name = "checkBox$numCheckBoxPackages"
+				$checkBox = New-Object System.Windows.Forms.CheckBox -Property ([ordered]@{
+				    Text = $package.PackageName + ": " + $package.PackageDescription
+				    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+				    AutoSize = $true
+				    Location = New-Object System.Drawing.Point(10, $verticalPosition2)
+				    Name = "checkBox$numCheckBoxPackages"
+				})
 				$checkboxesPackages.Add($checkBox)
 				$panelCategories.Controls.Add($checkBox)
 			    $url = $package.PackageUrl
 				if ($url -and (Test-HttpsUrl $url)){
-					$linkProjectUrl = New-Object System.Windows.Forms.linkLabel
-					$linkProjectUrl.Top = $checkbox.Top + 2
-					$linkProjectUrl.Left = $checkbox.Right - 3
-					$linkProjectUrl.AutoSize                    = $true
-					$linkProjectUrl.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-					$linkProjectUrl.LinkColor                   = "BLUE";
-					$linkProjectUrl.ActiveLinkColor             = "RED"
-					$linkProjectUrl.Text                        = "Link"
+					$linkProjectUrl = New-Object System.Windows.Forms.linkLabel -Property ([ordered]@{
+					    Top = $checkbox.Top + 2
+					    Left = $checkbox.Right - 3
+					    AutoSize = $true
+					    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+					    LinkColor = "BLUE";
+					    ActiveLinkColor = "RED"
+					    Text = "Link"
+					})
 					$linkProjectUrl.Links.Add(0, 4, $url)| Out-Null
 					$linkProjectUrl.add_Click({ Start-Process $this.Links.LinkData })
 					$panelCategories.Controls.Add($linkProjectUrl)
@@ -1693,118 +1775,131 @@ if (-not $noGui.IsPresent) {
 
 		# Create empty label and add it to the form categories to add some space
 		$posEnd = $verticalPosition2 +10
-		$emptyLabel                = New-Object system.Windows.Forms.Label
-		$emptyLabel.Width = 20
-		$emptyLabel.Height = 10
-		$emptyLabel.location       = New-Object System.Drawing.Point(10,$posEnd)
+		$emptyLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    Width = 20
+		    Height = 10
+		    location = New-Object System.Drawing.Point(10,$posEnd)
+		})
 		$panelCategories.Controls.Add($emptyLabel)
 
 		# Select packages that are in the config.xml
 		Set-InitialPackages
 
-		$additionalPackagesLabel                          = New-Object system.Windows.Forms.Label
-		$additionalPackagesLabel.text                     = "Additional packages to install"
-		$additionalPackagesLabel.AutoSize                 = $true
-		$additionalPackagesLabel.width                    = 25
-		$additionalPackagesLabel.height                   = 10
-		$additionalPackagesLabel.location                 = New-Object System.Drawing.Point(30,615)
-		$additionalPackagesLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$additionalPackagesLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Additional packages to install"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(30,615)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$additionalPackagesBox                 = New-Object system.Windows.Forms.ListBox
-		$additionalPackagesBox.text            = "listBox"
-		$additionalPackagesBox.SelectionMode   = 'MultiSimple'
-		$additionalPackagesBox.Sorted          = $true
-		$additionalPackagesBox.width           = 130
-		$additionalPackagesBox.height          = 140
-		$additionalPackagesBox.location        = New-Object System.Drawing.Point(50,640)
+		$additionalPackagesBox = New-Object system.Windows.Forms.ListBox -Property ([ordered]@{
+		    text = "listBox"
+		    SelectionMode = 'MultiSimple'
+		    Sorted = $true
+		    width = 130
+		    height = 140
+		    location = New-Object System.Drawing.Point(50,640)
+		})
 
-		$deletePackageButton          = New-Object system.Windows.Forms.Button
-		$deletePackageButton.text     = "-"
-		$deletePackageButton.width    = 24
-		$deletePackageButton.height   = 22
-		$deletePackageButton.enabled   = $true
-		$deletePackageButton.location  = New-Object System.Drawing.Point(190,670)
-		$deletePackageButton.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]::Bold)
+		$deletePackageButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "-"
+		    width = 24
+		    height = 22
+		    enabled = $true
+		    location = New-Object System.Drawing.Point(190,670)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',12,[System.Drawing.FontStyle]::Bold)
+		})
 		$deletePackageButton.Add_Click({Remove-SelectedPackages})
 
-		$packageLabel                          = New-Object system.Windows.Forms.Label
-		$packageLabel.text                     = "FLARE-VM uses Chocolatey packages. You can add additional packages from:"
-		$packageLabel.width                    = 260
-		$packageLabel.height                   = 35
-		$packageLabel.AutoSize                 = $true
-		$packageLabel.location                 = New-Object System.Drawing.Point(300,640)
-		$packageLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$packageLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "FLARE-VM uses Chocolatey packages. You can add additional packages from:"
+		    width = 260
+		    height = 35
+		    AutoSize = $true
+		    location = New-Object System.Drawing.Point(300,640)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 
-		$labelChoco                             = New-Object System.Windows.Forms.Label
-		$labelChoco.Location                    = New-Object System.Drawing.Point(300,660)
-		$labelChoco.Size                        = New-Object System.Drawing.Size(280,20)
-		$labelChoco.AutoSize                    = $true
-		$labelChoco.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$labelChoco.Text                        = "Community Packages"
+		$labelChoco = New-Object System.Windows.Forms.Label -Property ([ordered]@{
+		    Location = New-Object System.Drawing.Point(300,660)
+		    Size = New-Object System.Drawing.Size(280,20)
+		    AutoSize = $true
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    Text = "Community Packages"
+		})
 
-		$linkLabelChoco                             = New-Object System.Windows.Forms.linkLabel
-		$linkLabelChoco.Location                    = New-Object System.Drawing.Point(440,660)
-		$linkLabelChoco.AutoSize                    = $true
-		$linkLabelChoco.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$linkLabelChoco.LinkColor                   = "BLUE"
-		$linkLabelChoco.ActiveLinkColor             = "RED"
-		$linkLabelChoco.Text                        = "https://community.chocolatey.org/packages"
+		$linkLabelChoco = New-Object System.Windows.Forms.linkLabel -Property ([ordered]@{
+		    Location = New-Object System.Drawing.Point(440,660)
+		    AutoSize = $true
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    LinkColor = "BLUE"
+		    ActiveLinkColor = "RED"
+		    Text = "https://community.chocolatey.org/packages"
+		})
 		$linkLabelChoco.add_Click({Start-Process "https://community.chocolatey.org/packages"})
 
-		$labelFlarevm                             = New-Object System.Windows.Forms.Label
-		$labelFlarevm.Location                    = New-Object System.Drawing.Point(300,680)
-		$labelFlarevm.Size                        = New-Object System.Drawing.Size(280,20)
-		$labelFlarevm.AutoSize                     = $true
-		$labelFlarevm.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$labelFlarevm.Text                        = "FLARE-VM Packages"
+		$labelFlarevm = New-Object System.Windows.Forms.Label -Property ([ordered]@{
+		    Location = New-Object System.Drawing.Point(300,680)
+		    Size = New-Object System.Drawing.Size(280,20)
+		    AutoSize = $true
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    Text = "FLARE-VM Packages"
+		})
 
-		$linkLabelFlarevm                             = New-Object System.Windows.Forms.linkLabel
-		$linkLabelFlarevm.Location                    = New-Object System.Drawing.Point(440,680)
-		$linkLabelFlarevm.AutoSize                    = $true
-		$linkLabelFlarevm.Font                        = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
-		$linkLabelFlarevm.LinkColor                   = "BLUE"
-		$linkLabelFlarevm.ActiveLinkColor             = "RED"
-		$linkLabelFlarevm.Text                        = "https://github.com/mandiant/VM-Packages/wiki/Packages"
+		$linkLabelFlarevm = New-Object System.Windows.Forms.linkLabel -Property ([ordered]@{
+		    Location = New-Object System.Drawing.Point(440,680)
+		    AutoSize = $true
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		    LinkColor = "BLUE"
+		    ActiveLinkColor = "RED"
+		    Text = "https://github.com/mandiant/VM-Packages/wiki/Packages"
+		})
 		$linkLabelFlarevm.add_Click({Start-Process "https://github.com/mandiant/VM-Packages/wiki/Packages"})
 
 		Set-AdditionalPackages
 
-		$chocoPackageLabel                          = New-Object system.Windows.Forms.Label
-		$chocoPackageLabel.text                     = "Enter package name:"
-		$chocoPackageLabel.AutoSize                 = $true
-		$chocoPackageLabel.width                    = 25
-		$chocoPackageLabel.height                   = 10
-		$chocoPackageLabel.location                 = New-Object System.Drawing.Point(300,715)
-		$chocoPackageLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$chocoPackageLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = "Enter package name:"
+		    AutoSize = $true
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(300,715)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 
-		$packageTextBox                        = New-Object system.Windows.Forms.TextBox
-		$packageTextBox.multiline              = $false
-		$packageTextBox.width                  = 210
-		$packageTextBox.height                 = 20
-		$packageTextBox.location               = New-Object System.Drawing.Point(300,735)
-		$packageTextBox.Font                   = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$packageTextBox = New-Object system.Windows.Forms.TextBox -Property ([ordered]@{
+		    multiline = $false
+		    width = 210
+		    height = 20
+		    location = New-Object System.Drawing.Point(300,735)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 		$packageTextBox.Add_TextChanged({
 				  if ($addPackageButton.Enabled -eq $true){
 					  $addPackageButton.Enabled = $false
 				  }
 		})
 
-		$chocoPackageErrorLabel                          = New-Object system.Windows.Forms.Label
-		$chocoPackageErrorLabel.text                     = ""
-		$chocoPackageErrorLabel.AutoSize                 = $true
-		$chocoPackageErrorLabel.visible                  = $false
-		$chocoPackageErrorLabel.width                    = 25
-		$chocoPackageErrorLabel.height                   = 10
-		$chocoPackageErrorLabel.location                 = New-Object System.Drawing.Point(300,765)
-		$chocoPackageErrorLabel.Font                     = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		$chocoPackageErrorLabel = New-Object system.Windows.Forms.Label -Property ([ordered]@{
+		    text = ""
+		    AutoSize = $true
+		    visible = $false
+		    width = 25
+		    height = 10
+		    location = New-Object System.Drawing.Point(300,765)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10,[System.Drawing.FontStyle]([System.Drawing.FontStyle]::Bold))
+		})
 
-		$findPackageButton          = New-Object system.Windows.Forms.Button
-		$findPackageButton.text     = "Find Package"
-		$findPackageButton.width    = 118
-		$findPackageButton.height   = 30
-		$findPackageButton.enabled   = $true
-		$findPackageButton.location  = New-Object System.Drawing.Point(520,730)
-		$findPackageButton.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$findPackageButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Find Package"
+		    width = 118
+		    height = 30
+		    enabled = $true
+		    location = New-Object System.Drawing.Point(520,730)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 		$findPackageButton.Add_Click({
 			$chocoPackageErrorLabel.Visible = $true
 			$chocoPackageErrorLabel.text = "Finding package ..."
@@ -1829,13 +1924,14 @@ if (-not $noGui.IsPresent) {
 			}
 		})
 
-		$addPackageButton          = New-Object system.Windows.Forms.Button
-		$addPackageButton.text     = "Add Package"
-		$addPackageButton.width    = 118
-		$addPackageButton.height   = 30
-		$addPackageButton.enabled   = $false
-		$addPackageButton.location  = New-Object System.Drawing.Point(650,730)
-		$addPackageButton.Font      = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		$addPackageButton = New-Object system.Windows.Forms.Button -Property ([ordered]@{
+		    text = "Add Package"
+		    width = 118
+		    height = 30
+		    enabled = $false
+		    location = New-Object System.Drawing.Point(650,730)
+		    Font = New-Object System.Drawing.Font('Microsoft Sans Serif',10)
+		})
 		$addPackageButton.Add_Click({
 					  if (Add-NewPackage -PackageName $packageTextBox.Text){
 						  $chocoPackageErrorLabel.ForeColor = $successColor

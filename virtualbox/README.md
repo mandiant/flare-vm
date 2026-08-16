@@ -111,6 +111,31 @@ VM {e5f509ed-cbc8-4abc-b052-664246207e89} ⚙️  FLARE-VM.Win10.20250211.full.d
 ![Notification](../Images/vbox-adapter-check_notification.png)
 
 
+## Switch a VM's network on demand
+
+[`vbox-set-network.py`](vbox-set-network.py) switches a single named VM's network with one command, live if
+the VM is already running (no shutdown required, so a running sample isn't disturbed).
+
+- `isolate` checks every NIC on the VM and fixes any that aren't `hostonly`/`intnet`/`none` &mdash; run this
+  right before or while running a sample. Unlike `vbox-adapter-check.py`, it works on any VM name, not just
+  ones containing `.dynamic`.
+- `nat` switches NIC 1 to `nat` to temporarily restore internet access for setup or downloading tools.
+
+### Example
+
+```
+$ ./vbox-set-network.py "FLARE-VM.testing" isolate
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ⚙️  FLARE-VM.testing isolated: adapter(s) 1 set to hostonly
+
+$ ./vbox-set-network.py "FLARE-VM.testing" nat
+VM {2bc66f50-9ecb-4b10-a4dd-0cc329bc383d} ⚙️  FLARE-VM.testing NIC 1 set to nat
+```
+
+If the VM name contains `.dynamic` and `vbox-adapter-check.py` runs periodically on this host, it will
+detect the `nat` adapter and switch it back to `hostonly` &mdash; `vbox-set-network.py` prints a warning
+in that case.
+
+
 ## Export snapshot
 
 [`vbox-export-snapshot.py`](vbox-export-snapshot.py) exports a VirtualBox snapshot as an Open Virtual Appliance (OVA) file.

@@ -65,6 +65,7 @@ adapter_check = _load_module("vbox-adapter-check.py", "vbox_adapter_check")
 clean_snapshots = _load_module("vbox-clean-snapshots.py", "vbox_clean_snapshots")
 export_snapshot = _load_module("vbox-export-snapshot.py", "vbox_export_snapshot")
 build_flare_vm = _load_module("vbox-build-flare-vm.py", "vbox_build_flare_vm")
+set_network_tool = _load_module("vbox-set-network.py", "vbox_set_network")
 
 
 SHOWVMINFO_SAMPLE = """\
@@ -212,6 +213,44 @@ def test_get_num_logged_in_users(monkeypatch, output, expected):
     assert vboxcommon.get_num_logged_in_users("{uuid}") == expected
 
 
+# --------------------------- vboxcommon: set_nic (live vs. offline NIC switch) ---------------------------
+
+
+def test_set_nic_poweroff_uses_modifyvm_and_sets_hostonlyadapter(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "poweroff")
+    commands = []
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: commands.append(cmd))
+    vboxcommon.set_nic("{uuid}", "1", "hostonly", "vboxnet0")
+    assert commands == [
+        ["modifyvm", "{uuid}", "--nic1", "hostonly"],
+        ["modifyvm", "{uuid}", "--hostonlyadapter1", "vboxnet0"],
+    ]
+
+
+def test_set_nic_poweroff_nat_does_not_set_hostonlyadapter(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "poweroff")
+    commands = []
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: commands.append(cmd))
+    vboxcommon.set_nic("{uuid}", "1", "nat")
+    assert commands == [["modifyvm", "{uuid}", "--nic1", "nat"]]
+
+
+def test_set_nic_running_uses_controlvm_with_hostonly_ifname(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "running")
+    commands = []
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: commands.append(cmd))
+    vboxcommon.set_nic("{uuid}", "2", "hostonly", "vboxnet0")
+    assert commands == [["controlvm", "{uuid}", "nic2", "hostonly", "vboxnet0"]]
+
+
+def test_set_nic_running_nat_omits_trailing_argument(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "running")
+    commands = []
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: commands.append(cmd))
+    vboxcommon.set_nic("{uuid}", "1", "nat")
+    assert commands == [["controlvm", "{uuid}", "nic1", "nat"]]
+
+
 # --------------------------- vbox-adapter-check: get_vms / get_nics ---------------------------
 
 
@@ -229,13 +268,53 @@ def test_get_vms_dynamic_only_keeps_only_dynamic(monkeypatch):
 
 
 def test_get_nics_all(monkeypatch):
-    monkeypatch.setattr(adapter_check, "run_vboxmanage", lambda cmd: SHOWVMINFO_SAMPLE)
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: SHOWVMINFO_SAMPLE)
     assert adapter_check.get_nics("{uuid}") == [("1", "hostonly"), ("2", "nat"), ("3", "none"), ("4", "none")]
 
 
 def test_get_nics_single(monkeypatch):
-    monkeypatch.setattr(adapter_check, "run_vboxmanage", lambda cmd: SHOWVMINFO_SAMPLE)
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: SHOWVMINFO_SAMPLE)
     assert adapter_check.get_nics("{uuid}", only_nic="2") == [("2", "nat")]
+
+
+# --------------------------- vbox-adapter-check: disable_adapter ---------------------------
+
+
+def test_disable_adapter_poweroff_issues_modifyvm_commands(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "poweroff")
+    commands = []
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: commands.append(cmd))
+    monkeypatch.setattr(adapter_check, "get_nics", lambda _uuid, nic_number: [(nic_number, "hostonly")])
+    adapter_check.disable_adapter("{uuid}", "1", "vboxnet0")
+    assert commands == [
+        ["modifyvm", "{uuid}", "--nic1", "hostonly"],
+        ["modifyvm", "{uuid}", "--hostonlyadapter1", "vboxnet0"],
+    ]
+
+
+def test_disable_adapter_running_issues_controlvm_command(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "running")
+    commands = []
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: commands.append(cmd))
+    monkeypatch.setattr(adapter_check, "get_nics", lambda _uuid, nic_number: [(nic_number, "hostonly")])
+    adapter_check.disable_adapter("{uuid}", "1", "vboxnet0")
+    assert commands == [["controlvm", "{uuid}", "nic1", "hostonly", "vboxnet0"]]
+
+
+def test_disable_adapter_raises_if_nic_not_reported(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "poweroff")
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: None)
+    monkeypatch.setattr(adapter_check, "get_nics", lambda _uuid, nic_number: [])
+    with pytest.raises(RuntimeError, match="was not reported"):
+        adapter_check.disable_adapter("{uuid}", "1", "vboxnet0")
+
+
+def test_disable_adapter_raises_if_type_mismatch(monkeypatch):
+    monkeypatch.setattr(vboxcommon, "get_vm_state", lambda _uuid: "poweroff")
+    monkeypatch.setattr(vboxcommon, "run_vboxmanage", lambda cmd: None)
+    monkeypatch.setattr(adapter_check, "get_nics", lambda _uuid, nic_number: [(nic_number, "nat")])
+    with pytest.raises(RuntimeError, match="has type 'nat'"):
+        adapter_check.disable_adapter("{uuid}", "1", "vboxnet0")
 
 
 def test_do_not_modify_does_not_create_hostonly_interface(monkeypatch):
@@ -288,6 +367,81 @@ def test_export_snapshot_missing_vm_is_an_error(monkeypatch):
     monkeypatch.setattr(export_snapshot, "get_vm_uuid", lambda _name: None)
     with pytest.raises(RuntimeError, match="not found"):
         export_snapshot.export_snapshot("missing", "snapshot", "", vboxcommon.EXPORT_DIR_NAME)
+
+
+# --------------------------- vbox-set-network: set_network ---------------------------
+
+
+def test_set_network_missing_vm_is_an_error(monkeypatch):
+    monkeypatch.setattr(set_network_tool, "get_vm_uuid", lambda _name: None)
+    with pytest.raises(RuntimeError, match="not found"):
+        set_network_tool.set_network("missing", "isolate")
+
+
+def test_set_network_isolate_fixes_only_bad_nics(monkeypatch):
+    monkeypatch.setattr(set_network_tool, "get_vm_uuid", lambda _name: "{uuid}")
+    monkeypatch.setattr(set_network_tool, "ensure_hostonlyif_exists", lambda: "vboxnet0")
+
+    # Before: nic1 is already hostonly (fine), nic2 is nat (must be fixed).
+    # After the fix, get_nics is called again for verification and must report both as safe.
+    nics_calls = [[("1", "hostonly"), ("2", "nat")], [("1", "hostonly"), ("2", "hostonly")]]
+    monkeypatch.setattr(set_network_tool, "get_nics", lambda _uuid: nics_calls.pop(0))
+
+    fixed = []
+    monkeypatch.setattr(
+        set_network_tool,
+        "set_nic",
+        lambda _uuid, nic_number, adapter_type, ifname: fixed.append((nic_number, adapter_type, ifname)),
+    )
+
+    set_network_tool.set_network("FLARE-VM.testing", "isolate")
+
+    assert fixed == [("2", "hostonly", "vboxnet0")]
+
+
+def test_set_network_isolate_raises_if_still_unsafe_after_fix(monkeypatch):
+    monkeypatch.setattr(set_network_tool, "get_vm_uuid", lambda _name: "{uuid}")
+    monkeypatch.setattr(set_network_tool, "ensure_hostonlyif_exists", lambda: "vboxnet0")
+    monkeypatch.setattr(set_network_tool, "get_nics", lambda _uuid: [("1", "nat")])
+    monkeypatch.setattr(set_network_tool, "set_nic", lambda *_args: None)
+
+    with pytest.raises(RuntimeError, match="still"):
+        set_network_tool.set_network("FLARE-VM.testing", "isolate")
+
+
+def test_set_network_nat_sets_nic1_only(monkeypatch):
+    monkeypatch.setattr(set_network_tool, "get_vm_uuid", lambda _name: "{uuid}")
+
+    calls = []
+    monkeypatch.setattr(
+        set_network_tool,
+        "set_nic",
+        lambda uuid, nic_number, adapter_type: calls.append((uuid, nic_number, adapter_type)),
+    )
+    monkeypatch.setattr(set_network_tool, "get_nics", lambda _uuid, only_nic: [(only_nic, "nat")])
+
+    set_network_tool.set_network("FLARE-VM.testing", "nat")
+
+    assert calls == [("{uuid}", "1", "nat")]
+
+
+def test_set_network_nat_raises_if_verification_fails(monkeypatch):
+    monkeypatch.setattr(set_network_tool, "get_vm_uuid", lambda _name: "{uuid}")
+    monkeypatch.setattr(set_network_tool, "set_nic", lambda *_args: None)
+    monkeypatch.setattr(set_network_tool, "get_nics", lambda _uuid, only_nic: [])
+
+    with pytest.raises(RuntimeError, match="not switched"):
+        set_network_tool.set_network("FLARE-VM.testing", "nat")
+
+
+def test_set_network_nat_warns_for_dynamic_named_vm(monkeypatch, capsys):
+    monkeypatch.setattr(set_network_tool, "get_vm_uuid", lambda _name: "{uuid}")
+    monkeypatch.setattr(set_network_tool, "set_nic", lambda *_args: None)
+    monkeypatch.setattr(set_network_tool, "get_nics", lambda _uuid, only_nic: [(only_nic, "nat")])
+
+    set_network_tool.set_network("FLARE-VM.testing.dynamic", "nat")
+
+    assert "vbox-adapter-check.py" in capsys.readouterr().out
 
 
 def test_flare_install_wait_has_a_timeout(monkeypatch):
