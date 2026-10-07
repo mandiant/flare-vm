@@ -243,24 +243,18 @@ function Test-TestedOS {
 	}
 }
 function Test-VM {
-    $virtualModels = @('VirtualBox', 'VMware', 'Virtual Machine', 'Hyper-V')
+    $pattern = 'VirtualBox|VMware|Virtual Machine|Hyper-V|QEMU'
     try {
-		$computerSystemModel = (Get-CimInstance win32_computersystem).model
-		$isVirtualModel = $false
+        $sys = Get-CimInstance win32_computersystem
+        $isVirtual = ($sys.Model -match $pattern) -or ($sys.Manufacturer -match $pattern)
 
-		foreach ($model in $virtualModels) {
-			if ($computerSystemModel.Contains($model)) {
-				$isVirtualModel = $true
-				break
-			}
-		}
-
-		if (-not ($isVirtualModel)) {
-			return "You are not on a VM or have hardened your machine to not appear as such"
-		}
-	} catch {
-		return "Unable to determine if you are on a VM"
-	}
+        if (-not $isVirtual) {
+            return "You are not on a VM or have hardened your machine to not appear as such"
+        }
+    }
+    catch {
+        return "Unable to determine if you are on a VM"
+    }
 }
 
 function Test-SpaceUserName {
